@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PA5X Set Tool</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%23f0a03c%22/%3E%3Crect x=%223%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3Crect x=%227%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3Crect x=%2211%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#14161a;--panel:#1c1f25;--panel2:#23272f;--line:#2e333d;--text:#e6e8eb;--dim:#9aa1ad;--acc:#f0a03c;--acc2:#4fb3d9;--ok:#5cc28a;--bad:#e56b6b}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+  button,select,input{font:inherit;color:inherit}
+  .app{display:grid;grid-template-rows:auto 1fr auto auto;height:100vh}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.3px}
+  header h1 b{color:var(--acc)}
+  .setname{color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+  .btn:hover{border-color:var(--acc)}
+  .btn.primary{background:var(--acc);border-color:var(--acc);color:#1b1206;font-weight:600}
+  .btn:disabled{opacity:.45;cursor:default}
+  main{display:grid;grid-template-columns:340px 1fr;min-height:0}
+  aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+  .tabs{display:flex;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;white-space:nowrap;background:none;border:0;padding:9px 4px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;font-size:13px}
+  .tabs button.on{color:var(--text);border-bottom-color:var(--acc)}
+  .search{padding:8px;border-bottom:1px solid var(--line)}
+  .search input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+  .list{overflow:auto;flex:1}
+  .bank{padding:7px 12px;font-size:12px;color:var(--acc);text-transform:uppercase;letter-spacing:.6px;background:var(--panel2);position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .bank .n{color:var(--dim)}
+  .item{padding:6px 12px 6px 20px;cursor:pointer;border-bottom:1px solid #20242b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item:hover{background:#262a32}
+  .item.sel{background:#2f2a20;color:#ffd9a3}
+  section.detail{overflow:auto;padding:18px 22px;min-height:0}
+  .empty{color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px}
+  .empty .big{font-size:20px;color:var(--text)}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:30px 40px}
+  .drop.hover{border-color:var(--acc)}
+  h2{margin:0 0 4px;font-size:20px}
+  .meta{color:var(--dim);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .meta b{color:var(--text);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:14px;color:var(--acc2);font-weight:600}
+  table{border-collapse:collapse;width:100%}
+  th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;white-space:nowrap}
+  th{color:var(--dim);font-weight:500;position:sticky;top:0;background:var(--panel)}
+  td.c,th.c{text-align:center}
+  .cell{display:inline-block;min-width:34px;padding:1px 6px;border-radius:4px;background:#2b3a2f;color:#a8e4bf;font-size:12px}
+  .cell.zero{background:transparent;color:#4a505b}
+  .snd{font-family:Consolas,monospace;font-size:12px;color:#c9d1dc}
+  .tag{display:inline-block;padding:1px 7px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:12px;margin:2px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .ks{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .ks .t{font-weight:600;margin-bottom:6px}
+  .ks .l{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+  .ks .l span:last-child{color:var(--text)}
+  label.opt{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px}
+  .chmap{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chmap label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);align-items:center}
+  .chmap select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:2px}
+  .elsel{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+  .elsel label{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:12px;display:flex;gap:4px;align-items:center;cursor:pointer}
+  footer{padding:5px 14px;font-size:12px;color:var(--dim);background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:space-between}
+  .err{color:var(--bad)}
+  .hint{color:var(--dim);font-size:12.5px}
+  .toast{position:fixed;right:16px;bottom:36px;background:var(--panel2);border:1px solid var(--acc);padding:10px 14px;border-radius:8px;display:none;max-width:380px}
+
+  .transport{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#191c22;border-top:1px solid var(--line);flex-wrap:wrap;min-height:58px}
+  .tp-name{font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);font-size:18px;cursor:pointer}
+  .pbtn.on{background:var(--acc);color:#1b1206;border-color:var(--acc)}
+  .els{display:flex;gap:4px;flex-wrap:wrap}
+  .ebtn{font-size:11px;font-weight:600;padding:7px 8px;border-radius:5px;border:1px solid var(--line);background:#252a33;cursor:pointer;min-width:54px}
+  .ebtn.v{border-bottom:3px solid #4fb3d9}.ebtn.f{border-bottom:3px solid #c98cf0}.ebtn.i{border-bottom:3px solid #f0a03c}
+  .ebtn:disabled{opacity:.3;cursor:default}
+  .ebtn.cur{background:#3a6b48;color:#fff}.ebtn.next{outline:2px dashed var(--acc);outline-offset:-2px}
+  .tp-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .tp-ctl label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);gap:2px}
+  .tp-ctl input[type=number]{width:62px}.tp-ctl input,.tp-ctl select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px}
+  .tp-pos{margin-left:auto;font-family:Consolas,monospace;color:#a8e4bf;font-size:13px}
+  .ms{font-size:10px;padding:1px 5px;margin:2px 1px 0;border-radius:3px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--dim)}
+  .ms.m.on{background:#a33;color:#fff}.ms.s.on{background:#c9a227;color:#000}
+  .playel{background:none;border:1px solid var(--line);border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--ok);font-size:10px}
+  .playel:hover{background:#2b3a2f}
+  .mod{color:var(--acc);font-size:13px}
+  .warnc{border-color:var(--acc)} .chg{margin:0 0 10px;padding-left:18px;color:var(--dim)}
+  .copyf{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .copyf label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);gap:3px}
+  .copyf select{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:5px;max-width:260px}
+  .copyf .arrow{font-size:20px;color:var(--acc);padding-bottom:4px}
+  #cpInfo{margin-top:8px}
+  .padb{margin:3px}
+  .kssel{margin-top:8px;width:100%}.kssel.on{border-color:var(--acc);color:var(--acc)}
+  .kbwrap{margin-top:12px}.kbinfo{font-size:12px;color:var(--dim);margin-bottom:6px}
+  .kb{position:relative;height:130px;user-select:none;touch-action:none}
+  .wk{position:absolute;top:0;height:130px;background:#f3efe6;border:1px solid #888;border-radius:0 0 5px 5px;box-sizing:border-box;cursor:pointer}
+  .wk.lo{background:#e3ecf3}.wk span{position:absolute;bottom:4px;left:3px;font-size:9px;color:#666}
+  .bk{position:absolute;top:0;height:80px;background:#1b1b1b;border-radius:0 0 4px 4px;z-index:2;cursor:pointer}
+  .wk.down{background:#f0c27a}.bk.down{background:#b07722}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50}
+  .mbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;width:440px}
+  .mbox h3{margin:0 0 10px}.mbox input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+  footer a{color:var(--acc2);text-decoration:none} footer a:hover{text-decoration:underline}
+  .updbar{position:fixed;top:62px;right:16px;z-index:40;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:14px 16px;width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .updbar h3{margin:0 0 6px;font-size:15px;color:var(--acc)} .updbar p{margin:0 0 10px;color:var(--dim);font-size:13px;white-space:pre-line}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>PA5X <b>Set Tool</b></h1>
+    <span class="setname" id="setname">Няма отворен сет</span>
+    <button class="btn primary" id="openBtn">Отвори SET/KST папка…</button>
+    <input type="file" id="dirInput" webkitdirectory directory multiple hidden>
+  </header>
+  <main>
+    <aside>
+      <div class="tabs" id="tabs">
+        <button data-tab="styles" class="on">Стилове</button>
+        <button data-tab="ksets">Keyboard Sets</button>
+        <button data-tab="pads">Pads</button>
+        <button data-tab="sounds">User звуци</button>
+      </div>
+      <div class="search"><input id="q" placeholder="Търсене…"></div>
+      <div class="list" id="list"></div>
+    </aside>
+    <section class="detail" id="detail">
+      <div class="empty">
+        <div class="drop" id="drop">
+          <div class="big">Отвори своя PA5X сет</div>
+          <p>Натисни „Отвори SET/KST папка…“ и избери главната папка на сета<br>(тази, в която са STYLE, KEYBOARDSET, PAD, SOUND…),<br>или я пусни тук с мишката.</p>
+          <p class="hint">Файловете се четат само локално, нищо не се качва в интернет.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div id="transport" class="transport"></div>
+  <footer><span id="status">Готов</span><span><span id="ver">PA5X Set Tool</span> · <a href="#" id="chkUpd">Провери за обновления</a></span></footer>
+</div>
+<div class="toast" id="toast"></div>
+<script src="spessa.bundle.js"></script>
+<script>
+/*__CORE__*/
+</script>
+<script>
+/*__PLAYER__*/
+</script>
+<script>
+(() => {
+  const C = window.PACore;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const state = { files: [], root: '', styles: [], ksets: [], padPresets: [], userSounds: [], styleCache: new Map(), tab: 'styles', sel: null, collapsed: new Set() };
+
+  function status(t, err) { const s = $('#status'); s.textContent = t; s.className = err ? 'err' : ''; }
+  function toastHtml(h) { const el = $('#toast'); el.innerHTML = h; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 7000); }
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 3500); }
+  async function download(name, data, type) {
+    if (window.native) { const p = await window.native.saveFile(name, data); if (p) { toastHtml('Записано: ' + esc(p) + ' <button class="btn" id="showF" style="margin-left:8px">Покажи в папката</button>'); const b = document.getElementById('showF'); if (b) b.onclick = () => window.native.showInFolder(p); status('Записано: ' + p); } return; }
+    if (window.showSaveFilePicker) { // Chrome/Edge: real "Save as" dialog, Unicode names
+      try {
+        const ext = name.slice(name.lastIndexOf('.'));
+        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: ext === '.zip' ? 'ZIP архив' : 'MIDI файл', accept: { [type || 'application/octet-stream']: [ext] } }] });
+        const w = await h.createWritable(); await w.write(data); await w.close(); toast('Записано: ' + h.name); return;
+      } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(new Blob([data], { type: type || 'application/octet-stream' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  const safe = (s) => s.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'style';
+
+  // ---------- loading ----------
+  function relParts(f) { const p = (f.webkitRelativePath || f._rel || f.name).split('/'); return p; }
+  async function loadFiles(files, keepView) {
+    files = [...files]; if (!files.length) return;
+    // find set root: folder that contains STYLE / KEYBOARDSET
+    const KNOWN = ['STYLE', 'KEYBOARDSET', 'PAD', 'SOUND', 'MATRIXPRESET', 'SONGBOOK', 'PCM'];
+    let depth = 0; const sample = files.map(relParts);
+    for (let d = 0; d < 4; d++) { if (sample.some(p => p.length > d + 1 && KNOWN.includes(p[d].toUpperCase()))) { depth = d; break; } }
+    state.root = sample[0].slice(0, depth).join('/') || sample[0][0];
+    const idx = files.map(f => { const p = relParts(f).slice(depth); return { f, top: (p[0] || '').toUpperCase(), bank: p.length > 2 ? p[1] : '', name: p[p.length - 1], path: p.join('/') }; });
+    state.files = idx; state.styleCache.clear(); state.sel = null; if (!keepView && state.edits && state.edits.size) state.edits.clear();
+    const order = async (bankFiles, ext) => { // respect metadir.json order
+      const meta = idx.find(x => x.top === bankFiles[0].top && x.bank === bankFiles[0].bank && x.name.toLowerCase() === 'metadir.json');
+      let ord = []; if (meta) { try { ord = JSON.parse(await meta.f.text()).files.map(x => x.file); } catch (e) { } }
+      const pos = (n) => { const i = ord.indexOf(n); return i < 0 ? 1e6 : i; };
+      return bankFiles.filter(x => x.name.toLowerCase().endsWith(ext)).sort((a, b) => pos(a.name) - pos(b.name) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    };
+    const group = async (top, ext) => {
+      const byBank = new Map(); for (const x of idx.filter(x => x.top === top && x.name.toLowerCase().endsWith(ext))) { if (!byBank.has(x.bank)) byBank.set(x.bank, []); byBank.get(x.bank).push(x); }
+      const banks = []; for (const [bank, list] of [...byBank].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))) banks.push({ bank: bank || '(корен)', items: await order(idx.filter(x => x.top === top && x.bank === bank), ext) });
+      return banks;
+    };
+    state.styles = await group('STYLE', '.stg');
+    state.ksets = await group('KEYBOARDSET', '.ksc');
+    state.padPresets = []; state.userSounds = [];
+    for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...C.korfNames(new Uint8Array(await x.f.arrayBuffer())).map(n => ({ n, file: x.name }))); } catch (e) { } }
+    for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), names: C.korfNames(new Uint8Array(await x.f.arrayBuffer())) }); } catch (e) { } }
+    const ns = state.styles.reduce((s, b) => s + b.items.length, 0), nk = state.ksets.reduce((s, b) => s + b.items.length, 0);
+    $('#setname').textContent = state.root + `  ·  ${ns} стила · ${nk} Keyboard Sets`;
+    if (!ns && !nk) status('В избраната папка няма PA5X стилове (.stg) или Keyboard Sets (.ksc). Избери главната папка на сета.', true); else status('Сетът е зареден');
+    renderList(); if (!keepView) showWelcome();
+  }
+  window.PA5XApp = { loadFiles, state };
+  function nativeFiles(res) {
+    return res.files.map(rel => ({ name: rel.split('/').pop(), _rel: rel, arrayBuffer: () => window.native.readFile(rel), text: async () => new TextDecoder().decode(await window.native.readFile(rel)) }));
+  }
+  async function openNative(p, keepView) { status('Чета сета…'); const res = p ? await window.native.openPath(p) : await window.native.openFolder(); if (res) { state.rootPath = res.path; await loadFiles(nativeFiles(res), keepView); } else status('Готов'); }
+  $('#openBtn').onclick = () => window.native ? openNative() : $('#dirInput').click();
+  if (window.native) window.native.lastDir().then(d => { if (d) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Последен сет'; b.title = d; b.onclick = () => openNative(d); $('#openBtn').before(b); } });
+  $('#dirInput').onchange = (e) => loadFiles(e.target.files);
+  // drag & drop folder
+  async function entriesToFiles(entry, path, out) {
+    if (entry.isFile) { const f = await new Promise((res, rej) => entry.file(res, rej)); f._rel = path + entry.name; out.push(f); }
+    else if (entry.isDirectory) { const r = entry.createReader(); let batch; do { batch = await new Promise((res, rej) => r.readEntries(res, rej)); for (const e of batch) await entriesToFiles(e, path + entry.name + '/', out); } while (batch.length); }
+  }
+  document.addEventListener('dragover', e => { e.preventDefault(); const d = $('#drop'); d && d.classList.add('hover'); });
+  document.addEventListener('dragleave', () => { const d = $('#drop'); d && d.classList.remove('hover'); });
+  document.addEventListener('drop', async e => {
+    e.preventDefault();
+    if (window.native && e.dataTransfer.files.length) { const p = window.native.pathForFile(e.dataTransfer.files[0]); if (p) return openNative(p); }
+    status('Чета файловете…'); const out = [];
+    for (const it of e.dataTransfer.items) { const en = it.webkitGetAsEntry && it.webkitGetAsEntry(); if (en) await entriesToFiles(en, '', out); }
+    loadFiles(out);
+  });
+
+  // ---------- list ----------
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); state.tab = b.dataset.tab; renderList(); if (state.tab === 'pads') showPads(); if (state.tab === 'sounds') showSounds(); });
+  $('#q').oninput = renderList;
+  function renderList() {
+    const q = $('#q').value.trim().toLowerCase(); const L = $('#list'); let h = '';
+    const banks = state.tab === 'styles' ? state.styles : state.tab === 'ksets' ? state.ksets : [];
+    for (const [bi, b] of banks.entries()) {
+      const items = b.items.filter(x => !q || x.name.toLowerCase().includes(q)); if (q && !items.length) continue;
+      const key = state.tab + bi; const col = state.collapsed.has(key) && !q;
+      h += `<div class="bank" data-key="${key}"><span>${col ? '▸' : '▾'} ${esc(b.bank)}</span><span class="n">${items.length}</span></div>`;
+      if (!col) for (const x of items) h += `<div class="item${state.sel === x ? ' sel' : ''}" data-b="${bi}" data-i="${b.items.indexOf(x)}" title="${esc(x.path)}">${state.edits && state.edits.has(x) ? '<span class="mod">●</span> ' : ''}${esc(x.name.replace(/\.(stg|ksc)$/i, ''))}</div>`;
+    }
+    if (state.tab === 'pads') h = state.padPresets.length ? state.padPresets.map(p => `<div class="item">${esc(p.n)}</div>`).join('') : '<div class="item hint">Няма Pad пресети</div>';
+    if (state.tab === 'sounds') h = state.userSounds.map(b => `<div class="bank"><span>${esc(b.bank)}</span><span class="n">${b.names.length}</span></div>` + b.names.map(n => `<div class="item">${esc(n)}</div>`).join('')).join('') || '<div class="item hint">Няма User звуци</div>';
+    if (!state.files.length) h = '';
+    L.innerHTML = h;
+    L.querySelectorAll('.bank[data-key]').forEach(el => el.onclick = () => { const k = el.dataset.key; state.collapsed.has(k) ? state.collapsed.delete(k) : state.collapsed.add(k); renderList(); });
+    L.querySelectorAll('.item[data-b]').forEach(el => el.onclick = () => { const x = banks[+el.dataset.b].items[+el.dataset.i]; state.sel = x; renderList(); state.tab === 'styles' ? showStyle(x, +el.dataset.b) : showKset(x); });
+  }
+
+  function showWelcome() {
+    const ns = state.styles.reduce((s, b) => s + b.items.length, 0);
+    $('#detail').innerHTML = `<h2>${esc(state.root)}</h2><div class="meta"><span>Стилове: <b>${ns}</b> в <b>${state.styles.length}</b> банки</span><span>Keyboard Sets: <b>${state.ksets.reduce((s, b) => s + b.items.length, 0)}</b></span><span>Pad пресети: <b>${state.padPresets.length}</b></span><span>User звуци: <b>${state.userSounds.reduce((s, b) => s + b.names.length, 0)}</b></span></div>
+      <div class="card"><h3>Какво може</h3><p>Избери стил отляво, за да видиш елементите, пистите, звуците, Keyboard Sets и Pads и да го експортираш като MIDI.</p>
+      <div class="row"><button class="btn" id="bankAll" ${ns ? '' : 'disabled'}>Експорт на всички стилове в MIDI (.zip)…</button></div></div>`;
+    const b = $('#bankAll'); if (b) b.onclick = () => exportMany(state.styles.flatMap(x => x.items.map(i => ({ ...i, bankName: x.bank }))), safe(state.root) + '_MIDI.zip');
+  }
+
+
+  // ===================== self-update =====================
+  if (window.native && window.native.appVersion) {
+    window.native.appVersion().then(v => { $('#ver').textContent = 'PA5X Set Tool v' + v; });
+    const box = (html) => { let b = $('#updbar'); if (!b) { b = document.createElement('div'); b.id = 'updbar'; b.className = 'updbar'; document.body.appendChild(b); } b.innerHTML = html; return b; };
+    window.native.onUpdate((ev, d) => {
+      if (ev === 'update-available') {
+        const b = box(`<h3>Има нова версия ${esc(d.version)}</h3><p>${esc(d.notes || '')}</p>${d.fullDownload ? '<p>Тази версия изисква ново пълно изтегляне.</p><div class="row"><button class="btn primary" id="updPage">Отвори страницата за изтегляне</button><button class="btn" id="updLater">По-късно</button></div>' : '<div class="row"><button class="btn primary" id="updGo">Обнови сега</button><button class="btn" id="updLater">По-късно</button></div>'}`);
+        b.querySelector('#updLater').onclick = () => b.remove();
+        const pg = b.querySelector('#updPage'); if (pg) pg.onclick = () => window.native.openUrl(d.page || 'https://github.com/Hogzzmeade/pa5x-set-tool');
+        const go = b.querySelector('#updGo'); if (go) go.onclick = async () => {
+          if (state.edits && state.edits.size && !confirm('Имаш незаписани промени в стилове. Програмата ще се рестартира и те ще се загубят. Продължаваш ли?')) return;
+          go.disabled = true; go.textContent = 'Изтеглям…'; const r = await window.native.installUpdate();
+          if (!r.ok) { go.disabled = false; go.textContent = 'Опитай пак'; toast('Обновлението не успя: ' + r.error); } else go.textContent = 'Рестартирам…';
+        };
+      } else if (ev === 'update-progress') { const go = $('#updGo'); if (go) go.textContent = `Изтеглям… ${d.done}/${d.total}`; }
+      else if (ev === 'update-none') toast('Имаш най-новата версия (' + d.version + ')');
+      else if (ev === 'update-error') toast('Не може да се провери за обновления: ' + d.message);
+    });
+    $('#chkUpd').onclick = (e) => { e.preventDefault(); toast('Проверявам…'); window.native.checkUpdate(); };
+  } else { const c = document.getElementById('chkUpd'); if (c) c.style.display = 'none'; }
+
+  // ===================== styles: load / edits =====================
+  state.edits = new Map(); // fileItem -> { tree, history: [Uint8Array], name }
+  async function getStyle(x) {
+    const ed = state.edits.get(x);
+    if (ed) { if (!ed.parsed) ed.parsed = C.parseStyle(C.serializeTree(ed.tree), x.name); return ed.parsed; }
+    if (state.styleCache.has(x)) return state.styleCache.get(x);
+    const s = C.parseStyle(new Uint8Array(await x.f.arrayBuffer()), x.name); state.styleCache.set(x, s); return s;
+  }
+  async function getTree(x) { const ed = state.edits.get(x); if (ed) return ed.tree; return C.parseTree(new Uint8Array(await x.f.arrayBuffer())); }
+  const allStyleItems = () => state.styles.flatMap((b, bi) => b.items.map((x, i) => ({ x, bi, i, bank: b.bank })));
+
+  // ===================== player =====================
+  const P = new window.PAPlayer(); window.PA5XApp && (window.PA5XApp.P = P); let playerReady = false; let curStyleItem = null; let curStyleBank = 0;
+  async function ensurePlayer() {
+    if (playerReady) return true;
+    if (!window.native) { toast('Прослушването работи в програмата за Windows'); return false; }
+    status('Зареждам звуците…');
+    try { await P.init(() => window.native.readAppFile('gm.sf3')); playerReady = true; status('Звуците са заредени'); P.onState = renderTransport; return true; }
+    catch (e) { status('Звукът не може да се стартира: ' + e.message, true); return false; }
+  }
+  const ROOTS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const rootIdx = (r) => { if (!r) return 0; const m = /^([A-G])(#|b)?/.exec(r); if (!m) return 0; let i = ROOTS.indexOf(m[1]); if (m[2] === '#') i++; if (m[2] === 'b') i--; return (i + 12) % 12; };
+  let origRoot = 0, origChordLabel = '';
+  const ELEMENT_BTNS = [['Intro1', 'INTRO 1'], ['Intro2', 'INTRO 2'], ['CountIn', 'INTRO 3'], ['Var1', 'VAR 1'], ['Var2', 'VAR 2'], ['Var3', 'VAR 3'], ['Var4', 'VAR 4'], ['Fill1', 'FILL 1'], ['Fill2', 'FILL 2'], ['Fill3', 'FILL 3'], ['Fill4', 'FILL 4'], ['Break', 'BREAK'], ['End1', 'END 1'], ['End2', 'END 2']];
+  async function loadIntoPlayer(x, s) {
+    curStyleItem = x; P.loadStyle(s, opts.channels);
+    const oc = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord; return null; })();
+    origRoot = oc ? rootIdx(oc.root) : 0; origChordLabel = oc ? oc.root + (/min/i.test(oc.chord) ? 'm' : '') : '';
+    P.transpose = 0; renderTransport();
+  }
+  function renderTransport() {
+    const bar = $('#transport'); if (!bar) return;
+    const s = P.style; if (!s) { bar.innerHTML = '<span class="hint">Избери стил, за да го прослушаш. Звук: вграден синтезатор или MIDI към PA5X.</span>'; return; }
+    const pos = P.playing ? P.position() : null; const cur = pos && pos.id;
+    const keyNow = ROOTS[(origRoot + P.transpose + 120) % 12];
+    if (!bar.dataset.built || bar.dataset.style !== s.fileName) {
+      bar.dataset.built = '1'; bar.dataset.style = s.fileName;
+      bar.innerHTML = `<div class="tp-name" title="${esc(s.name)}">${esc(s.name)}</div>
+        <button class="pbtn start" id="tpStart" title="Start/Stop (интервал)">▶</button>
+        <div class="els">${ELEMENT_BTNS.map(([id, l]) => { const e = s.elements.find(z => z.id === id && z.length); return `<button class="ebtn ${/^Var/.test(id) ? 'v' : /^Fill|^Break/.test(id) ? 'f' : 'i'}" data-el="${id}" ${e ? '' : 'disabled'}>${l}</button>`; }).join('')}</div>
+        <div class="tp-ctl"><label>Темпо<input type="number" id="tpTempo" min="30" max="300" step="1"></label>
+          <label>Тоналност<select id="tpKey">${ROOTS.map((r, i) => `<option value="${i}">${r}${/m$/.test(origChordLabel) ? 'm' : ''}</option>`).join('')}</select></label>
+          <label>Сила<input type="range" id="tpVol" min="0" max="1.5" step="0.05" value="${P.volume}"></label>
+          <label>Звук<select id="tpOut"><option value="synth">Вграден синтезатор</option></select></label></div>
+        <div class="tp-pos" id="tpPos"></div>`;
+      $('#tpStart').onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.stop(); else P.start(P.lastVar || 'Var1'); };
+      bar.querySelectorAll('.ebtn').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const id = b.dataset.el; if (P.playing) P.queue(id); else P.start(id); });
+      $('#tpTempo').onchange = e => { const v = Math.max(30, Math.min(300, +e.target.value || s.tempo)); P.setTempo(v); renderTransport(); };
+      $('#tpTempo').onkeydown = e => { if (e.key === 'Enter') e.target.blur(); };
+      $('#tpKey').onchange = e => { let d = (+e.target.value - origRoot + 12) % 12; if (d > 6) d -= 12; P.transpose = d; };
+      $('#tpVol').oninput = e => P.setVolume(+e.target.value);
+      $('#tpOut').onfocus = fillOutputs; $('#tpOut').onmousedown = fillOutputs;
+      $('#tpOut').onchange = async e => { if (!(await ensurePlayer())) return; P.setOutput(e.target.value); toast(e.target.value === 'synth' ? 'Звук: вграден синтезатор' : 'Звук: MIDI към ' + e.target.selectedOptions[0].textContent + '. Настрой MIDI IN каналите на PA5X да съвпадат с каналите на пистите.'); };
+    }
+    if (document.activeElement !== $('#tpTempo')) $('#tpTempo').value = Math.round(P.tempo); if (document.activeElement !== $('#tpKey')) $('#tpKey').value = (origRoot + P.transpose + 12) % 12;
+    $('#tpStart').textContent = P.playing ? '■' : '▶'; $('#tpStart').classList.toggle('on', P.playing);
+    bar.querySelectorAll('.ebtn').forEach(b => { b.classList.toggle('cur', b.dataset.el === cur); b.classList.toggle('next', !!pos && (b.dataset.el === pos.pending || (!pos.pending && b.dataset.el === P.lastVar && b.dataset.el !== cur))); });
+    $('#tpPos').textContent = pos ? `${C.ELEMENT_LABEL[pos.id] || pos.id} · такт ${pos.bar}/${pos.bars} · удар ${pos.beat}` : `${keyNow}${/m$/.test(origChordLabel) ? 'm' : ''} · ${Math.round(P.tempo)} BPM`;
+  }
+  async function fillOutputs() {
+    const sel = $('#tpOut'); if (sel.dataset.filled) return; sel.dataset.filled = '1';
+    const outs = await P.midiOutputs(); for (const o of outs) { const op = document.createElement('option'); op.value = o.id; op.textContent = 'MIDI: ' + o.name; sel.appendChild(op); }
+    if (!outs.length) { const op = document.createElement('option'); op.disabled = true; op.textContent = '(няма MIDI устройства)'; sel.appendChild(op); }
+  }
+  setInterval(() => { if (P.playing) renderTransport(); }, 150);
+  document.addEventListener('keydown', async e => {
+    if (e.target.matches('input,select,textarea')) return;
+    if (e.code === 'Space' && P.style) { e.preventDefault(); if (!(await ensurePlayer())) return; P.playing ? P.stop() : P.start(P.lastVar || 'Var1'); }
+  });
+
+  // ===================== style view =====================
+  const opts = { includeChords: false, keepKorgSysex: false, setupPerElement: true, channels: { ...C.DEFAULT_CHANNELS } };
+  async function showStyle(x, bi) {
+    let s; try { s = await getStyle(x); } catch (e) { $('#detail').innerHTML = `<h2>${esc(x.name)}</h2><p class="err">Файлът не може да се прочете: ${esc(e.message)}</p>`; return; }
+    curStyleBank = bi; if (!P.playing || curStyleItem !== x) { P.stop(); await loadIntoPlayer(x, s); }
+    const ed = state.edits.get(x);
+    const tracks = C.TRACK_ORDER.filter(t => t !== 'Chords' && s.elements.some(e => e.tracks.some(tr => tr.name === t)));
+    const firstSound = (t) => { for (const id of ['Var1', 'Var2', 'Var3', 'Var4']) { const el = s.elements.find(e => e.id === id); const tr = el && el.tracks.find(z => z.name === t); if (tr) return tr.sound; } for (const el of s.elements) { const tr = el.tracks.find(z => z.name === t); if (tr) return tr.sound; } };
+    const ts = [...new Set(s.elements.map(e => e.ts.label))].join(', ');
+    const orig = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord.root + ' ' + t.origChord.chord; return '—'; })();
+    const ms = (t) => `<button class="ms m${P.mutes.has(t) ? ' on' : ''}" data-m="${t}" title="Mute">M</button><button class="ms s${P.solos.has(t) ? ' on' : ''}" data-s="${t}" title="Solo">S</button>`;
+    let h = `<h2>${esc(s.name)}${ed ? ' <span class="mod">● променен</span>' : ''}</h2>
+      <div class="meta"><span>Темпо: <b>${s.tempo} BPM</b></span><span>Такт: <b>${esc(ts)}</b></span><span>Оригинален акорд: <b>${esc(orig)}</b></span><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
+      ${ed ? `<div class="card warnc"><h3>Незаписани промени (${ed.history.length})</h3><ul class="chg">${ed.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+        <div class="row"><button class="btn primary" id="saveAs">Запиши като нов стил…</button><button class="btn" id="saveOver">Презапиши оригинала (с резервно копие)</button><button class="btn" id="undo">Отмени последното</button><button class="btn" id="discard">Откажи всички</button></div></div>` : ''}
+      <div class="card"><h3>Елементи и писти</h3><div style="overflow:auto"><table class="et"><tr><th></th><th>Елемент</th><th class="c">Тактове</th><th class="c">Такт</th>${tracks.map(t => `<th class="c">${t}<div class="msw">${ms(t)}</div></th>`).join('')}</tr>
+      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}" title="${tr ? 'Звук ' + C.fmtSound(tr.sound) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
+      <tr><td></td><td class="hint">Звук (MSB.LSB.Prog)</td><td></td><td></td>${tracks.map(t => `<td class="c snd">${C.fmtSound(firstSound(t))}</td>`).join('')}</tr>
+      </table></div><p class="hint">Числата са брой ноти. M = заглуши пистата, S = само тази писта. Интервал = Start/Stop.</p></div>
+      <div class="card"><h3>Копиране от друг стил</h3>${copyFormHtml(s)}</div>
+      <div class="card"><h3>Pads на стила (${s.pads.length})</h3>${s.pads.length ? s.pads.map((p, i) => `<button class="btn padb" data-p="${i}">▶ Pad ${i + 1}: ${esc(p.name)}</button>`).join(' ') : '<span class="hint">Няма зададени Pads</span>'}</div>
+      <div class="card"><h3>Keyboard Sets на стила (${s.keyboardSets.length})</h3><div class="grid2">${s.keyboardSets.map((k, i) => ksCard(k, i + 1, i)).join('') || '<span class="hint">Няма</span>'}</div><div id="kbHost"></div></div>
+      <div class="card"><h3>Експорт към MIDI</h3>
+        <div class="row"><button class="btn primary" id="expAll">Целият стил → .mid</button><button class="btn" id="expEach">Всеки елемент отделно → .zip</button><button class="btn" id="expBank">Цялата банка „${esc(x.bank)}“ → .zip</button></div>
+        <div class="elsel" id="elsel">${s.elements.map(e => `<label><input type="checkbox" value="${e.id}" ${e.length ? 'checked' : ''}>${esc(e.label)}</label>`).join('')}</div>
+        <div class="row"><label class="opt"><input type="checkbox" id="oChords" ${opts.includeChords ? 'checked' : ''}> Писта с акордите (Chords)</label><label class="opt"><input type="checkbox" id="oSetup" ${opts.setupPerElement ? 'checked' : ''}> Звук/обем в началото на всеки елемент</label><label class="opt"><input type="checkbox" id="oSysex" ${opts.keepKorgSysex ? 'checked' : ''}> Запази KORG SysEx</label></div>
+        <div class="chmap">${C.TRACK_ORDER.map(t => `<label>${t}<select data-t="${t}">${Array.from({ length: 16 }, (_, i) => `<option ${opts.channels[t] === i + 1 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>`).join('')}</div>
+        <p class="hint">MIDI каналите важат и за експорта, и за свиренето към PA5X.</p></div>`;
+    $('#detail').innerHTML = h;
+    // playback hooks
+    document.querySelectorAll('.playel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.queue(b.dataset.el); else P.start(b.dataset.el); });
+    document.querySelectorAll('.ms').forEach(b => b.onclick = () => { const t = b.dataset.m || b.dataset.s; const set = b.dataset.m ? P.mutes : P.solos; set.has(t) ? set.delete(t) : set.add(t); b.classList.toggle('on', set.has(t)); });
+    document.querySelectorAll('.padb').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const p = s.pads[+b.dataset.p]; if (p.smf) P.playClip(p.smf, p.sound, [14, 15, 13, 12][+b.dataset.p % 4]); });
+    document.querySelectorAll('.kssel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const k = s.keyboardSets[+b.dataset.k]; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); document.querySelectorAll('.kssel').forEach(z => z.classList.toggle('on', z === b)); });
+    // export hooks
+    $('#oChords').onchange = e => opts.includeChords = e.target.checked; $('#oSetup').onchange = e => opts.setupPerElement = e.target.checked; $('#oSysex').onchange = e => opts.keepKorgSysex = e.target.checked;
+    document.querySelectorAll('.chmap select').forEach(sel => sel.onchange = () => opts.channels[sel.dataset.t] = +sel.value);
+    const chosen = () => [...document.querySelectorAll('#elsel input:checked')].map(i => i.value);
+    $('#expAll').onclick = () => { const els = chosen(); if (!els.length) return toast('Избери поне един елемент'); download(safe(s.name) + '.mid', C.exportStyleMidi(s, { ...opts, elements: els }), 'audio/midi'); };
+    $('#expEach').onclick = () => { const files = s.elements.filter(e => chosen().includes(e.id) && e.length).map((e, i) => ({ name: `${String(i + 1).padStart(2, '0')} ${safe(e.label)}.mid`, data: C.exportStyleMidi(s, { ...opts, elements: [e.id] }) })); download(safe(s.name) + '_elements.zip', C.makeZip(files), 'application/zip'); };
+    $('#expBank').onclick = () => exportMany(state.styles[bi].items.map(i => ({ ...i, bankName: '' })), safe(x.bank) + '_MIDI.zip');
+    bindCopyForm(x, bi, s);
+    if (ed) {
+      $('#undo').onclick = () => { ed.tree = C.parseTree(ed.history.pop()); ed.log.pop(); ed.parsed = null; if (!ed.history.length) state.edits.delete(x); refreshStyle(x, bi); };
+      $('#discard').onclick = () => { if (!confirm('Да се откажат ли всички незаписани промени в този стил?')) return; state.edits.delete(x); refreshStyle(x, bi); };
+      $('#saveAs').onclick = () => saveStyle(x, bi, false); $('#saveOver').onclick = () => saveStyle(x, bi, true);
+    }
+    renderTransport();
+  }
+  function refreshStyle(x, bi) { const keep = $('#detail').scrollTop; P.stop(); curStyleItem = null; renderList(); showStyle(x, bi).then(() => { $('#detail').scrollTop = keep; }); }
+
+  // ===================== copy form =====================
+  const copySel = { src: null, srcEl: 'Var1', what: '*', dstEl: 'Var1', dstTrack: '' };
+  function copyFormHtml(s) {
+    const items = allStyleItems();
+    const elOpts = (els, sel) => els.map(([id, l]) => `<option value="${id}" ${id === sel ? 'selected' : ''}>${l}</option>`).join('');
+    const known = Object.keys(C.SCENE_INFO).map(id => [id, C.ELEMENT_LABEL[id] || id]);
+    return `<div class="copyf">
+      <label>От стил<select id="cpSrc">${state.styles.map((b, bi) => `<optgroup label="${esc(b.bank)}">${b.items.map((it, i) => `<option value="${bi}:${i}">${esc(it.name.replace(/\.stg$/i, ''))}${state.edits.has(it) ? ' ●' : ''}</option>`).join('')}</optgroup>`).join('')}</select></label>
+      <label>Елемент<select id="cpSrcEl"></select></label>
+      <label>Какво<select id="cpWhat"></select></label>
+      <span class="arrow">→</span>
+      <label>В елемент<select id="cpDstEl">${elOpts(known, copySel.dstEl)}</select></label>
+      <label>В писта<select id="cpDstTr"></select></label>
+      <button class="btn primary" id="cpGo">Копирай</button>
+      <button class="btn" id="cpListen" title="Прослушай избрания елемент от изходния стил">▶ Прослушай източника</button>
+    </div><div id="cpInfo" class="hint"></div>`;
+  }
+  async function bindCopyForm(x, bi, s) {
+    const items = allStyleItems(); const me = items.find(z => z.x === x);
+    if (!copySel.src || !items.find(z => z.x === copySel.src)) copySel.src = x;
+    const srcIt = items.find(z => z.x === copySel.src); $('#cpSrc').value = srcIt.bi + ':' + srcIt.i;
+    const refresh = async () => {
+      const [b, i] = $('#cpSrc').value.split(':').map(Number); const sx = state.styles[b].items[i]; copySel.src = sx;
+      let ss; try { ss = await getStyle(sx); } catch (e) { $('#cpInfo').textContent = 'Изходният стил не може да се прочете'; return; }
+      const els = ss.elements.filter(e => e.length); if (!els.find(e => e.id === copySel.srcEl)) copySel.srcEl = els[0] ? els[0].id : '';
+      $('#cpSrcEl').innerHTML = els.map(e => `<option value="${e.id}" ${e.id === copySel.srcEl ? 'selected' : ''}>${esc(e.label)} (${e.bars} т., ${e.ts.label})</option>`).join('');
+      const el = ss.elements.find(e => e.id === copySel.srcEl);
+      const trs = el ? el.tracks.filter(t => t.name !== 'Chords' && t.info.notes) : [];
+      if (copySel.what !== '*' && !trs.find(t => t.name === copySel.what)) copySel.what = '*';
+      $('#cpWhat').innerHTML = `<option value="*">Целия елемент (всички писти)</option>` + trs.map(t => `<option value="${t.name}" ${t.name === copySel.what ? 'selected' : ''}>Писта ${t.name} (${t.info.notes} ноти)</option>`).join('');
+      const what = copySel.what;
+      if (what === '*') { $('#cpDstTr').innerHTML = '<option value="">—</option>'; $('#cpDstTr').disabled = true; }
+      else { const comp = C.compatibleTracks(what); if (!comp.includes(copySel.dstTrack)) copySel.dstTrack = what; $('#cpDstTr').disabled = false; $('#cpDstTr').innerHTML = comp.map(t => `<option ${t === copySel.dstTrack ? 'selected' : ''}>${t}</option>`).join(''); }
+      const dEl = s.elements.find(e => e.id === copySel.dstEl);
+      $('#cpInfo').textContent = !el ? '' : (what === '*' ? `${el.label} от „${ss.name}“ ще замени ${dEl ? C.ELEMENT_LABEL[copySel.dstEl] + ' (' + dEl.bars + ' т.)' : 'липсващия ' + C.ELEMENT_LABEL[copySel.dstEl] + ' (ще бъде създаден)'}.`
+        : `Пистата ${what} от ${el.label} ще отиде в ${copySel.dstTrack} на ${C.ELEMENT_LABEL[copySel.dstEl]}. Звукът и настройките на пистата се копират заедно с нея.`) + (el && dEl && el.ts.label !== dEl.ts.label ? ` Внимание: тактът е различен (${el.ts.label} → ${dEl.ts.label}).` : '');
+    };
+    $('#cpSrc').onchange = () => { refresh(); }; $('#cpSrcEl').onchange = e => { copySel.srcEl = e.target.value; refresh(); };
+    $('#cpWhat').onchange = e => { copySel.what = e.target.value; refresh(); }; $('#cpDstEl').onchange = e => { copySel.dstEl = e.target.value; refresh(); };
+    $('#cpDstTr').onchange = e => { copySel.dstTrack = e.target.value; refresh(); };
+    $('#cpListen').onclick = async () => { if (!(await ensurePlayer())) return; const ss = await getStyle(copySel.src); P.stop(); await loadIntoPlayer(copySel.src, ss); P.start(copySel.srcEl); toast('Свири източникът: ' + ss.name + '. Избери отново стила отляво, за да се върнеш.'); };
+    $('#cpGo').onclick = async () => {
+      try {
+        const srcTree = await getTree(copySel.src); const srcName = (await getStyle(copySel.src)).name;
+        let ed = state.edits.get(x); const tree = ed ? ed.tree : await getTree(x);
+        const before = C.serializeTree(tree); let res;
+        if (copySel.what === '*') res = C.copyElement(srcTree, copySel.srcEl, tree, copySel.dstEl);
+        else res = C.copyTrack(srcTree, copySel.srcEl, copySel.what, tree, copySel.dstEl, copySel.dstTrack || copySel.what);
+        C.parseStyle(C.serializeTree(tree), x.name); // validate
+        if (!ed) { ed = { tree, history: [], log: [] }; state.edits.set(x, ed); }
+        ed.history.push(before); ed.parsed = null;
+        ed.log.push(copySel.what === '*' ? `${C.ELEMENT_LABEL[copySel.srcEl]} от „${srcName}“ → ${C.ELEMENT_LABEL[copySel.dstEl]}` : `${copySel.what} (${C.ELEMENT_LABEL[copySel.srcEl]}, „${srcName}“) → ${copySel.dstTrack || copySel.what} в ${C.ELEMENT_LABEL[copySel.dstEl]}`);
+        if (res.warnings.length) toast(res.warnings.join(' · ')); else toast('Копирано. Прослушай и запиши, когато си готов.');
+        refreshStyle(x, bi);
+      } catch (e) { toast('Не може: ' + e.message); }
+    };
+    refresh();
+  }
+
+  // ===================== save =====================
+
+  function askText(title, def, hint) {
+    return new Promise(res => {
+      const m = document.createElement('div'); m.className = 'modal';
+      m.innerHTML = `<div class="mbox"><h3>${esc(title)}</h3><input id="askIn" value="${esc(def)}"><p class="hint">${esc(hint || '')}</p><div class="row" style="justify-content:flex-end"><button class="btn" id="askNo">Отказ</button><button class="btn primary" id="askOk">Запиши</button></div></div>`;
+      document.body.appendChild(m); const inp = m.querySelector('#askIn'); inp.focus(); inp.select();
+      const done = (v) => { m.remove(); res(v); };
+      m.querySelector('#askOk').onclick = () => done(inp.value.trim() || null); m.querySelector('#askNo').onclick = () => done(null);
+      inp.onkeydown = e => { if (e.key === 'Enter') done(inp.value.trim() || null); if (e.key === 'Escape') done(null); };
+    });
+  }
+
+  async function saveStyle(x, bi, overwrite) {
+    const ed = state.edits.get(x); if (!ed || !window.native) return;
+    try {
+      let res;
+      if (overwrite) {
+        if (!confirm('Оригиналният файл ще бъде заменен. Резервно копие ще се запише в папка „' + state.root + '_backup“ до сета. Продължаваш ли?')) return;
+        res = await window.native.writeStyle({ rel: x.f._rel, overwrite: true, data: C.serializeTree(ed.tree) });
+      } else {
+        const base = x.name.replace(/\.stg$/i, ''); const name = await askText('Име на новия стил', base + ' 2', 'Ще бъде записан в същата банка: ' + x.bank); if (!name) return;
+        const t2 = C.cloneNode(ed.tree); C.renameStyle(t2, name.trim());
+        res = await window.native.writeStyle({ rel: x.f._rel, newName: safe(name.trim()) + '.stg', data: C.serializeTree(t2) });
+      }
+      if (!res || !res.ok) { if (res && res.error) toast('Грешка: ' + res.error); return; }
+      state.edits.delete(x); state.styleCache.delete(x);
+      toast((overwrite ? 'Стилът е презаписан. Резервно копие: ' + res.backup : 'Записан нов стил: ' + res.path) + (res.metadir ? ' (добавен в списъка на банката)' : ''));
+      const sel = x.f._rel; await openNative(state.rootPath, true);
+      const it = allStyleItems().find(z => z.x.f._rel === (overwrite ? sel : res.rel)); if (it) { state.sel = it.x; renderList(); showStyle(it.x, it.bi); }
+    } catch (e) { toast('Грешка при запис: ' + e.message); }
+  }
+
+  // ===================== keyboard sets =====================
+  function ksCard(k, n, idx) {
+    return `<div class="ks"><div class="t">${n ? n + '. ' : ''}${esc(k.name || '(без име)')}</div>${k.tracks.map(t => `<div class="l"><span>${t.name}${t.mute ? ' <span class="hint">(mute)</span>' : ''}</span><span class="snd">${C.fmtSound(t.sound)}${t.sound && t.sound.vol !== null ? ' · vol ' + t.sound.vol : ''}</span></div>`).join('')}${k.splitPoint !== null && k.splitPoint !== undefined ? `<div class="l"><span>Split point</span><span>${noteName(k.splitPoint)}</span></div>` : ''}${idx !== undefined ? `<button class="btn kssel" data-k="${idx}">🎹 Свири с този Keyboard Set</button>` : ''}</div>`;
+  }
+  const noteName = (n) => ROOTS[n % 12] + (Math.floor(n / 12) - 1);
+  let kbCleanup = null;
+  function mountKeyboard(host, k) {
+    if (kbCleanup) kbCleanup();
+    const lo = 36, hi = 96; const whites = []; for (let n = lo; n <= hi; n++) if (![1, 3, 6, 8, 10].includes(n % 12)) whites.push(n);
+    const W = 100 / whites.length; let html = `<div class="kbwrap"><div class="kbinfo">🎹 ${esc(k.name || '')} · split ${noteName(k.splitPoint ?? 60)} · Клавиши на компютъра: Z–M и Q–U (октава ↓/↑ с „,“ и „.“)</div><div class="kb">`;
+    whites.forEach((n, i) => { html += `<div class="wk${n < (k.splitPoint ?? 60) ? ' lo' : ''}" data-n="${n}" style="left:${i * W}%;width:${W}%">${n % 12 === 0 ? '<span>' + noteName(n) + '</span>' : ''}</div>`; });
+    whites.forEach((n, i) => { if (n + 1 <= hi && [1, 3, 6, 8, 10].includes((n + 1) % 12)) html += `<div class="bk" data-n="${n + 1}" style="left:${(i + 1) * W - W * 0.32}%;width:${W * 0.64}%"></div>`; });
+    host.innerHTML = html + '</div></div>';
+    const down = new Set();
+    const on = (n, v = 100) => { if (down.has(n)) return; down.add(n); P.kbNote(n, v); const el = host.querySelector(`[data-n="${n}"]`); if (el) el.classList.add('down'); };
+    const off = (n) => { if (!down.has(n)) return; down.delete(n); P.kbNote(n, 0); const el = host.querySelector(`[data-n="${n}"]`); if (el) el.classList.remove('down'); };
+    let mouseN = null;
+    host.querySelector('.kb').onpointerdown = e => { const n = +e.target.closest('[data-n]')?.dataset.n; if (!n) return; mouseN = n; on(n, 90 + Math.round(Math.random() * 10)); e.target.setPointerCapture?.(e.pointerId); };
+    host.querySelector('.kb').onpointerover = e => { if (mouseN === null) return; const n = +e.target.closest('[data-n]')?.dataset.n; if (n && n !== mouseN) { off(mouseN); mouseN = n; on(n); } };
+    const up = () => { if (mouseN !== null) { off(mouseN); mouseN = null; } }; window.addEventListener('pointerup', up);
+    const MAP = 'zsxdcvgbhnjmq2w3er5t6y7u'; let oct = 60;
+    const kd = e => { if (e.target.matches('input,select,textarea') || e.repeat) return; if (e.key === ',') { oct = Math.max(36, oct - 12); return; } if (e.key === '.') { oct = Math.min(84, oct + 12); return; } const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) on(oct + i); };
+    const ku = e => { const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) off(oct + i); };
+    window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+    kbCleanup = () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); for (const n of [...down]) off(n); };
+  }
+  async function showKset(x) {
+    let k; try { k = C.parseKeyboardSetFile(new Uint8Array(await x.f.arrayBuffer()), x.name); } catch (e) { $('#detail').innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+    $('#detail').innerHTML = `<h2>${esc(k.name)}</h2><div class="meta"><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
+      <div class="card"><h3>Пистите</h3><table><tr><th>Писта</th><th>Звук (MSB.LSB.Prog)</th><th class="c">Volume</th><th class="c">Pan</th><th class="c">Обхват</th><th class="c">Mute</th></tr>
+      ${k.tracks.map(t => `<tr><td>${t.name}</td><td class="snd">${C.fmtSound(t.sound)}</td><td class="c">${t.sound?.vol ?? '—'}</td><td class="c">${t.sound?.pan ?? '—'}</td><td class="c">${t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—'}</td><td class="c">${t.mute ? 'да' : ''}</td></tr>`).join('')}</table>
+      ${k.splitPoint !== null ? `<p class="hint">Split point: ${noteName(k.splitPoint)}</p>` : ''}</div>
+      <div class="card"><h3>Прослушване</h3><button class="btn primary" id="ksPlay">🎹 Включи клавиатурата</button><div id="kbHost"></div></div>`;
+    $('#ksPlay').onclick = async () => { if (!(await ensurePlayer())) return; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); $('#ksPlay').style.display = 'none'; };
+  }
+
+  async function exportMany(items, zipName) {
+    const files = []; let bad = 0;
+    for (const [i, x] of items.entries()) {
+      status(`Експорт ${i + 1}/${items.length}: ${x.name}`); await new Promise(r => setTimeout(r));
+      try { const s = await getStyle(x); files.push({ name: (x.bankName ? safe(x.bankName) + '/' : '') + safe(x.name.replace(/\.stg$/i, '')) + '.mid', data: C.exportStyleMidi(s, opts) }); } catch (e) { bad++; }
+      if (state.styleCache.size > 40) state.styleCache.clear();
+    }
+    download(zipName, C.makeZip(files), 'application/zip'); status(`Готово: ${files.length} стила експортирани${bad ? `, ${bad} с грешка` : ''}`);
+  }
+
+  function showPads() {
+    $('#detail').innerHTML = `<h2>Pads</h2><div class="card"><h3>Pad пресети (MATRIXPRESET)</h3>${state.padPresets.map(p => `<span class="tag">${esc(p.n)}</span>`).join('') || '<span class="hint">Няма</span>'}
+      <p class="hint">Съдържанието на Pad пресетите е компресирано. Разчитането му предстои в следваща версия. Pads на всеки стил се виждат в страницата на стила.</p></div>`;
+  }
+  function showSounds() {
+    $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => `<div class="card"><h3>${esc(b.bank)} (${b.names.length})</h3>${b.names.map(n => `<span class="tag">${esc(n)}</span>`).join('')}</div>`).join('') || '<p class="hint">Няма</p>'}`;
+  }
+})();
+</script>
+</body>
+</html>

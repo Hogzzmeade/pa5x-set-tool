@@ -1,0 +1,15 @@
+import * as ResEdit from 'resedit'; import * as PELibrary from 'pe-library'; import fs from 'fs';
+const [exePath, icoPath] = process.argv.slice(2);
+const exe = PELibrary.NtExecutable.from(fs.readFileSync(exePath), { ignoreCert: true });
+const res = PELibrary.NtExecutableResource.from(exe);
+const ico = ResEdit.Data.IconFile.from(fs.readFileSync(icoPath));
+const groups = ResEdit.Resource.IconGroupEntry.fromEntries(res.entries);
+const gid = groups.length ? groups[0].id : 1, lang = groups.length ? groups[0].lang : 1033;
+ResEdit.Resource.IconGroupEntry.replaceIconsForResource(res.entries, gid, lang, ico.icons.map(i => i.data));
+const vi = ResEdit.Resource.VersionInfo.fromEntries(res.entries)[0];
+const L = { lang: 1033, codepage: 1200 };
+vi.setStringValues(L, { FileDescription: 'PA5X Set Tool', ProductName: 'PA5X Set Tool', CompanyName: '', OriginalFilename: 'PA5X Set Tool.exe', InternalName: 'PA5X Set Tool', LegalCopyright: '' });
+vi.removeStringValue(L, 'CompanyName'); vi.setFileVersion(0, 4, 0, 0, 1033); vi.setProductVersion(0, 4, 0, 0, 1033);
+vi.outputToResourceEntries(res.entries);
+res.outputResource(exe); fs.writeFileSync(exePath, Buffer.from(exe.generate()));
+console.log('ok icon+version');
