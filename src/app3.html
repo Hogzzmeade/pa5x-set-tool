@@ -126,6 +126,8 @@
   .fvprev{border-top:1px solid var(--line);background:var(--panel)} .fvprev:empty{display:none}
   .pvbar{display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap;font-size:13px} .pvbar span{flex:1}
   #pvC{display:block;width:100%;height:150px}
+  .sndn{font-size:12px;color:#c9d1dc;white-space:normal;max-width:130px}
+  .ks .l .sndn{max-width:none;text-align:right}
 </style>
 </head>
 <body>
@@ -242,7 +244,8 @@
     state.ksets = await group('KEYBOARDSET', '.ksc');
     state.padPresets = []; state.userSounds = [];
     for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...C.korfNames(new Uint8Array(await x.f.arrayBuffer())).map(n => ({ n, file: x.name }))); } catch (e) { } }
-    for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), names: C.korfNames(new Uint8Array(await x.f.arrayBuffer())) }); } catch (e) { } }
+    for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { const ent = window.PAKorf.parseKorf(new Uint8Array(await x.f.arrayBuffer())).entries.filter(e => e.name).sort((a, b) => a.slot - b.slot); state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), file: x.name, entries: ent, names: ent.map(e => e.name) }); } catch (e) { } }
+    C.setSoundIndex(C.buildSoundIndex(state.userSounds.map(b => ({ name: b.file, entries: b.entries })))); state.styleCache.clear();
     const ns = state.styles.reduce((s, b) => s + b.items.length, 0), nk = state.ksets.reduce((s, b) => s + b.items.length, 0);
     $('#setname').textContent = state.root + `  ·  ${ns} стила · ${nk} Keyboard Sets`;
     if (!ns && !nk) status('В избраната папка няма PA5X стилове (.stg) или Keyboard Sets (.ksc). Избери главната папка на сета.', true); else status('Сетът е зареден');
@@ -284,7 +287,7 @@
       if (!col) for (const x of items) h += `<div class="item${state.sel === x ? ' sel' : ''}" data-b="${bi}" data-i="${b.items.indexOf(x)}" title="${esc(x.path)}">${state.edits && state.edits.has(x) ? '<span class="mod">●</span> ' : ''}${esc(x.name.replace(/\.(stg|ksc)$/i, ''))}</div>`;
     }
     if (state.tab === 'pads') h = state.padPresets.length ? state.padPresets.map(p => `<div class="item">${esc(p.n)}</div>`).join('') : '<div class="item hint">Няма Pad пресети</div>';
-    if (state.tab === 'sounds') h = state.userSounds.map(b => `<div class="bank"><span>${esc(b.bank)}</span><span class="n">${b.names.length}</span></div>` + b.names.map(n => `<div class="item">${esc(n)}</div>`).join('')).join('') || '<div class="item hint">Няма User звуци</div>';
+    if (state.tab === 'sounds') h = state.userSounds.map(b => `<div class="bank"><span>${esc(b.bank)}</span><span class="n">${b.names.length}</span></div>` + b.entries.map(e => `<div class="item" title="${esc(C.soundTitle(Object.assign({ pc: e.slot }, C.pcgBankFromFile(b.file) || {})))}">${String(e.slot + 1).padStart(3, '0')} ${esc(e.name)}</div>`).join('')).join('') || '<div class="item hint">Няма User звуци</div>';
     if (!state.files.length) h = '';
     L.innerHTML = h;
     L.querySelectorAll('.bank[data-key]').forEach(el => el.onclick = () => { const k = el.dataset.key; state.collapsed.has(k) ? state.collapsed.delete(k) : state.collapsed.add(k); renderList(); });
@@ -407,11 +410,11 @@
       ${ed ? `<div class="card warnc"><h3>Незаписани промени (${ed.history.length})</h3><ul class="chg">${ed.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
         <div class="row"><button class="btn primary" id="saveAs">Запиши като нов стил…</button><button class="btn" id="saveOver">Презапиши оригинала (с резервно копие)</button><button class="btn" id="undo">Отмени последното</button><button class="btn" id="discard">Откажи всички</button></div></div>` : ''}
       <div class="card"><h3>Елементи и писти</h3><div style="overflow:auto"><table class="et"><tr><th></th><th>Елемент</th><th class="c">Тактове</th><th class="c">Такт</th>${tracks.map(t => `<th class="c">${t}<div class="msw">${ms(t)}</div></th>`).join('')}</tr>
-      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}" title="${tr ? 'Звук ' + C.fmtSound(tr.sound) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
-      <tr><td></td><td class="hint">Звук (MSB.LSB.Prog)</td><td></td><td></td>${tracks.map(t => `<td class="c snd">${C.fmtSound(firstSound(t))}</td>`).join('')}</tr>
+      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}" title="${tr ? esc(C.soundLabel(tr.sound) + ' · ' + C.soundTitle(tr.sound)) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
+      <tr><td></td><td class="hint">Звук</td><td></td><td></td>${tracks.map(t => `<td class="c sndn" title="${esc(C.soundTitle(firstSound(t)))}">${esc(C.soundLabel(firstSound(t)))}</td>`).join('')}</tr>
       </table></div><p class="hint">Числата са брой ноти. M = заглуши пистата, S = само тази писта. Интервал = Start/Stop.</p></div>
       <div class="card"><h3>Копиране от друг стил</h3>${copyFormHtml(s)}</div>
-      <div class="card"><h3>Pads на стила (${s.pads.length})</h3>${s.pads.length ? s.pads.map((p, i) => `<button class="btn padb" data-p="${i}">▶ Pad ${i + 1}: ${esc(p.name)}</button>`).join(' ') : '<span class="hint">Няма зададени Pads</span>'}</div>
+      <div class="card"><h3>Pads на стила (${s.pads.length})</h3>${s.pads.length ? s.pads.map((p, i) => `<button class="btn padb" data-p="${i}" title="${esc(C.soundLabel(p.sound) + ' · ' + C.soundTitle(p.sound))}">▶ Pad ${i + 1}: ${esc(p.name)}</button>`).join(' ') : '<span class="hint">Няма зададени Pads</span>'}</div>
       <div class="card"><h3>Keyboard Sets на стила (${s.keyboardSets.length})</h3><div class="grid2">${s.keyboardSets.map((k, i) => ksCard(k, i + 1, i)).join('') || '<span class="hint">Няма</span>'}</div><div id="kbHost"></div></div>
       <div class="card"><h3>Експорт към MIDI</h3>
         <div class="row"><button class="btn primary" id="expAll">Целият стил → .mid</button><button class="btn" id="expEach">Всеки елемент отделно → .zip</button><button class="btn" id="expBank">Цялата банка „${esc(x.bank)}“ → .zip</button></div>
@@ -536,7 +539,7 @@
 
   // ===================== keyboard sets =====================
   function ksCard(k, n, idx) {
-    return `<div class="ks"><div class="t">${n ? n + '. ' : ''}${esc(k.name || '(без име)')}</div>${k.tracks.map(t => `<div class="l"><span>${t.name}${t.mute ? ' <span class="hint">(mute)</span>' : ''}</span><span class="snd">${C.fmtSound(t.sound)}${t.sound && t.sound.vol !== null ? ' · vol ' + t.sound.vol : ''}</span></div>`).join('')}${k.splitPoint !== null && k.splitPoint !== undefined ? `<div class="l"><span>Split point</span><span>${noteName(k.splitPoint)}</span></div>` : ''}${idx !== undefined ? `<button class="btn kssel" data-k="${idx}">🎹 Свири с този Keyboard Set</button>` : ''}</div>`;
+    return `<div class="ks"><div class="t">${n ? n + '. ' : ''}${esc(k.name || '(без име)')}</div>${k.tracks.map(t => `<div class="l"><span>${t.name}${t.mute ? ' <span class="hint">(mute)</span>' : ''}</span><span class="sndn" title="${esc(C.soundTitle(t.sound))}">${esc(C.soundLabel(t.sound))}${t.sound && t.sound.vol !== null ? ' <span class="hint">· vol ' + t.sound.vol + '</span>' : ''}</span></div>`).join('')}${k.splitPoint !== null && k.splitPoint !== undefined ? `<div class="l"><span>Split point</span><span>${noteName(k.splitPoint)}</span></div>` : ''}${idx !== undefined ? `<button class="btn kssel" data-k="${idx}">🎹 Свири с този Keyboard Set</button>` : ''}</div>`;
   }
   const noteName = (n) => ROOTS[n % 12] + (Math.floor(n / 12) - 1);
   let kbCleanup = null;
@@ -563,8 +566,8 @@
   async function showKset(x) {
     let k; try { k = C.parseKeyboardSetFile(new Uint8Array(await x.f.arrayBuffer()), x.name); } catch (e) { $('#detail').innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
     $('#detail').innerHTML = `<h2>${esc(k.name)}</h2><div class="meta"><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
-      <div class="card"><h3>Пистите</h3><table><tr><th>Писта</th><th>Звук (MSB.LSB.Prog)</th><th class="c">Volume</th><th class="c">Pan</th><th class="c">Обхват</th><th class="c">Mute</th></tr>
-      ${k.tracks.map(t => `<tr><td>${t.name}</td><td class="snd">${C.fmtSound(t.sound)}</td><td class="c">${t.sound?.vol ?? '—'}</td><td class="c">${t.sound?.pan ?? '—'}</td><td class="c">${t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—'}</td><td class="c">${t.mute ? 'да' : ''}</td></tr>`).join('')}</table>
+      <div class="card"><h3>Пистите</h3><table><tr><th>Писта</th><th>Звук</th><th>Банка / номер</th><th class="c">Volume</th><th class="c">Pan</th><th class="c">Обхват</th><th class="c">Mute</th></tr>
+      ${k.tracks.map(t => `<tr><td>${t.name}</td><td>${esc(C.soundLabel(t.sound))}</td><td class="snd hint">${esc(C.soundTitle(t.sound))}</td><td class="c">${t.sound?.vol ?? '—'}</td><td class="c">${t.sound?.pan ?? '—'}</td><td class="c">${t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—'}</td><td class="c">${t.mute ? 'да' : ''}</td></tr>`).join('')}</table>
       ${k.splitPoint !== null ? `<p class="hint">Split point: ${noteName(k.splitPoint)}</p>` : ''}</div>
       <div class="card"><h3>Прослушване</h3><button class="btn primary" id="ksPlay">🎹 Включи клавиатурата</button><div id="kbHost"></div></div>`;
     $('#ksPlay').onclick = async () => { if (!(await ensurePlayer())) return; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); $('#ksPlay').style.display = 'none'; };
@@ -585,7 +588,7 @@
       <p class="hint">Съдържанието на Pad пресетите е компресирано. Разчитането му предстои в следваща версия. Pads на всеки стил се виждат в страницата на стила.</p></div>`;
   }
   function showSounds() {
-    $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => `<div class="card"><h3>${esc(b.bank)} (${b.names.length})</h3>${b.names.map(n => `<span class="tag">${esc(n)}</span>`).join('')}</div>`).join('') || '<p class="hint">Няма</p>'}`;
+    $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => { const bk = C.pcgBankFromFile(b.file); return `<div class="card"><h3>${esc(b.bank)} (${b.entries.length})${bk ? ` <span class="hint">· MSB ${bk.msb} · LSB ${bk.lsb}</span>` : ''}</h3><table><tr><th>Слот</th><th>Име</th><th>MSB.LSB.Prog</th><th>Дата</th></tr>${b.entries.map(e => `<tr><td>${e.slot + 1}</td><td>${esc(e.name)}</td><td class="snd">${bk ? `${bk.msb}.${bk.lsb}.${e.slot + 1}` : ''}</td><td class="hint">${esc(e.date || '')}</td></tr>`).join('')}</table></div>`; }).join('') || '<p class="hint">Няма</p>'}`;
   }
   // ===================== FILE VIEWER =====================
   const K = window.PAKorf;
@@ -601,8 +604,8 @@
     if (fv.cache.has(f.path)) return fv.cache.get(f.path);
     const bytes = new Uint8Array(await window.native.fvRead(f.path)); const ext = f.name.split('.').pop().toLowerCase(); let r;
     try {
-      if (ext === 'stg') { const s = C.parseStyle(bytes, f.name); r = { type: 'stg', style: s }; }
-      else if (ext === 'ksc') { r = { type: 'ksc', ks: C.parseKeyboardSetFile(bytes, f.name) }; }
+      if (ext === 'stg') { const s = C.parseStyle(bytes, f.name); r = { type: 'stg', style: s, idx: await fvSetIndex(f) }; }
+      else if (ext === 'ksc') { r = { type: 'ksc', ks: C.parseKeyboardSetFile(bytes, f.name), idx: await fvSetIndex(f) }; }
       else if (K.isKorf(bytes)) { const k = K.parseKorf(bytes); r = { type: k.samples.length ? 'pcm' : 'korf', korf: k }; if (k.samples.length) r.bytes = bytes; }
       else r = { type: 'unknown', error: 'Неразпознат формат (възможно е от по-стар модел PA)' };
     } catch (e) { r = { type: 'unknown', error: e.message }; }
@@ -610,11 +613,19 @@
     fv.cache.set(f.path, r); if (fv.cache.size > 60) { const k0 = fv.cache.keys().next().value; if (k0 !== f.path) fv.cache.delete(k0); }
     return r;
   }
+  const fvIdxCache = new Map();
+  async function fvSetIndex(f) { // names of the user sounds of the set this file belongs to
+    try { const info = await window.native.fvSetSounds(f.path); if (!info || !info.root) return null;
+      if (fvIdxCache.has(info.root)) return fvIdxCache.get(info.root);
+      const files = []; for (const p of info.pcg) { try { files.push({ name: p.name, entries: K.parseKorf(new Uint8Array(await window.native.fvRead(p.path))).entries }); } catch (e) { } }
+      const idx = C.buildSoundIndex(files); idx.root = info.root; fvIdxCache.set(info.root, idx); return idx; } catch (e) { return null; }
+  }
+  const sndLbl = (s, idx) => C.soundLabel(s, idx || null);
   function fvRows(f, r) {
     if (r.type === 'pcm') return { cols: ['ID', 'Име на семпъл', 'Размер', 'Честота', 'Семпли', 'Продълж.', 'Тип', 'Канали', 'Цикъл'], rows: r.korf.samples.map((s, i) => ({ i, cells: [s.slot != null ? s.slot + 1 : i + 1, s.name || '—', s.dataLen.toLocaleString('bg') + ' б (' + fmtKB(s.dataLen) + ')', (s.rate / 1000).toFixed(1) + ' kHz / ' + s.bits + ' бита', s.frames.toLocaleString('bg'), s.duration >= 1 ? s.duration.toFixed(2) + ' s' : Math.round(s.duration * 1000) + ' ms', s.compressed ? 'Компресиран' : 'Нормален', s.channels > 1 ? 'стерео' : 'моно', s.loopStart > 0 && s.loopStart < s.loopEnd ? s.loopStart + '–' + s.loopEnd : '—'], warn: s.compressed })).sort((a, b) => a.cells[0] - b.cells[0]) };
-    if (r.type === 'korf') return { cols: ['ID', 'Име', 'Тип', 'Версия', 'Дата', 'Създаден с'], rows: r.korf.entries.map((e, i) => ({ i, cells: [e.slot != null ? e.slot + 1 : i + 1, e.name || '—', e.type || '', e.ver != null ? `Ver ${e.ver} Rev ${e.rev}` : '', e.date || '', e.createdWith || ''] })).sort((a, b) => a.cells[0] - b.cells[0]) };
-    if (r.type === 'stg') { const s = r.style; return { head: `${s.name} · ${s.tempo} BPM · ${[...new Set(s.elements.map(e => e.ts.label))].join(', ')} · Keyboard Sets: ${s.keyboardSets.map(k => k.name || '—').join(', ') || 'няма'} · Pads: ${s.pads.map(p => p.name).join(', ') || 'няма'}`, cols: ['#', 'Елемент', 'Тактове', 'Такт', 'Писти', 'Ноти'], rows: s.elements.map((e, i) => ({ i, cells: [i + 1, e.label, e.bars || 'празен', e.ts.label, e.tracks.filter(t => t.name !== 'Chords').map(t => t.name).join(', '), e.tracks.reduce((a, t) => a + t.info.notes, 0)] })) }; }
-    if (r.type === 'ksc') return { head: `${r.ks.name} · split ${r.ks.splitPoint != null ? noteName(r.ks.splitPoint) : '—'}`, cols: ['Писта', 'Звук (MSB.LSB.Prog)', 'Volume', 'Pan', 'Обхват', 'Mute'], rows: r.ks.tracks.map((t, i) => ({ i, cells: [t.name, C.fmtSound(t.sound), t.sound?.vol ?? '—', t.sound?.pan ?? '—', t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—', t.mute ? 'да' : ''] })) };
+    if (r.type === 'korf') { const bk = C.pcgBankFromFile(f.name); return { cols: ['ID', 'Име', 'Тип', ...(bk ? ['MSB.LSB.Prog'] : []), 'Версия', 'Дата', 'Създаден с'], rows: r.korf.entries.map((e, i) => ({ i, cells: [e.slot != null ? e.slot + 1 : i + 1, e.name || '—', e.type || '', ...(bk ? [e.slot != null ? `${bk.msb}.${bk.lsb}.${e.slot + 1}` : ''] : []), e.ver != null ? `Ver ${e.ver} Rev ${e.rev}` : '', e.date || '', e.createdWith || ''] })).sort((a, b) => a.cells[0] - b.cells[0]) }; }
+    if (r.type === 'stg') { const s = r.style; return { head: `${s.name} · ${s.tempo} BPM · ${[...new Set(s.elements.map(e => e.ts.label))].join(', ')} · Keyboard Sets: ${s.keyboardSets.map(k => k.name || '—').join(', ') || 'няма'} · Pads: ${s.pads.map(p => p.name).join(', ') || 'няма'}`, sounds: C.TRACK_ORDER.filter(t => t !== 'Chords').map(t => { for (const e of s.elements) { const tr = e.tracks.find(z => z.name === t); if (tr) return t + ': ' + sndLbl(tr.sound, r.idx); } return null; }).filter(Boolean).join(' · '), cols: ['#', 'Елемент', 'Тактове', 'Такт', 'Писти', 'Ноти'], rows: s.elements.map((e, i) => ({ i, cells: [i + 1, e.label, e.bars || 'празен', e.ts.label, e.tracks.filter(t => t.name !== 'Chords').map(t => t.name).join(', '), e.tracks.reduce((a, t) => a + t.info.notes, 0)] })) }; }
+    if (r.type === 'ksc') return { head: `${r.ks.name} · split ${r.ks.splitPoint != null ? noteName(r.ks.splitPoint) : '—'}`, cols: ['Писта', 'Звук', 'Банка / номер', 'Volume', 'Pan', 'Обхват', 'Mute'], rows: r.ks.tracks.map((t, i) => ({ i, cells: [t.name, sndLbl(t.sound, r.idx), C.soundTitle(t.sound, r.idx || null), t.sound?.vol ?? '—', t.sound?.pan ?? '—', t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—', t.mute ? 'да' : ''] })) };
     return { head: r.error || '', cols: [], rows: [] };
   }
   function renderFvFiles() {
@@ -636,7 +647,7 @@
   function renderFvTable(f, r) {
     const t = fvRows(f, r); const q = fv.q.toLowerCase();
     const rows = t.rows.filter(x => !q || x.cells.some(c => String(c).toLowerCase().includes(q)));
-    $('#fvTable').innerHTML = `${t.head ? `<div class="fvhead">${esc(t.head)}</div>` : ''}<table class="fvt"><tr>${t.cols.map(c => `<th>${c}</th>`).join('')}</tr>${rows.map(x => `<tr data-i="${x.i}" class="${fv.rowSel === x.i ? 'sel' : ''}">${x.cells.map((c, j) => `<td class="${x.warn && j === 6 ? 'warn' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+    $('#fvTable').innerHTML = `${t.head ? `<div class="fvhead">${esc(t.head)}${t.sounds ? `<div class="hint" style="margin-top:4px">Звуци: ${esc(t.sounds)}</div>` : ''}${r.idx === null && (r.type === 'stg' || r.type === 'ksc') ? '<div class="hint">Папката SOUND на сета не е намерена, затова User звуците са показани с номера.</div>' : ''}</div>` : ''}<table class="fvt"><tr>${t.cols.map(c => `<th>${c}</th>`).join('')}</tr>${rows.map(x => `<tr data-i="${x.i}" class="${fv.rowSel === x.i ? 'sel' : ''}">${x.cells.map((c, j) => `<td class="${x.warn && j === 6 ? 'warn' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
     $('#fvInfo').textContent = `${f.name} · ${kindOf(f.name)} · ${t.rows.length} ${r.type === 'pcm' ? 'семпъла' : 'записа'}`;
     $('#fvWav').disabled = r.type !== 'pcm' || fv.rowSel == null; $('#fvWavAll').disabled = r.type !== 'pcm';
     $('#fvTable').querySelectorAll('tr[data-i]').forEach(tr => { tr.onclick = () => { fv.rowSel = +tr.dataset.i; $('#fvTable').querySelectorAll('tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel'); $('#fvWav').disabled = r.type !== 'pcm'; if (r.type === 'pcm') fvPreview(r, r.korf.samples[fv.rowSel]); };
@@ -671,7 +682,7 @@
     if (r.type === 'pcm') for (const [i, s] of r.korf.samples.entries()) { const e = s.entry || {}; out.push([...base, s.slot != null ? s.slot + 1 : i + 1, s.name || '', 'Sample', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', s.rate, s.bits, s.channels, s.frames, Math.round(s.duration * 1000), s.compressed ? 'да' : 'не', '', '', s.loopStart > 0 ? `loop ${s.loopStart}-${s.loopEnd}` : '']); }
     else if (r.type === 'korf') for (const [i, e] of r.korf.entries.entries()) out.push([...base, e.slot != null ? e.slot + 1 : i + 1, e.name || '', e.type || '', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', '', '', '', '', '', '', '', '', '']);
     else if (r.type === 'stg') { const s = r.style; out.push([...base, '', s.name, 'Style', '', '', '', '', '', '', '', '', '', s.tempo, [...new Set(s.elements.map(e => e.ts.label))].join(' '), s.elements.filter(e => e.length).map(e => `${e.id}:${e.bars}т`).join(' ') + ' | KS: ' + s.keyboardSets.map(k => k.name).join(', ')]); }
-    else if (r.type === 'ksc') out.push([...base, '', r.ks.name, 'Keyboard Set', '', '', '', '', '', '', '', '', '', '', '', r.ks.tracks.map(t => `${t.name}=${C.fmtSound(t.sound)}${t.mute ? '(m)' : ''}`).join(' ')]);
+    else if (r.type === 'ksc') out.push([...base, '', r.ks.name, 'Keyboard Set', '', '', '', '', '', '', '', '', '', '', '', r.ks.tracks.map(t => `${t.name}=${sndLbl(t.sound, r.idx)} [${C.fmtSound(t.sound)}]${t.mute ? '(m)' : ''}`).join(' ')]);
     else out.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '', '', r.error || '']);
     return out;
   }

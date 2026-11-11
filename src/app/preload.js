@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('native', {
   fvPending: () => ipcRenderer.invoke('fv-pending'),
   fvAdd: (paths) => ipcRenderer.invoke('fv-add', paths),
   fvPick: (kind) => ipcRenderer.invoke('fv-pick', kind),
+  fvSetSounds: (p) => ipcRenderer.invoke('fv-set-sounds', p),
   fvRead: (p) => ipcRenderer.invoke('fv-read', p),
   fvAssoc: (on) => ipcRenderer.invoke('fv-assoc', on),
   onFvOpen: (cb) => ipcRenderer.on('fv-open', (_e, d) => cb(d)),

@@ -219,6 +219,31 @@
   }
 
 
+
+  // ---------- sound names (user banks from the set's SOUND/*.PCG; factory names from an optional table) ----------
+  let curSoundIndex = null; let factoryNames = null;
+  function pcgBankFromFile(name) { // USER02.PCG -> {msb:121, lsb:65}; USERDK01.PCG -> {msb:120, lsb:64}
+    const m = /^USER(DK)?(\d+)\.PCG$/i.exec(name); if (!m) return null; return { msb: m[1] ? 120 : 121, lsb: 63 + parseInt(m[2], 10), bank: (m[1] ? 'USER DK ' : 'USER ') + parseInt(m[2], 10) };
+  }
+  function buildSoundIndex(pcgFiles) { // [{name:'USER01.PCG', entries:[{slot,name}]}]
+    const idx = new Map(); idx.banks = new Set();
+    for (const f of pcgFiles) { const b = pcgBankFromFile(f.name); if (!b) continue; idx.banks.add(b.msb + '.' + b.lsb);
+      for (const e of f.entries) if (e.slot != null && e.name) idx.set(`${b.msb}.${b.lsb}.${e.slot}`, { name: e.name, bank: b.bank, slot: e.slot }); }
+    return idx;
+  }
+  function setSoundIndex(idx) { curSoundIndex = idx; }
+  function setFactoryNames(map) { factoryNames = map; }
+  function soundInfo(s, idx) {
+    idx = idx === undefined ? curSoundIndex : idx; if (!s || s.pc === null || s.pc === undefined) return null;
+    const key = `${s.msb}.${s.lsb}.${s.pc}`; const num = `${s.msb ?? '-'}.${s.lsb ?? '-'}.${s.pc + 1}`;
+    const u = idx && idx.get(key); if (u) return { name: u.name, num, src: `${u.bank}, слот ${u.slot + 1}` };
+    if (s.lsb >= 64 && (s.msb === 121 || s.msb === 120)) { const bank = (s.msb === 120 ? 'USER DK ' : 'USER ') + (s.lsb - 63); return { name: null, num, src: idx && idx.banks && idx.banks.has(s.msb + '.' + s.lsb) ? `${bank}, празен слот ${s.pc + 1}` : `${bank} (липсва в сета)` }; }
+    const f = factoryNames && factoryNames.get(key); if (f) return { name: f, num, src: 'фабричен' };
+    return { name: null, num, src: 'фабричен' };
+  }
+  function soundLabel(s, idx) { const i = soundInfo(s, idx); if (!i) return '—'; return i.name || i.num; }
+  function soundTitle(s, idx) { const i = soundInfo(s, idx); if (!i) return ''; return `${i.src} · MSB.LSB.Prog ${i.num}`; }
+
   // ---------- editing (copy elements / tracks between styles) ----------
   const SCENE_INFO = { Intro1: [1, 4], Intro2: [2, 5], CountIn: [3, 11], Var1: [4, 0], Var2: [5, 1], Var3: [6, 2], Var4: [7, 3], Fill1: [8, 6], Fill2: [9, 7], Fill3: [10, 13], Fill4: [11, 14], Break: [12, 10], End1: [13, 8], End2: [14, 9] };
   const TRACK_NUM = { Bass: 1, Drum: 2, Perc: 3, Acc1: 4, Acc2: 5, Acc3: 6, Acc4: 7, Acc5: 8, Chords: 10 };
@@ -339,6 +364,6 @@
     const all = [...parts, ...cd, endRec]; const total = all.reduce((s, x) => s + x.length, 0); const out = new Uint8Array(total); let p = 0; for (const x of all) { out.set(x, p); p += x.length; } return out;
   }
 
-  const api = { copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
+  const api = { pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PACore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

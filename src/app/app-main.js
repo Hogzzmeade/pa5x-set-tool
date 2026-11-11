@@ -94,6 +94,19 @@ ipcMain.handle('fv-pick', async (_e, kind) => {
   const r = await dialog.showOpenDialog(win, kind === 'folder' ? { title: 'Избери папка (SET / KST или част от него)', properties: ['openDirectory'] } : { title: 'Избери файлове', properties: ['openFile', 'multiSelections'], filters: [{ name: 'KORG PA файлове', extensions: ['stg', 'ksc', 'pcg', 'pcm', 'mtp', 'kmp', 'pad'] }, { name: 'Всички', extensions: ['*'] }] });
   return r.canceled ? [] : fvExpand(r.filePaths);
 });
+
+ipcMain.handle('fv-set-sounds', (_e, p) => {
+  const r = path.resolve(String(p)); if (!fvAllowed.has(r)) return null;
+  let d = path.dirname(r);
+  for (let i = 0; i < 4 && d && d !== path.dirname(d); i++, d = path.dirname(d)) {
+    let names = []; try { names = fs.readdirSync(d); } catch (e) { break; }
+    const snd = names.find(n => n.toUpperCase() === 'SOUND'); if (!snd) continue;
+    const sd = path.join(d, snd); let pcg = [];
+    try { pcg = fs.readdirSync(sd).filter(n => /\.pcg$/i.test(n)).map(n => ({ name: n, path: path.join(sd, n) })); } catch (e) { }
+    pcg.forEach(x => fvAllowed.add(path.resolve(x.path))); return { root: d, pcg };
+  }
+  return null;
+});
 ipcMain.handle('fv-read', async (_e, p) => { const r = path.resolve(String(p)); if (!fvAllowed.has(r)) throw new Error('not allowed'); const b = await fs.promises.readFile(r); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); });
 ipcMain.handle('fv-assoc', async (_e, on) => {
   if (process.platform !== 'win32') return { ok: false, error: 'Само за Windows' };

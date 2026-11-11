@@ -1,12 +1,12 @@
 {
-  "version": "0.5.0",
-  "notes": "File Viewer: бърз преглед на Styles, Keyboard Sets, Pads, PCG и PCM без зареждане на целия сет. Плъзгане на файлове и папки, двоен клик върху файл в Windows, доклади TXT/CSV, вълна, прослушване и експорт на PCM в WAV.",
+  "version": "0.5.1",
+  "notes": "Имената на звуците вместо номера: при всеки отворен сет или KST програмата чете неговите User звуци (SOUND/*.PCG) и ги показва в стиловете, Keyboard Sets, Pads и File Viewer. Номерът остава в подсказката.",
   "date": "2026-11-11",
   "files": [
     {
       "name": "app-main.js",
-      "size": 14134,
-      "sha256": "03141e904016cdb5ea40ea5bf506efc8ac4868243b95bf82e4a7bdad84b2abe8"
+      "size": 14807,
+      "sha256": "7e919642ebfd430b6e7be2c9757d7955f2e8448f5aedebd38a276e2203eb3b30"
     },
     {
       "name": "icon.png",
@@ -15,18 +15,18 @@
     },
     {
       "name": "index.html",
-      "size": 118105,
-      "sha256": "8c72639b981670766cb29970c31fe515bb9e943d1a47b7c512f498721e8a4552"
+      "size": 122979,
+      "sha256": "dde8c8a004e8f3a1f1d53c7d65811e518a43280fa101f1294618da655c9e1246"
     },
     {
       "name": "package.json",
       "size": 131,
-      "sha256": "3883865e83418880de0012768a6d89acbcb64d6c35a1d445484855845389236f"
+      "sha256": "840732eee0236940c56e6026489ddeee999bc9561df2d0ae841b514581b0d704"
     },
     {
       "name": "preload.js",
-      "size": 1415,
-      "sha256": "48be61463044d319a6209cd4a46110693b52fa32957b09652218a061b06f0895"
+      "size": 1477,
+      "sha256": "d24cb20490dae640dd9adb7374b15c1dd83eaa9fa5b01e7037b110c4acd96ca9"
     },
     {
       "name": "spessa.bundle.js",
