@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PA5X Set Tool</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%23f0a03c%22/%3E%3Crect x=%223%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3Crect x=%227%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3Crect x=%2211%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#14161a;--panel:#1c1f25;--panel2:#23272f;--line:#2e333d;--text:#e6e8eb;--dim:#9aa1ad;--acc:#f0a03c;--acc2:#4fb3d9;--ok:#5cc28a;--bad:#e56b6b}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+  button,select,input{font:inherit;color:inherit}
+  .app{display:grid;grid-template-rows:auto 1fr auto auto;height:100vh}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.3px}
+  header h1 b{color:var(--acc)}
+  .setname{color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+  .btn:hover{border-color:var(--acc)}
+  .btn.primary{background:var(--acc);border-color:var(--acc);color:#1b1206;font-weight:600}
+  .btn:disabled{opacity:.45;cursor:default}
+  main{display:grid;grid-template-columns:340px 1fr;min-height:0}
+  aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+  .tabs{display:flex;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;white-space:nowrap;background:none;border:0;padding:9px 4px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;font-size:13px}
+  .tabs button.on{color:var(--text);border-bottom-color:var(--acc)}
+  .search{padding:8px;border-bottom:1px solid var(--line)}
+  .search input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+  .list{overflow:auto;flex:1}
+  .bank{padding:7px 12px;font-size:12px;color:var(--acc);text-transform:uppercase;letter-spacing:.6px;background:var(--panel2);position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .bank .n{color:var(--dim)}
+  .item{padding:6px 12px 6px 20px;cursor:pointer;border-bottom:1px solid #20242b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item:hover{background:#262a32}
+  .item.sel{background:#2f2a20;color:#ffd9a3}
+  section.detail{overflow:auto;padding:18px 22px;min-height:0}
+  .empty{color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px}
+  .empty .big{font-size:20px;color:var(--text)}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:30px 40px}
+  .drop.hover{border-color:var(--acc)}
+  h2{margin:0 0 4px;font-size:20px}
+  .meta{color:var(--dim);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .meta b{color:var(--text);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:14px;color:var(--acc2);font-weight:600}
+  table{border-collapse:collapse;width:100%}
+  th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;white-space:nowrap}
+  th{color:var(--dim);font-weight:500;position:sticky;top:0;background:var(--panel)}
+  td.c,th.c{text-align:center}
+  .cell{display:inline-block;min-width:34px;padding:1px 6px;border-radius:4px;background:#2b3a2f;color:#a8e4bf;font-size:12px}
+  .cell.zero{background:transparent;color:#4a505b}
+  .snd{font-family:Consolas,monospace;font-size:12px;color:#c9d1dc}
+  .tag{display:inline-block;padding:1px 7px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:12px;margin:2px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .ks{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .ks .t{font-weight:600;margin-bottom:6px}
+  .ks .l{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+  .ks .l span:last-child{color:var(--text)}
+  label.opt{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px}
+  .chmap{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chmap label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);align-items:center}
+  .chmap select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:2px}
+  .elsel{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+  .elsel label{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:12px;display:flex;gap:4px;align-items:center;cursor:pointer}
+  footer{padding:5px 14px;font-size:12px;color:var(--dim);background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:space-between}
+  .err{color:var(--bad)}
+  .hint{color:var(--dim);font-size:12.5px}
+  .toast{position:fixed;right:16px;bottom:36px;background:var(--panel2);border:1px solid var(--acc);padding:10px 14px;border-radius:8px;display:none;max-width:380px}
+
+  .transport{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#191c22;border-top:1px solid var(--line);flex-wrap:wrap;min-height:58px}
+  .tp-name{font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);font-size:18px;cursor:pointer}
+  .pbtn.on{background:var(--acc);color:#1b1206;border-color:var(--acc)}
+  .els{display:flex;gap:4px;flex-wrap:wrap}
+  .ebtn{font-size:11px;font-weight:600;padding:7px 8px;border-radius:5px;border:1px solid var(--line);background:#252a33;cursor:pointer;min-width:54px}
+  .ebtn.v{border-bottom:3px solid #4fb3d9}.ebtn.f{border-bottom:3px solid #c98cf0}.ebtn.i{border-bottom:3px solid #f0a03c}
+  .ebtn:disabled{opacity:.3;cursor:default}
+  .ebtn.cur{background:#3a6b48;color:#fff}.ebtn.next{outline:2px dashed var(--acc);outline-offset:-2px}
+  .tp-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .tp-ctl label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);gap:2px}
+  .tp-ctl input[type=number]{width:62px}.tp-ctl input,.tp-ctl select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px}
+  .tp-pos{margin-left:auto;font-family:Consolas,monospace;color:#a8e4bf;font-size:13px}
+  .ms{font-size:10px;padding:1px 5px;margin:2px 1px 0;border-radius:3px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--dim)}
+  .ms.m.on{background:#a33;color:#fff}.ms.s.on{background:#c9a227;color:#000}
+  .playel{background:none;border:1px solid var(--line);border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--ok);font-size:10px}
+  .playel:hover{background:#2b3a2f}
+  .mod{color:var(--acc);font-size:13px}
+  .warnc{border-color:var(--acc)} .chg{margin:0 0 10px;padding-left:18px;color:var(--dim)}
+  .copyf{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .copyf label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);gap:3px}
+  .copyf select{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:5px;max-width:260px}
+  .copyf .arrow{font-size:20px;color:var(--acc);padding-bottom:4px}
+  #cpInfo{margin-top:8px}
+  .padb{margin:3px}
+  .kssel{margin-top:8px;width:100%}.kssel.on{border-color:var(--acc);color:var(--acc)}
+  .kbwrap{margin-top:12px}.kbinfo{font-size:12px;color:var(--dim);margin-bottom:6px}
+  .kb{position:relative;height:130px;user-select:none;touch-action:none}
+  .wk{position:absolute;top:0;height:130px;background:#f3efe6;border:1px solid #888;border-radius:0 0 5px 5px;box-sizing:border-box;cursor:pointer}
+  .wk.lo{background:#e3ecf3}.wk span{position:absolute;bottom:4px;left:3px;font-size:9px;color:#666}
+  .bk{position:absolute;top:0;height:80px;background:#1b1b1b;border-radius:0 0 4px 4px;z-index:2;cursor:pointer}
+  .wk.down{background:#f0c27a}.bk.down{background:#b07722}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50}
+  .mbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;width:440px}
+  .mbox h3{margin:0 0 10px}.mbox input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+  footer a{color:var(--acc2);text-decoration:none} footer a:hover{text-decoration:underline}
+  .updbar{position:fixed;top:62px;right:16px;z-index:40;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:14px 16px;width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .updbar h3{margin:0 0 6px;font-size:15px;color:var(--acc)} .updbar p{margin:0 0 10px;color:var(--dim);font-size:13px;white-space:pre-line}
+
+  .modes{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .modes button{background:none;border:0;padding:6px 14px;cursor:pointer;color:var(--dim)} .modes button.on{background:var(--acc);color:#1b1206;font-weight:600}
+  .fv{display:none;grid-template-columns:300px 1fr;min-height:0}
+  body.fvmode .fv{display:grid} body.fvmode main, body.fvmode .transport{display:none}
+  body.fvmode .app{grid-template-rows:auto 1fr auto auto}
+  .fv.drag{outline:3px dashed var(--acc);outline-offset:-6px}
+  .fvleft{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+  .fvtools{display:flex;gap:6px;padding:8px}
+  .fvfiles{flex:1;overflow:auto} .fvgrp{padding:5px 10px;font-size:11px;color:var(--acc);background:var(--panel2);text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0}
+  .fvf{display:flex;justify-content:space-between;padding:4px 10px 4px 16px;cursor:pointer;font-size:13px;border-bottom:1px solid #20242b} .fvf:hover{background:#262a32} .fvf.sel{background:#2f2a20;color:#ffd9a3}
+  .fvf .sz{color:var(--dim);font-size:12px} .fvcount{padding:5px 10px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
+  .fvright{display:flex;flex-direction:column;min-height:0;min-width:0}
+  .fvbar{display:flex;gap:6px;padding:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)} .fvbar input#fvS{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px;width:220px} .fvbar .sep{flex:1}
+  .fvinfo{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;font-size:13px}
+  .fvtable{flex:1;overflow:auto;padding:0 12px 12px} .fvhead{padding:6px 0 10px;color:var(--text)}
+  .fvt th{position:sticky;top:0;background:var(--panel);z-index:1} .fvt tr[data-i]{cursor:pointer} .fvt tr[data-i]:hover{background:#262a32} .fvt tr.sel{background:#2f2a20}
+  .fvt td.warn{color:#f0a03c} .warnt{color:#f0a03c}
+  .fvprev{border-top:1px solid var(--line);background:var(--panel)} .fvprev:empty{display:none}
+  .pvbar{display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap;font-size:13px} .pvbar span{flex:1}
+  #pvC{display:block;width:100%;height:150px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>PA5X <b>Set Tool</b></h1>
+    <div class="modes" id="modes"><button data-m="set" class="on">Сет</button><button data-m="fv">File Viewer</button></div>
+    <span class="setname" id="setname">Няма отворен сет</span>
+    <button class="btn primary" id="openBtn">Отвори SET/KST папка…</button>
+    <input type="file" id="dirInput" webkitdirectory directory multiple hidden>
+  </header>
+  <main>
+    <aside>
+      <div class="tabs" id="tabs">
+        <button data-tab="styles" class="on">Стилове</button>
+        <button data-tab="ksets">Keyboard Sets</button>
+        <button data-tab="pads">Pads</button>
+        <button data-tab="sounds">User звуци</button>
+      </div>
+      <div class="search"><input id="q" placeholder="Търсене…"></div>
+      <div class="list" id="list"></div>
+    </aside>
+    <section class="detail" id="detail">
+      <div class="empty">
+        <div class="drop" id="drop">
+          <div class="big">Отвори своя PA5X сет</div>
+          <p>Натисни „Отвори SET/KST папка…“ и избери главната папка на сета<br>(тази, в която са STYLE, KEYBOARDSET, PAD, SOUND…),<br>или я пусни тук с мишката.</p>
+          <p class="hint">Файловете се четат само локално, нищо не се качва в интернет.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <section id="fv" class="fv">
+    <div class="fvleft">
+      <div class="fvtools"><button class="btn primary" id="fvOpenF">Файлове…</button><button class="btn" id="fvOpenD">Папка…</button><button class="btn" id="fvClear" title="Изчисти списъка">✕</button></div>
+      <div class="search"><input id="fvQ" placeholder="Филтър по име на файл…"></div>
+      <div class="fvfiles" id="fvFiles"></div>
+      <div class="fvcount" id="fvCount"></div>
+    </div>
+    <div class="fvright">
+      <div class="fvbar">
+        <input id="fvS" placeholder="Търсене в съдържанието…">
+        <button class="btn" id="fvWav" disabled>Експорт избрания .WAV</button><button class="btn" id="fvWavAll" disabled>Експорт всички .WAV</button>
+        <span class="sep"></span>
+        <label class="opt"><input type="checkbox" id="fvRepAll"> всички файлове</label><button class="btn" id="fvRepTxt">Доклад .TXT</button><button class="btn" id="fvRepCsv">Доклад .CSV</button>
+        <button class="btn" id="fvAssoc" title="Двоен клик върху .STG .KSC .PCG .PCM .MTP .KMP в Windows ще ги отваря тук">Свържи файловете с програмата</button>
+      </div>
+      <div class="fvinfo"><span id="fvInfo"></span><span id="fvPath" class="hint"></span></div>
+      <div class="fvtable" id="fvTable"><div class="empty"><div class="drop"><div class="big">File Viewer</div><p>Бърз преглед на Styles, Keyboard Sets, Pads, PCG и PCM<br>без да зареждаш целия сет.</p><p>Пусни файлове или папка тук, или използвай „Файлове…“ / „Папка…“.</p></div></div></div>
+      <div class="fvprev" id="fvPrev"></div>
+    </div>
+  </section>
+  <div id="transport" class="transport"></div>
+  <footer><span id="status">Готов</span><span><span id="ver">PA5X Set Tool</span> · <a href="#" id="chkUpd">Провери за обновления</a></span></footer>
+</div>
+<div class="toast" id="toast"></div>
+<script src="spessa.bundle.js"></script>
+<script>
+// PA5X Set Tool — core: KORG PA5X STG/KSC tree parser, SMF reader/writer, style→MIDI export.
+// Independent implementation written from analysis of the user's own set files.
+(function (root) {
+  'use strict';
+  const td = new TextDecoder('utf-8');
+
+  // ---------- container tree (Root / Branch / Leaf) ----------
+  function readCStr(b, p) { let e = p; while (e < b.length && b[e] !== 0) e++; return [td.decode(b.subarray(p, e)), e + 1]; }
+  function u32(b, p) { return ((b[p] << 24) >>> 0) + (b[p + 1] << 16) + (b[p + 2] << 8) + b[p + 3]; }
+
+  function parseTree(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    function walk(p, end, out) {
+      while (p < end) {
+        let kind; [kind, p] = readCStr(b, p);
+        if (kind === 'Root') {
+          const ver = b.slice(p, p + 2); p += 2; const size = u32(b, p); p += 4;
+          const node = { kind: 'Root', name: '', ver, children: [] };
+          walk(p, Math.min(p + size, b.length), node.children); out.push(node); p += size;
+        } else if (kind === 'Branch' || kind === 'Leaf') {
+          let name; [name, p] = readCStr(b, p); const size = u32(b, p); p += 4;
+          const node = { kind, name, offset: p, size };
+          if (kind === 'Branch') { node.children = []; walk(p, Math.min(p + size, end), node.children); }
+          else node.data = b.subarray(p, p + size);
+          out.push(node); p += size;
+        } else throw new Error('Unknown node "' + kind.slice(0, 16) + '" at ' + p);
+      }
+      return out;
+    }
+    const nodes = walk(0, b.length, []);
+    if (!nodes.length || nodes[0].kind !== 'Root') throw new Error('Not a PA5X tree file');
+    return nodes[0];
+  }
+  // serialize a tree back to bytes (exact inverse of parseTree)
+  function serializeTree(rootNode) {
+    const enc = new TextEncoder(); const chunks = [];
+    const p32 = (v) => new Uint8Array([(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255]);
+    function body(n) { // returns array of Uint8Array for node payload
+      if (n.kind === 'Leaf') return [n.data];
+      const out = []; for (const c of n.children) out.push(...node(c)); return out;
+    }
+    const len = (arr) => arr.reduce((s, x) => s + x.length, 0);
+    function node(n) {
+      const b = body(n); const size = len(b);
+      if (n.kind === 'Root') return [enc.encode('Root\0'), n.ver || new Uint8Array([1, 0]), p32(size), ...b];
+      return [enc.encode(n.kind + '\0' + n.name + '\0'), p32(size), ...b];
+    }
+    const parts = node(rootNode); const out = new Uint8Array(len(parts)); let o = 0; for (const x of parts) { out.set(x, o); o += x.length; } return out;
+  }
+  const child = (n, name) => n && n.children && n.children.find(c => c.name === name);
+  const childrenEnding = (n, ext) => (n && n.children ? n.children.filter(c => c.name.toLowerCase().endsWith(ext)) : []);
+  const leafText = (n) => (n && n.data ? td.decode(n.data) : '');
+  function xmlAttr(xml, tag, attr) {
+    const m = new RegExp('<' + tag + '\\b[^>]*\\b' + attr + '="([^"]*)"').exec(xml); return m ? m[1] : null;
+  }
+  function xmlAll(xml, tag) {
+    const out = []; const re = new RegExp('<' + tag + '\\b([^>]*)/?>', 'g'); let m;
+    while ((m = re.exec(xml))) { const o = {}; m[1].replace(/(\w+)="([^"]*)"/g, (_, k, v) => { o[k] = v; }); out.push(o); }
+    return out;
+  }
+
+  // ---------- Standard MIDI File ----------
+  function readVLQ(b, p) { let v = 0, c; do { c = b[p++]; v = (v << 7) | (c & 0x7f); } while (c & 0x80); return [v, p]; }
+  function parseSMF(b) {
+    if (String.fromCharCode(b[0], b[1], b[2], b[3]) !== 'MThd') throw new Error('Not SMF');
+    const hl = u32(b, 4); const format = (b[8] << 8) | b[9]; const ntr = (b[10] << 8) | b[11]; const division = (b[12] << 8) | b[13];
+    let p = 8 + hl; const tracks = [];
+    for (let i = 0; i < ntr && p + 8 <= b.length; i++) {
+      const len = u32(b, p + 4); let q = p + 8; const end = Math.min(q + len, b.length); let t = 0, rs = 0; const ev = [];
+      while (q < end) {
+        let d; [d, q] = readVLQ(b, q); t += d; const s = b[q];
+        if (s === 0xff) { const type = b[q + 1]; let l; [l, q] = readVLQ(b, q + 2); ev.push({ t, kind: 'meta', type, data: b.slice(q, q + l) }); q += l; }
+        else if (s === 0xf0 || s === 0xf7) { let l; [l, q] = readVLQ(b, q + 1); ev.push({ t, kind: 'sysex', status: s, data: b.slice(q, q + l) }); q += l; }
+        else {
+          if (s & 0x80) { rs = s; q++; }
+          const hi = rs & 0xf0; const n = (hi === 0xc0 || hi === 0xd0) ? 1 : 2;
+          ev.push({ t, kind: 'ch', status: rs, data: b.slice(q, q + n) }); q += n;
+        }
+      }
+      tracks.push(ev); p = end;
+    }
+    return { format, division, tracks };
+  }
+  function vlq(v) { const a = [v & 0x7f]; while ((v >>= 7)) a.unshift((v & 0x7f) | 0x80); return a; }
+  function writeSMF(division, tracks) { // tracks: arrays of {t, kind, ...} absolute ticks
+    const out = [];
+    const push32 = (a, v) => a.push((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255);
+    out.push(0x4d, 0x54, 0x68, 0x64); push32(out, 6); out.push(0, 1, (tracks.length >> 8) & 255, tracks.length & 255, (division >> 8) & 255, division & 255);
+    for (const tr of tracks) {
+      const ev = tr.map((e, i) => [e, i]).sort((a, b) => a[0].t - b[0].t || (a[0].prio || 0) - (b[0].prio || 0) || a[1] - b[1]).map(x => x[0]);
+      const body = []; let last = 0, end = 0;
+      for (const e of ev) {
+        if (e.kind === 'meta' && e.type === 0x2f) { end = Math.max(end, e.t); continue; }
+        body.push(...vlq(e.t - last)); last = e.t;
+        if (e.kind === 'meta') { body.push(0xff, e.type, ...vlq(e.data.length), ...e.data); }
+        else if (e.kind === 'sysex') { body.push(e.status, ...vlq(e.data.length), ...e.data); }
+        else body.push(e.status, ...e.data);
+      }
+      body.push(...vlq(Math.max(0, end - last)), 0xff, 0x2f, 0x00);
+      out.push(0x4d, 0x54, 0x72, 0x6b); push32(out, body.length); for (const x of body) out.push(x);
+    }
+    return new Uint8Array(out);
+  }
+  const textMeta = (t, type, s, prio) => ({ t, kind: 'meta', type, data: new TextEncoder().encode(s), prio: prio || 0 });
+
+  // ---------- domain ----------
+  const ELEMENT_ORDER = ['Intro1', 'Intro2', 'Intro3', 'CountIn', 'Var1', 'Var2', 'Var3', 'Var4', 'Fill1', 'Fill2', 'Fill3', 'Fill4', 'Break', 'End1', 'End2', 'End3'];
+  const ELEMENT_LABEL = { Intro1: 'Intro 1', Intro2: 'Intro 2', Intro3: 'Intro 3', CountIn: 'Intro 3 / Count In', Var1: 'Variation 1', Var2: 'Variation 2', Var3: 'Variation 3', Var4: 'Variation 4', Fill1: 'Fill 1', Fill2: 'Fill 2', Fill3: 'Fill 3', Fill4: 'Fill 4', Break: 'Break', End1: 'Ending 1', End2: 'Ending 2', End3: 'Ending 3' };
+  const TRACK_ORDER = ['Bass', 'Drum', 'Perc', 'Acc1', 'Acc2', 'Acc3', 'Acc4', 'Acc5', 'Chords'];
+  const DEFAULT_CHANNELS = { Bass: 1, Drum: 10, Perc: 9, Acc1: 2, Acc2: 3, Acc3: 4, Acc4: 5, Acc5: 6, Chords: 16 };
+
+  function soundOf(smf) { // first bank select / program change found in setup track
+    const s = { msb: null, lsb: null, pc: null, vol: null, pan: null };
+    for (const tr of smf.tracks) for (const e of tr) {
+      if (e.kind !== 'ch') continue; const hi = e.status & 0xf0;
+      if (hi === 0xb0) { const [c, v] = e.data; if (c === 0 && s.msb === null) s.msb = v; else if (c === 32 && s.lsb === null) s.lsb = v; else if (c === 7 && s.vol === null) s.vol = v; else if (c === 10 && s.pan === null) s.pan = v; }
+      else if (hi === 0xc0 && s.pc === null) s.pc = e.data[0];
+    }
+    return s;
+  }
+  const fmtSound = (s) => (s && s.pc !== null ? `${s.msb ?? '-'}.${s.lsb ?? '-'}.${s.pc + 1}` : '—');
+
+  // split a clip SMF into setup part (track 0) and music part (track 1+), measured from end of setup bar
+  function clipInfo(smf) {
+    const setup = smf.tracks[0] || [];
+    const setupEnd = setup.length ? setup[setup.length - 1].t : 0;
+    const music = []; let end = setupEnd;
+    for (let i = 1; i < smf.tracks.length; i++) for (const e of smf.tracks[i]) {
+      if (e.kind === 'meta' && e.type === 0x2f) { end = Math.max(end, e.t); continue; }
+      music.push(e);
+    }
+    if (smf.tracks.length === 1) end = setupEnd;
+    let notes = 0; for (const e of music) if (e.kind === 'ch' && (e.status & 0xf0) === 0x90 && e.data[1] > 0) notes++;
+    return { setup, setupEnd, music, length: Math.max(0, end - setupEnd), notes };
+  }
+
+  function parseTimeSig(sceneXml) {
+    const n = +(xmlAttr(sceneXml, 'TimeSignature', 'numerator') || 4); const d = +(xmlAttr(sceneXml, 'TimeSignature', 'denominator') || 2);
+    return { num: n, den: d, label: `${n}/${2 ** d}` };
+  }
+
+  function parseKeyboardSetNode(name, ksc) { // ksc branch (or Root of a .ksc file)
+    const tracks = [];
+    const rt = child(child(ksc, 'Main.ssn'), 'RTTracks.scn');
+    if (rt) for (const plc of childrenEnding(rt, '.plc')) {
+      const mid = child(plc, 'Main.mid');
+      let snd = null; try { snd = soundOf(parseSMF(mid.data)); } catch (e) { }
+      tracks.push({ name: plc.name.replace(/\.plc$/i, ''), sound: snd, octave: xmlAttr(leafText(child(plc, 'ClipDescription.xml')), 'Pitch', 'transposition') });
+    } else for (const nm of ['Lower', 'Upper1', 'Upper2', 'Upper3']) { // compact layout inside .ksa
+      const mid = child(ksc, nm + '.mid'); if (!mid) continue;
+      let snd = null; try { snd = soundOf(parseSMF(mid.data)); } catch (e) { }
+      tracks.push({ name: nm, sound: snd });
+    }
+    const xml = leafText(child(ksc, 'ClipDescription.xml'));
+    const kp = {}; (xmlAll(xml, 'KeyboardProcessing')[0] && Object.assign(kp, xmlAll(xml, 'KeyboardProcessing')[0]));
+    const tp = xmlAll(xml, 'Track\\dParams');
+    tracks.forEach((t, i) => { const p = tp[i]; if (p) { t.mute = p.mute === '1'; t.keyLow = +p.keyrangelow; t.keyHigh = +p.keyrangehigh; } });
+    return { name: name.replace(/\.ksc$/i, ''), tracks, splitPoint: kp.splitpoint ? +kp.splitpoint : null, keyboardMode: kp.keyboardmode, chordScanning: kp.chordscanning };
+  }
+
+  function findStc(rootNode) { // walk to the .stc branch
+    let found = null; (function rec(n) { if (found || !n.children) return; for (const c of n.children) { if (c.kind === 'Branch' && /\.stc$/i.test(c.name)) { found = c; return; } rec(c); } })(rootNode); return found;
+  }
+
+  function parseStyle(bytes, fileName) {
+    const rootNode = parseTree(bytes);
+    const stc = findStc(rootNode); if (!stc) throw new Error('No style (.stc) inside');
+    const ssn = child(stc, 'Main.ssn');
+    const sessionXml = leafText(child(ssn, 'SessionDescription.xml'));
+    const stageXml = leafText(child(rootNode, 'StageDescription.xml'));
+    const tempoUs = +(xmlAttr(stageXml, 'Tempo', 'value') || 500000);
+    const elements = [];
+    for (const scn of childrenEnding(ssn, '.scn')) {
+      const id = scn.name.replace(/\.scn$/i, '');
+      const sceneXml = leafText(child(scn, 'SceneDescription.xml'));
+      const ts = parseTimeSig(sceneXml);
+      const tracks = [];
+      for (const clip of scn.children.filter(c => c.kind === 'Branch')) {
+        const tname = clip.name.replace(/\.(pdc|csc)$/i, '');
+        const mid = child(clip, 'Main.mid'); if (!mid) continue;
+        let smf, info; try { smf = parseSMF(mid.data); info = clipInfo(smf); } catch (e) { continue; }
+        const cx = leafText(child(clip, 'ClipDescription.xml'));
+        tracks.push({ name: tname, division: smf.division, smf, info, sound: soundOf(smf), origChord: { root: xmlAttr(cx, 'CV1', 'root'), chord: xmlAttr(cx, 'CV1', 'chord') } });
+      }
+      const division = tracks[0] ? tracks[0].division : 384;
+      const length = Math.max(0, ...tracks.map(t => t.info.length));
+      const barTicks = division * 4 * ts.num / (2 ** ts.den);
+      elements.push({ id, label: ELEMENT_LABEL[id] || id, ts, tracks: tracks.sort((a, b) => TRACK_ORDER.indexOf(a.name) - TRACK_ORDER.indexOf(b.name)), division, length, bars: barTicks ? Math.round(length / barTicks * 100) / 100 : 0 });
+    }
+    elements.sort((a, b) => (ELEMENT_ORDER.indexOf(a.id) + 1 || 99) - (ELEMENT_ORDER.indexOf(b.id) + 1 || 99));
+    // keyboard sets (two layouts) and pads
+    const keyboardSets = []; const pads = [];
+    (function rec(n) {
+      if (!n.children) return;
+      for (const c of n.children) {
+        if (c.kind !== 'Branch') continue;
+        if (/^KbdSet\d+\.scn$/i.test(c.name) || /^ks\d+$/i.test(c.name)) { const k = c.children.find(x => /\.ksc$/i.test(x.name)); if (k) keyboardSets.push(parseKeyboardSetNode(k.name, k)); continue; }
+        if (/^PadSet\d+\.scn$/i.test(c.name)) { for (const p of c.children.filter(x => /\.pdc$/i.test(x.name))) { let snd = null, smf = null; try { smf = parseSMF(child(p, 'Main.mid').data); snd = soundOf(smf); } catch (e) { } pads.push({ name: p.name.replace(/\.pdc$/i, '').replace(/\(\d+\)$/, ''), sound: snd, smf }); } continue; }
+        if (c === stc) continue;
+        rec(c);
+      }
+    })(rootNode);
+    return { name: stc.name.replace(/\.stc$/i, ''), fileName, tempo: Math.round(60000000 / tempoUs * 10) / 10, tempoUs, elements, keyboardSets, pads, sessionXml };
+  }
+
+  function parseKeyboardSetFile(bytes, fileName) {
+    const r = parseTree(bytes); return parseKeyboardSetNode(fileName.replace(/^.*[\\/]/, ''), r);
+  }
+
+  // KORF chunk files (.MTP / .PCG): extract record names
+  function korfNames(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); const out = [];
+    for (let i = 0; i + 34 < b.length; i++) {
+      if (b[i] === 0 && b[i + 1] === 5 && b[i + 2] === 0 && b[i + 3] === 2 && b[i + 4] === 0 && b[i + 5] === 0x1c) {
+        let e = i + 6; while (e < i + 34 && b[e]) e++; const s = td.decode(b.subarray(i + 6, e)); if (s) out.push(s); i += 33;
+      }
+    }
+    return out;
+  }
+
+
+  // ---------- editing (copy elements / tracks between styles) ----------
+  const SCENE_INFO = { Intro1: [1, 4], Intro2: [2, 5], CountIn: [3, 11], Var1: [4, 0], Var2: [5, 1], Var3: [6, 2], Var4: [7, 3], Fill1: [8, 6], Fill2: [9, 7], Fill3: [10, 13], Fill4: [11, 14], Break: [12, 10], End1: [13, 8], End2: [14, 9] };
+  const TRACK_NUM = { Bass: 1, Drum: 2, Perc: 3, Acc1: 4, Acc2: 5, Acc3: 6, Acc4: 7, Acc5: 8, Chords: 10 };
+  const TRACK_GROUP = { Bass: 'bass', Drum: 'drum', Perc: 'drum', Acc1: 'acc', Acc2: 'acc', Acc3: 'acc', Acc4: 'acc', Acc5: 'acc', Chords: 'chords' };
+  const compatibleTracks = (t) => Object.keys(TRACK_GROUP).filter(x => TRACK_GROUP[x] === TRACK_GROUP[t]);
+  const enc8 = (s) => new TextEncoder().encode(s);
+  function cloneNode(n) { const o = { kind: n.kind, name: n.name }; if (n.ver) o.ver = n.ver.slice(); if (n.children) o.children = n.children.map(cloneNode); if (n.data) o.data = n.data.slice(); return o; }
+  function stcOf(root) { const s = findStc(root); if (!s) throw new Error('Няма стил във файла'); return s; }
+  const ssnOf = (root) => child(stcOf(root), 'Main.ssn');
+  const sceneOf = (root, id) => child(ssnOf(root), id + '.scn');
+  const clipName = (t) => t + (t === 'Chords' ? '.csc' : '.pdc');
+  function setLeafText(parent, name, text) { const l = child(parent, name); l.data = enc8(text); }
+  function sceneTs(scn) { const x = leafText(child(scn, 'SceneDescription.xml')); return parseTimeSig(x).label; }
+  function clipLen(clip) { try { return clipInfo(parseSMF(child(clip, 'Main.mid').data)).length; } catch (e) { return 0; } }
+  function sortScene(scn) {
+    const clips = scn.children.filter(c => c.kind === 'Branch').sort((a, b) => (TRACK_NUM[a.name.replace(/\.\w+$/, '')] || 99) - (TRACK_NUM[b.name.replace(/\.\w+$/, '')] || 99));
+    const rest = scn.children.filter(c => c.kind !== 'Branch'); scn.children = [...clips, ...rest];
+    // rebuild RESOURCE list in SceneDescription.xml
+    const sd = child(scn, 'SceneDescription.xml'); if (!sd) return;
+    let x = leafText(sd); x = x.replace(/\s*<RESOURCE\b[^>]*\/>/g, '');
+    const res = clips.map(c => { const t = c.name.replace(/\.\w+$/, ''); return `  <RESOURCE name="${c.name}" type="${t === 'Chords' ? 'ChordClip' : 'PadClip'}" track="${TRACK_NUM[t] || 1}"/>`; }).join('\n');
+    x = x.replace(/<SCENE>\s*/, '<SCENE>\n' + (res ? res + '\n' : '') + '  ');
+    sd.data = enc8(x);
+  }
+  function ensureScene(dstRoot, id, templateScn) {
+    const ssn = ssnOf(dstRoot); let scn = child(ssn, id + '.scn'); if (scn) return scn;
+    if (!SCENE_INFO[id]) throw new Error('Неизвестен елемент: ' + id);
+    const sdT = templateScn ? leafText(child(templateScn, 'SceneDescription.xml')) : '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<SCENE>\n  <PARAMS>\n    <TimeSignature numerator="4" denominator="2" beatsubdivisions="1"/>\n  </PARAMS>\n</SCENE>\n';
+    scn = { kind: 'Branch', name: id + '.scn', children: [{ kind: 'Leaf', name: 'SceneDescription.xml', data: enc8(sdT) }] };
+    // insert in scene-number order, before non-scene leaves
+    const num = SCENE_INFO[id][0]; const idx = ssn.children.findIndex(c => (c.kind !== 'Branch') || ((SCENE_INFO[c.name.replace(/\.scn$/, '')] || [99])[0] > num));
+    ssn.children.splice(idx < 0 ? ssn.children.length : idx, 0, scn);
+    const sess = child(ssn, 'SessionDescription.xml'); let x = leafText(sess);
+    const lines = [...x.matchAll(/\s*<RESOURCE\b[^>]*\/>/g)].map(m => m[0].trim()); lines.push(`<RESOURCE scenenum="${num}" role="${SCENE_INFO[id][1]}" name="${id}.scn"/>`);
+    lines.sort((a, b) => +/scenenum="(\d+)"/.exec(a)[1] - +/scenenum="(\d+)"/.exec(b)[1]);
+    x = x.replace(/\s*<RESOURCE\b[^>]*\/>/g, ''); x = x.replace(/(<SESSION\b[^>]*>)\s*/, '$1\n' + lines.map(l => '  ' + l).join('\n') + '\n  ');
+    sess.data = enc8(x); return scn;
+  }
+  function copyElement(srcRoot, srcId, dstRoot, dstId) {
+    const src = sceneOf(srcRoot, srcId); if (!src) throw new Error('Елементът ' + srcId + ' липсва в изходния стил');
+    const dst = ensureScene(dstRoot, dstId, src);
+    dst.children = src.children.map(cloneNode); return { warnings: [] };
+  }
+  function copyTrack(srcRoot, srcId, track, dstRoot, dstId, dstTrack) {
+    dstTrack = dstTrack || track;
+    if (TRACK_GROUP[track] !== TRACK_GROUP[dstTrack]) throw new Error(`${track} не може да се копира в ${dstTrack} (различен тип писта)`);
+    const src = sceneOf(srcRoot, srcId); const clip = src && child(src, clipName(track)); if (!clip) throw new Error(`Пистата ${track} липсва в ${srcId}`);
+    const dstExisted = !!sceneOf(dstRoot, dstId); const dst = ensureScene(dstRoot, dstId, src); const warnings = [];
+    if (dstExisted && sceneTs(dst) !== sceneTs(src)) throw new Error(`Различен такт: ${sceneTs(src)} → ${sceneTs(dst)}`);
+    const nc = cloneNode(clip); nc.name = clipName(dstTrack);
+    if (dstTrack !== track) { const cd = child(nc, 'ClipDescription.xml'); /* same Pattern type inside group, nothing else to rename */ }
+    const others = dst.children.filter(c => c.kind === 'Branch' && c.name !== nc.name);
+    if (others.length) { const L = Math.max(...others.map(clipLen)); const l = clipLen(nc); if (L && l && L !== l) warnings.push(`Дължината се различава (${(l / L).toFixed(2)}× спрямо останалите писти)`); }
+    dst.children = dst.children.filter(c => c.name !== nc.name); dst.children.unshift(nc); sortScene(dst);
+    return { warnings };
+  }
+  function deleteTrack(root, id, track) { const scn = sceneOf(root, id); if (!scn) return; scn.children = scn.children.filter(c => c.name !== clipName(track)); sortScene(scn); }
+  function renameStyle(root, newName) { const s = stcOf(root); s.name = newName.replace(/\.stg$/i, '') + '.stc'; }
+
+  // ---------- export ----------
+  const KORG_SYSEX = (e) => e.kind === 'sysex' && e.data[0] === 0x42;
+  function exportStyleMidi(style, opts) {
+    opts = Object.assign({ elements: null, channels: DEFAULT_CHANNELS, includeChords: false, keepKorgSysex: false, setupPerElement: true, markers: true }, opts || {});
+    const els = style.elements.filter(e => !opts.elements || opts.elements.includes(e.id));
+    const division = (els[0] && els[0].division) || 384;
+    const cond = [textMeta(0, 0x03, style.name), { t: 0, kind: 'meta', type: 0x51, data: new Uint8Array([(style.tempoUs >> 16) & 255, (style.tempoUs >> 8) & 255, style.tempoUs & 255]) }];
+    const trackEvents = {}; const names = TRACK_ORDER.filter(n => n !== 'Chords' || opts.includeChords);
+    for (const n of names) trackEvents[n] = [textMeta(0, 0x03, n)];
+    let T = 0, lastTs = null;
+    for (const el of els) {
+      if (!lastTs || lastTs.label !== el.ts.label) { cond.push({ t: T, kind: 'meta', type: 0x58, data: new Uint8Array([el.ts.num, el.ts.den, 24, 8]) }); lastTs = el.ts; }
+      if (opts.markers) cond.push(textMeta(T, 0x06, el.label));
+      for (const tr of el.tracks) {
+        if (!trackEvents[tr.name]) continue;
+        const ch = ((opts.channels[tr.name] || 1) - 1) & 15; const out = trackEvents[tr.name];
+        const scale = division / tr.division;
+        const remap = (e, t) => {
+          if (e.kind === 'ch') { const d = new Uint8Array(e.data); out.push({ t, kind: 'ch', status: (e.status & 0xf0) | ch, data: d, prio: (e.status & 0xf0) === 0x80 || ((e.status & 0xf0) === 0x90 && e.data[1] === 0) ? -1 : 0 }); }
+          else if (e.kind === 'sysex' && (opts.keepKorgSysex || !KORG_SYSEX(e))) out.push({ t, kind: 'sysex', status: e.status, data: e.data });
+        };
+        if (opts.setupPerElement || T === 0) for (const e of tr.info.setup) remap(e, T);
+        const elEnd = Math.round(el.length * scale); const held = new Map();
+        for (const e of tr.info.music) {
+          const rel = Math.round((e.t - tr.info.setupEnd) * scale); if (rel < 0) continue;
+          const isOff = e.kind === 'ch' && ((e.status & 0xf0) === 0x80 || ((e.status & 0xf0) === 0x90 && e.data[1] === 0));
+          const isOn = e.kind === 'ch' && (e.status & 0xf0) === 0x90 && e.data[1] > 0;
+          if (rel >= elEnd && !isOff) continue;
+          if (isOff && !held.get(e.data[0])) continue; // orphan note-off
+          if (isOn) held.set(e.data[0], (held.get(e.data[0]) || 0) + 1);
+          if (isOff) held.set(e.data[0], held.get(e.data[0]) - 1);
+          remap(e, T + Math.min(rel, elEnd));
+        }
+        for (const [k, n] of held) for (let i = 0; i < n; i++) out.push({ t: T + elEnd, kind: 'ch', status: 0x80 | ch, data: new Uint8Array([k, 0]), prio: -1 });
+      }
+      T += Math.round(el.length * division / el.division);
+    }
+    const tracks = [cond.concat([{ t: T, kind: 'meta', type: 0x2f, data: new Uint8Array(0) }])];
+    for (const n of names) { const ev = trackEvents[n]; ev.push({ t: T, kind: 'meta', type: 0x2f, data: new Uint8Array(0) }); tracks.push(ev); }
+    return writeSMF(division, tracks);
+  }
+
+  // ---------- tiny ZIP (store) ----------
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function makeZip(files) { // [{name, data}]
+    const enc = new TextEncoder(); const parts = []; const cd = []; let off = 0;
+    const now = new Date(); const dosT = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1); const dosD = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    const le = (n, w) => { const a = []; for (let i = 0; i < w; i++) a.push((n >>> (8 * i)) & 255); return a; };
+    for (const f of files) {
+      const nm = enc.encode(f.name); const crc = crc32(f.data);
+      const h = [0x50, 0x4b, 3, 4, ...le(20, 2), ...le(0x0800, 2), 0, 0, ...le(dosT, 2), ...le(dosD, 2), ...le(crc, 4), ...le(f.data.length, 4), ...le(f.data.length, 4), ...le(nm.length, 2), 0, 0];
+      parts.push(new Uint8Array(h), nm, f.data);
+      cd.push(new Uint8Array([0x50, 0x4b, 1, 2, ...le(20, 2), ...le(20, 2), ...le(0x0800, 2), 0, 0, ...le(dosT, 2), ...le(dosD, 2), ...le(crc, 4), ...le(f.data.length, 4), ...le(f.data.length, 4), ...le(nm.length, 2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...le(off, 4)]), nm);
+      off += h.length + nm.length + f.data.length;
+    }
+    const cdSize = cd.reduce((s, x) => s + x.length, 0);
+    const endRec = new Uint8Array([0x50, 0x4b, 5, 6, 0, 0, 0, 0, ...le(files.length, 2), ...le(files.length, 2), ...le(cdSize, 4), ...le(off, 4), 0, 0]);
+    const all = [...parts, ...cd, endRec]; const total = all.reduce((s, x) => s + x.length, 0); const out = new Uint8Array(total); let p = 0; for (const x of all) { out.set(x, p); p += x.length; } return out;
+  }
+
+  const api = { copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PACore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// PA5X Set Tool — player: arranger-style playback of styles, pads and keyboard sets.
+// Output: built-in SoundFont synth (SpessaSynth, GM approximation) or Web MIDI to the real keyboard.
+(function (root) {
+  'use strict';
+  const LOOK = 0.12, TICK_MS = 20;
+  const isVar = (id) => /^Var\d$/.test(id);
+  const isOneShot = (id) => /^(Intro|CountIn|Fill|Break|End)/.test(id);
+
+  class Player {
+    constructor() {
+      this.ctx = null; this.synth = null; this.ready = null; this.out = 'synth'; this.midiOut = null; this.midiAccess = null;
+      this.style = null; this.playing = false; this.channels = null; this.mutes = new Set(); this.solos = new Set();
+      this.transpose = 0; this.tempo = 120; this.volume = 1; this.onState = null; this.timer = null;
+      this.drumCh = new Set(); this.held = new Map(); // ch -> Set(notes)
+    }
+    async init(loadBank) {
+      if (this.ready) return this.ready;
+      this.ready = (async () => {
+        this.ctx = new AudioContext({ latencyHint: 'interactive' });
+        await this.ctx.audioWorklet.addModule('spessasynth_processor.min.js');
+        this.synth = new root.SpessaLib.WorkletSynthesizer(this.ctx);
+        this.gain = this.ctx.createGain(); this.synth.connect(this.gain); this.gain.connect(this.ctx.destination);
+        await this.synth.soundBankManager.addSoundBank(await loadBank(), 'main');
+        await this.synth.isReady;
+      })();
+      return this.ready;
+    }
+    async midiOutputs() {
+      try { if (!this.midiAccess) this.midiAccess = await navigator.requestMIDIAccess({ sysex: false }); return [...this.midiAccess.outputs.values()].map(o => ({ id: o.id, name: o.name })); }
+      catch (e) { return []; }
+    }
+    setOutput(id) { this.allNotesOff(); if (id === 'synth') { this.out = 'synth'; this.midiOut = null; } else { this.midiOut = this.midiAccess && this.midiAccess.outputs.get(id); this.out = this.midiOut ? 'midi' : 'synth'; } this.programCache = new Map(); }
+    setVolume(v) { this.volume = v; if (this.gain) this.gain.gain.value = v; }
+    now() { return this.ctx.currentTime; }
+
+    // ---- low level send (time in AudioContext seconds) ----
+    send(bytes, time) {
+      if (this.out === 'midi' && this.midiOut) {
+        const ts = performance.now() + Math.max(0, (time - this.ctx.currentTime) * 1000);
+        try { this.midiOut.send(bytes, ts); } catch (e) { }
+        return;
+      }
+      const s = this.synth; const st = bytes[0] & 0xf0, ch = bytes[0] & 15; const o = { time: Math.max(time, this.ctx.currentTime) };
+      if (st === 0x90 && bytes[2] > 0) s.noteOn(ch, bytes[1], bytes[2], o);
+      else if (st === 0x80 || st === 0x90) s.noteOff(ch, bytes[1], o);
+      else s.sendMessage(bytes, 0, o);
+    }
+    // apply a clip's sound setup to a channel (GM approximation for the synth, raw for MIDI out)
+    setupChannel(ch, sound, setupEvents, time) {
+      if (this.out === 'midi') {
+        for (const e of setupEvents) if (e.kind === 'ch') this.send([(e.status & 0xf0) | ch, ...e.data], time);
+        return;
+      }
+      const drum = sound && sound.msb === 120;
+      if (this.synth.midiChannels[ch]) this.synth.midiChannels[ch].setDrums(!!drum);
+      if (drum) this.drumCh.add(ch); else this.drumCh.delete(ch);
+      this.send([0xc0 | ch, sound && sound.pc !== null ? sound.pc : 0], time);
+      for (const e of setupEvents) {
+        if (e.kind !== 'ch' || (e.status & 0xf0) !== 0xb0) continue; const c = e.data[0];
+        if ([7, 10, 11, 91, 93, 64, 1].includes(c)) this.send([0xb0 | ch, c, e.data[1]], time);
+      }
+    }
+    noteMsg(e, ch, transpose) {
+      const hi = e.status & 0xf0;
+      if (hi === 0x90 || hi === 0x80) { const n = e.data[0] + (this.drumCh.has(ch) || this.out === 'midi' && transpose === null ? 0 : (transpose || 0)); if (n < 0 || n > 127) return null; return [hi | ch, n, e.data[1]]; }
+      if (hi === 0xb0) { const c = e.data[0]; if (this.out === 'synth' && [0, 32, 98, 99, 100, 101, 6, 38].includes(c)) return null; return [0xb0 | ch, c, e.data[1]]; }
+      if (hi === 0xc0) return this.out === 'midi' ? [0xc0 | ch, e.data[0]] : null;
+      return [hi | ch, ...e.data];
+    }
+    track(ch, msg, time) { // remember held notes for clean stops
+      const hi = msg[0] & 0xf0; if (!this.held.has(ch)) this.held.set(ch, new Set()); const h = this.held.get(ch);
+      if (hi === 0x90 && msg[2] > 0) h.add(msg[1]); else if (hi === 0x80 || hi === 0x90) h.delete(msg[1]);
+    }
+    allNotesOff(time) {
+      if (!this.ctx) return; const t = time || this.ctx.currentTime;
+      for (const [ch, set] of this.held) { for (const n of set) this.send([0x80 | ch, n, 0], t); set.clear(); }
+      for (let ch = 0; ch < 16; ch++) { this.send([0xb0 | ch, 123, 0], t); this.send([0xb0 | ch, 64, 0], t); }
+    }
+
+    // ---- style playback ----
+    loadStyle(style, channels) {
+      this.stop(); this.style = style; this.channels = channels; this.tempo = style.tempo; this.lastVar = 'Var1';
+      this.programCache = new Map();
+    }
+    element(id) { return this.style && this.style.elements.find(e => e.id === id && e.length > 0); }
+    secPerTick(div) { return 60 / this.tempo / div; }
+    audible(t) { return this.solos.size ? this.solos.has(t) : !this.mutes.has(t); }
+    buildEvents(el) { // flatten clips into [{tick, track, e}] relative to element start
+      const out = [];
+      for (const tr of el.tracks) { if (tr.name === 'Chords') continue; const scale = el.division / tr.division;
+        for (const e of tr.info.music) { const tk = Math.round((e.t - tr.info.setupEnd) * scale); if (tk >= 0 && e.kind === 'ch') out.push({ tk, tr: tr.name, e }); } }
+      out.sort((a, b) => a.tk - b.tk || (((a.e.status & 0xf0) === 0x80 || a.e.data[1] === 0) ? -1 : 1)); return out;
+    }
+    async start(id) {
+      if (!this.style) return; await this.ctx.resume();
+      const el = this.element(id) || this.element(this.lastVar) || this.style.elements.find(e => e.length);
+      if (!el) return; if (this.playing) { this.queue(el.id); return; }
+      this.pending = null;
+      this.playing = true; this.begin(el, this.ctx.currentTime + 0.08);
+      this.timer = setInterval(() => this.pump(), TICK_MS); this.emit();
+    }
+    begin(el, time) {
+      this.cur = el; this.events = this.buildEvents(el); this.idx = 0; this.t0 = time; this.tick0 = 0;
+      if (isVar(el.id)) this.lastVar = el.id;
+      for (const tr of el.tracks) { if (tr.name === 'Chords') continue; const ch = (this.channels[tr.name] || 1) - 1; this.setupChannel(ch, tr.sound, tr.info.setup, time); }
+      this.barTicks = el.division * 4 * el.ts.num / (2 ** el.ts.den); this.emit();
+    }
+    tickToTime(tk) { return this.t0 + (tk - this.tick0) * this.secPerTick(this.cur.division); }
+    setTempo(bpm) { // re-anchor so position is continuous
+      if (this.playing && this.cur) { const now = this.ctx.currentTime; const tk = this.tick0 + (now - this.t0) / this.secPerTick(this.cur.division); this.tempo = bpm; this.t0 = now; this.tick0 = tk; }
+      else this.tempo = bpm;
+    }
+    curTick() { return Math.max(0, this.tick0 + (this.ctx.currentTime - this.t0) / this.secPerTick(this.cur.division)); }
+    queue(id) { // Korg-like: Var during Intro/Fill/Break only sets the target; otherwise switch at next bar
+      const el = this.element(id); if (!el || !this.playing) return;
+      if (isVar(id) && isOneShot(this.cur.id) && !/^End/.test(this.cur.id)) { this.lastVar = id; this.emit(); return; }
+      const tk = this.curTick() + 1; this.pending = el; this.pendingTk = Math.min(this.cur.length, Math.ceil(tk / this.barTicks) * this.barTicks);
+      if (isVar(id)) this.lastVar = id; this.emit();
+    }
+    pump() {
+      if (!this.playing) return; const horizon = this.ctx.currentTime + LOOK;
+      for (let guard = 0; guard < 100000; guard++) {
+        const el = this.cur; const limit = this.pending ? this.pendingTk : el.length;
+        if (this.idx < this.events.length && this.events[this.idx].tk < limit) {
+          const ev = this.events[this.idx]; const t = this.tickToTime(ev.tk); if (t > horizon) return;
+          this.idx++; if (!this.audible(ev.tr)) continue;
+          const ch = (this.channels[ev.tr] || 1) - 1; const tp = (ev.tr === 'Drum' || ev.tr === 'Perc') ? 0 : this.transpose;
+          const msg = this.noteMsg(ev.e, ch, tp); if (msg) { this.send(msg, t); this.track(ch, msg); }
+          continue;
+        }
+        const tB = this.tickToTime(limit); if (tB > horizon) return;
+        this.allNotesOff(tB);
+        if (this.pending) { const p = this.pending; this.pending = null; this.begin(p, tB); continue; }
+        let next = null;
+        if (isVar(el.id)) next = el;
+        else if (/^End/.test(el.id)) { this.playing = false; clearInterval(this.timer); this.emit(); return; }
+        else next = this.element(this.lastVar) || this.style.elements.find(x => isVar(x.id) && x.length) || null;
+        if (!next || !next.length) { this.playing = false; clearInterval(this.timer); this.emit(); return; }
+        this.begin(next, tB);
+      }
+    }
+    stop() {
+      clearInterval(this.timer); this.timer = null; const was = this.playing; this.playing = false; this.pending = null;
+      if (this.ctx) this.allNotesOff(); if (was) this.emit();
+    }
+    position() {
+      if (!this.playing || !this.cur) return null;
+      const tk = this.curTick();
+      return { id: this.cur.id, bar: Math.floor(tk / this.barTicks) + 1, bars: Math.round(this.cur.length / this.barTicks), beat: Math.floor((tk % this.barTicks) / (this.cur.division * 4 / (2 ** this.cur.ts.den))) + 1, pending: this.pending && this.pending.id };
+    }
+    emit() { if (this.onState) this.onState(); }
+
+    // ---- one-shot clip (pads) ----
+    async playClip(smf, sound, ch) {
+      await this.ctx.resume(); const t0 = this.ctx.currentTime + 0.05; const div = smf.division; const sp = 60 / this.tempo / div;
+      const setup = smf.tracks[0] || []; const setupEnd = setup.length ? setup[setup.length - 1].t : 0;
+      this.setupChannel(ch, sound, setup, t0);
+      const evs = []; for (let i = 1; i < smf.tracks.length; i++) for (const e of smf.tracks[i]) if (e.kind === 'ch') evs.push(e);
+      evs.sort((a, b) => a.t - b.t);
+      for (const e of evs) { const tk = e.t - setupEnd; if (tk < 0) continue; const m = this.noteMsg(e, ch, 0); if (m) { this.send(m, t0 + tk * sp); this.track(ch, m); } }
+    }
+
+    // ---- live keyboard (keyboard sets) ----
+    async setKeyboardSet(ks) {
+      await this.ctx.resume(); this.ks = ks; const t = this.ctx.currentTime;
+      ks.tracks.forEach((tr, i) => { const ch = 10 + i; this.setupChannel(ch, tr.sound, tr.sound ? [{ kind: 'ch', status: 0xb0, data: [7, tr.sound.vol ?? 100] }, ...(tr.sound.pan != null ? [{ kind: 'ch', status: 0xb0, data: [10, tr.sound.pan] }] : [])] : [], t);
+        if (this.out === 'midi' && tr.sound) { if (tr.sound.msb != null) this.send([0xb0 | ch, 0, tr.sound.msb], t); if (tr.sound.lsb != null) this.send([0xb0 | ch, 32, tr.sound.lsb], t); if (tr.sound.pc != null) this.send([0xc0 | ch, tr.sound.pc], t); } });
+    }
+    kbNote(note, vel) {
+      if (!this.ks || !this.ctx) return; const t = this.ctx.currentTime; const split = this.ks.splitPoint ?? 60;
+      this.ks.tracks.forEach((tr, i) => {
+        if (tr.mute) return; const lower = /lower/i.test(tr.name); if (lower !== (note < split)) return;
+        const ch = 10 + i; const msg = vel > 0 ? [0x90 | ch, note, vel] : [0x80 | ch, note, 0]; this.send(msg, t); this.track(ch, msg);
+      });
+    }
+  }
+  root.PAPlayer = Player;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// KORF container (.PCG .PCM .MTP .KMP …): chunk list + directory of named resources + PCM samples.
+(function (root) {
+  'use strict';
+  const td = new TextDecoder('utf-8');
+  const u16 = (b, p) => (b[p] << 8) | b[p + 1];
+  const u32 = (b, p) => ((b[p] << 24) >>> 0) + (b[p + 1] << 16) + (b[p + 2] << 8) + b[p + 3];
+  const hex = (b, p, n) => Array.from(b.subarray(p, p + n), x => x.toString(16).padStart(2, '0')).join('');
+  function isKorf(b) { return b.length > 32 && b[0] === 1 && b[1] === 0 && td.decode(b.subarray(23, 27)) === 'KORF'; }
+  function chunks(b) { const out = []; let p = 8; while (p + 8 <= b.length) { const id = hex(b, p, 4), size = u32(b, p + 4); out.push({ id, off: p + 8, size }); if (size > b.length - p) break; p += 8 + size; } return out; }
+  const TYPE = { 3: 'Pad', 4: 'Sound', 5: 'Multisample', 6: 'Sample', 0x19: 'Pad preset' };
+  function directory(b, ch) {
+    const out = []; let p = ch.off; const end = ch.off + ch.size;
+    while (p + 4 <= end) {
+      const len = u16(b, p); if (!len) break; const nf = u16(b, p + 2); let q = p + 4; const e = { fields: {} };
+      for (let i = 0; i < nf && q + 4 <= p + 2 + len; i++) { const id = u16(b, q), l = u16(b, q + 2); e.fields[id] = b.subarray(q + 4, q + 4 + l); q += 4 + l; }
+      const f = e.fields;
+      e.name = f[2] ? td.decode(f[2]).replace(/\0.*$/s, '').trim() : '';
+      if (f[0]) { e.typeCode = f[0][0]; e.type = TYPE[f[0][0]] || ('0x' + f[0][0].toString(16)); e.sub = f[0][1]; e.slot = f[0][2]; }
+      if (f[1]) { e.ver = f[1][0]; e.rev = f[1][1]; }
+      if (f[4]) e.hash = hex(f[4], 0, f[4].length);
+      if (f[5] && f[5].length >= 6) { const d = f[5]; e.date = `${d[0] * 100 + d[1]}-${String(d[2]).padStart(2, '0')}-${String(d[3]).padStart(2, '0')} ${String(d[4]).padStart(2, '0')}:${String(d[5]).padStart(2, '0')}`; }
+      if (f[6]) { e.history = td.decode(f[6]).replace(/\0.*$/s, ''); e.createdWith = e.history.split('//').map(s => s.trim()).filter(Boolean).pop() || ''; }
+      out.push(e); p += 2 + len;
+    }
+    return out;
+  }
+  function parseKorf(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    if (!isKorf(b)) throw new Error('Не е KORF файл');
+    const ch = chunks(b); const dirCh = ch.find(c => c.id === '05010018');
+    const entries = dirCh ? directory(b, dirCh) : [];
+    const samples = [];
+    for (const c of ch.filter(c => c.id === '12020010')) {
+      const o = c.off; if (c.size < 82) continue;
+      const s = { hash: hex(b, o + 8, 8), channels: b[o + 16], fmt: b[o + 17], rate: u16(b, o + 20), frames: u32(b, o + 22),
+        loopStart: u32(b, o + 58), loopEnd: u32(b, o + 62), loopFlag: b[o + 74], dataOff: o + 82, dataLen: u32(b, o + 78) };
+      s.compressed = (s.fmt & 0x80) !== 0; s.bits = s.compressed ? 8 : 16;
+      if (s.dataOff + s.dataLen > b.length) s.dataLen = Math.max(0, b.length - s.dataOff);
+      s.duration = s.rate ? s.frames / s.rate : 0;
+      const e = entries.find(x => x.hash === s.hash); if (e) { s.name = e.name; s.slot = e.slot; s.entry = e; }
+      samples.push(s);
+    }
+    return { entries, samples, chunks: ch };
+  }
+  // Decode a sample to Float32Array per channel. 16-bit: exact LE PCM. Compressed: 8-bit deltas, integrated with a DC blocker (experimental).
+  function decodeSample(bytes, s) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); const C = Math.max(1, s.channels || 1); const out = [];
+    for (let c = 0; c < C; c++) out.push(new Float32Array(s.frames));
+    if (!s.compressed) {
+      const dv = new DataView(b.buffer, b.byteOffset + s.dataOff, s.dataLen); const n = Math.min(s.frames, Math.floor(s.dataLen / (2 * C)));
+      for (let i = 0; i < n; i++) for (let c = 0; c < C; c++) out[c][i] = dv.getInt16((i * C + c) * 2, true) / 32768;
+    } else {
+      const n = Math.min(s.frames, Math.floor(s.dataLen / C)); const R = 1 - 30 / (s.rate || 44100); let peak = 1e-9;
+      for (let c = 0; c < C; c++) { let acc = 0, prevAcc = 0, y = 0; const o = out[c];
+        for (let i = 0; i < n; i++) { let d = b[s.dataOff + i * C + c]; if (d > 127) d -= 256; acc += d; y = acc - prevAcc + R * y; prevAcc = acc; o[i] = y; const a = Math.abs(y); if (a > peak) peak = a; } }
+      const g = 0.9 / peak; for (const o of out) for (let i = 0; i < o.length; i++) o[i] *= g;
+    }
+    return out;
+  }
+  function wavBytes(chs, rate, loop) {
+    const C = chs.length, n = chs[0].length; const dataLen = n * C * 2; const smpl = loop && loop.end > loop.start ? 60 + 8 : 0;
+    const buf = new ArrayBuffer(44 + dataLen + smpl); const v = new DataView(buf); let p = 0;
+    const str = (s) => { for (const ch of s) v.setUint8(p++, ch.charCodeAt(0)); }; const w32 = (x) => { v.setUint32(p, x, true); p += 4; }; const w16 = (x) => { v.setUint16(p, x, true); p += 2; };
+    str('RIFF'); w32(36 + dataLen + smpl); str('WAVE'); str('fmt '); w32(16); w16(1); w16(C); w32(rate); w32(rate * C * 2); w16(C * 2); w16(16); str('data'); w32(dataLen);
+    for (let i = 0; i < n; i++) for (let c = 0; c < C; c++) { const x = Math.max(-1, Math.min(1, chs[c][i])); v.setInt16(p, x < 0 ? x * 32768 : x * 32767, true); p += 2; }
+    if (smpl) { str('smpl'); w32(60); w32(0); w32(0); w32(Math.round(1e9 / rate)); w32(60); w32(0); w32(0); w32(0); w32(1); w32(0); w32(0); w32(0); w32(loop.start); w32(Math.max(loop.start, loop.end - 1)); w32(0); w32(0); }
+    return new Uint8Array(buf);
+  }
+  const api = { isKorf, parseKorf, decodeSample, wavBytes };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PAKorf = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(() => {
+  const C = window.PACore;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const state = { files: [], root: '', styles: [], ksets: [], padPresets: [], userSounds: [], styleCache: new Map(), tab: 'styles', sel: null, collapsed: new Set() };
+
+  function status(t, err) { const s = $('#status'); s.textContent = t; s.className = err ? 'err' : ''; }
+  function toastHtml(h) { const el = $('#toast'); el.innerHTML = h; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 7000); }
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 3500); }
+  async function download(name, data, type) {
+    if (window.native) { const p = await window.native.saveFile(name, data); if (p) { toastHtml('Записано: ' + esc(p) + ' <button class="btn" id="showF" style="margin-left:8px">Покажи в папката</button>'); const b = document.getElementById('showF'); if (b) b.onclick = () => window.native.showInFolder(p); status('Записано: ' + p); } return; }
+    if (window.showSaveFilePicker) { // Chrome/Edge: real "Save as" dialog, Unicode names
+      try {
+        const ext = name.slice(name.lastIndexOf('.'));
+        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: ext === '.zip' ? 'ZIP архив' : 'MIDI файл', accept: { [type || 'application/octet-stream']: [ext] } }] });
+        const w = await h.createWritable(); await w.write(data); await w.close(); toast('Записано: ' + h.name); return;
+      } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(new Blob([data], { type: type || 'application/octet-stream' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  const safe = (s) => s.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'style';
+
+  // ---------- loading ----------
+  function relParts(f) { const p = (f.webkitRelativePath || f._rel || f.name).split('/'); return p; }
+  async function loadFiles(files, keepView) {
+    files = [...files]; if (!files.length) return;
+    // find set root: folder that contains STYLE / KEYBOARDSET
+    const KNOWN = ['STYLE', 'KEYBOARDSET', 'PAD', 'SOUND', 'MATRIXPRESET', 'SONGBOOK', 'PCM'];
+    let depth = 0; const sample = files.map(relParts);
+    for (let d = 0; d < 4; d++) { if (sample.some(p => p.length > d + 1 && KNOWN.includes(p[d].toUpperCase()))) { depth = d; break; } }
+    state.root = sample[0].slice(0, depth).join('/') || sample[0][0];
+    const idx = files.map(f => { const p = relParts(f).slice(depth); return { f, top: (p[0] || '').toUpperCase(), bank: p.length > 2 ? p[1] : '', name: p[p.length - 1], path: p.join('/') }; });
+    state.files = idx; state.styleCache.clear(); state.sel = null; if (!keepView && state.edits && state.edits.size) state.edits.clear();
+    const order = async (bankFiles, ext) => { // respect metadir.json order
+      const meta = idx.find(x => x.top === bankFiles[0].top && x.bank === bankFiles[0].bank && x.name.toLowerCase() === 'metadir.json');
+      let ord = []; if (meta) { try { ord = JSON.parse(await meta.f.text()).files.map(x => x.file); } catch (e) { } }
+      const pos = (n) => { const i = ord.indexOf(n); return i < 0 ? 1e6 : i; };
+      return bankFiles.filter(x => x.name.toLowerCase().endsWith(ext)).sort((a, b) => pos(a.name) - pos(b.name) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    };
+    const group = async (top, ext) => {
+      const byBank = new Map(); for (const x of idx.filter(x => x.top === top && x.name.toLowerCase().endsWith(ext))) { if (!byBank.has(x.bank)) byBank.set(x.bank, []); byBank.get(x.bank).push(x); }
+      const banks = []; for (const [bank, list] of [...byBank].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))) banks.push({ bank: bank || '(корен)', items: await order(idx.filter(x => x.top === top && x.bank === bank), ext) });
+      return banks;
+    };
+    state.styles = await group('STYLE', '.stg');
+    state.ksets = await group('KEYBOARDSET', '.ksc');
+    state.padPresets = []; state.userSounds = [];
+    for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...C.korfNames(new Uint8Array(await x.f.arrayBuffer())).map(n => ({ n, file: x.name }))); } catch (e) { } }
+    for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), names: C.korfNames(new Uint8Array(await x.f.arrayBuffer())) }); } catch (e) { } }
+    const ns = state.styles.reduce((s, b) => s + b.items.length, 0), nk = state.ksets.reduce((s, b) => s + b.items.length, 0);
+    $('#setname').textContent = state.root + `  ·  ${ns} стила · ${nk} Keyboard Sets`;
+    if (!ns && !nk) status('В избраната папка няма PA5X стилове (.stg) или Keyboard Sets (.ksc). Избери главната папка на сета.', true); else status('Сетът е зареден');
+    renderList(); if (!keepView) showWelcome();
+  }
+  window.PA5XApp = { loadFiles, state };
+  function nativeFiles(res) {
+    return res.files.map(rel => ({ name: rel.split('/').pop(), _rel: rel, arrayBuffer: () => window.native.readFile(rel), text: async () => new TextDecoder().decode(await window.native.readFile(rel)) }));
+  }
+  async function openNative(p, keepView) { status('Чета сета…'); const res = p ? await window.native.openPath(p) : await window.native.openFolder(); if (res) { state.rootPath = res.path; await loadFiles(nativeFiles(res), keepView); } else status('Готов'); }
+  $('#openBtn').onclick = () => window.native ? openNative() : $('#dirInput').click();
+  if (window.native) window.native.lastDir().then(d => { if (d) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Последен сет'; b.title = d; b.onclick = () => openNative(d); $('#openBtn').before(b); } });
+  $('#dirInput').onchange = (e) => loadFiles(e.target.files);
+  // drag & drop folder
+  async function entriesToFiles(entry, path, out) {
+    if (entry.isFile) { const f = await new Promise((res, rej) => entry.file(res, rej)); f._rel = path + entry.name; out.push(f); }
+    else if (entry.isDirectory) { const r = entry.createReader(); let batch; do { batch = await new Promise((res, rej) => r.readEntries(res, rej)); for (const e of batch) await entriesToFiles(e, path + entry.name + '/', out); } while (batch.length); }
+  }
+  document.addEventListener('dragover', e => { e.preventDefault(); const d = $('#drop'); d && d.classList.add('hover'); });
+  document.addEventListener('dragleave', () => { const d = $('#drop'); d && d.classList.remove('hover'); });
+  document.addEventListener('drop', async e => {
+    e.preventDefault();
+    if (window.native && e.dataTransfer.files.length) { const p = window.native.pathForFile(e.dataTransfer.files[0]); if (p) return openNative(p); }
+    status('Чета файловете…'); const out = [];
+    for (const it of e.dataTransfer.items) { const en = it.webkitGetAsEntry && it.webkitGetAsEntry(); if (en) await entriesToFiles(en, '', out); }
+    loadFiles(out);
+  });
+
+  // ---------- list ----------
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); state.tab = b.dataset.tab; renderList(); if (state.tab === 'pads') showPads(); if (state.tab === 'sounds') showSounds(); });
+  $('#q').oninput = renderList;
+  function renderList() {
+    const q = $('#q').value.trim().toLowerCase(); const L = $('#list'); let h = '';
+    const banks = state.tab === 'styles' ? state.styles : state.tab === 'ksets' ? state.ksets : [];
+    for (const [bi, b] of banks.entries()) {
+      const items = b.items.filter(x => !q || x.name.toLowerCase().includes(q)); if (q && !items.length) continue;
+      const key = state.tab + bi; const col = state.collapsed.has(key) && !q;
+      h += `<div class="bank" data-key="${key}"><span>${col ? '▸' : '▾'} ${esc(b.bank)}</span><span class="n">${items.length}</span></div>`;
+      if (!col) for (const x of items) h += `<div class="item${state.sel === x ? ' sel' : ''}" data-b="${bi}" data-i="${b.items.indexOf(x)}" title="${esc(x.path)}">${state.edits && state.edits.has(x) ? '<span class="mod">●</span> ' : ''}${esc(x.name.replace(/\.(stg|ksc)$/i, ''))}</div>`;
+    }
+    if (state.tab === 'pads') h = state.padPresets.length ? state.padPresets.map(p => `<div class="item">${esc(p.n)}</div>`).join('') : '<div class="item hint">Няма Pad пресети</div>';
+    if (state.tab === 'sounds') h = state.userSounds.map(b => `<div class="bank"><span>${esc(b.bank)}</span><span class="n">${b.names.length}</span></div>` + b.names.map(n => `<div class="item">${esc(n)}</div>`).join('')).join('') || '<div class="item hint">Няма User звуци</div>';
+    if (!state.files.length) h = '';
+    L.innerHTML = h;
+    L.querySelectorAll('.bank[data-key]').forEach(el => el.onclick = () => { const k = el.dataset.key; state.collapsed.has(k) ? state.collapsed.delete(k) : state.collapsed.add(k); renderList(); });
+    L.querySelectorAll('.item[data-b]').forEach(el => el.onclick = () => { const x = banks[+el.dataset.b].items[+el.dataset.i]; state.sel = x; renderList(); state.tab === 'styles' ? showStyle(x, +el.dataset.b) : showKset(x); });
+  }
+
+  function showWelcome() {
+    const ns = state.styles.reduce((s, b) => s + b.items.length, 0);
+    $('#detail').innerHTML = `<h2>${esc(state.root)}</h2><div class="meta"><span>Стилове: <b>${ns}</b> в <b>${state.styles.length}</b> банки</span><span>Keyboard Sets: <b>${state.ksets.reduce((s, b) => s + b.items.length, 0)}</b></span><span>Pad пресети: <b>${state.padPresets.length}</b></span><span>User звуци: <b>${state.userSounds.reduce((s, b) => s + b.names.length, 0)}</b></span></div>
+      <div class="card"><h3>Какво може</h3><p>Избери стил отляво, за да видиш елементите, пистите, звуците, Keyboard Sets и Pads и да го експортираш като MIDI.</p>
+      <div class="row"><button class="btn" id="bankAll" ${ns ? '' : 'disabled'}>Експорт на всички стилове в MIDI (.zip)…</button></div></div>`;
+    const b = $('#bankAll'); if (b) b.onclick = () => exportMany(state.styles.flatMap(x => x.items.map(i => ({ ...i, bankName: x.bank }))), safe(state.root) + '_MIDI.zip');
+  }
+
+
+  // ===================== self-update =====================
+  if (window.native && window.native.appVersion) {
+    window.native.appVersion().then(v => { $('#ver').textContent = 'PA5X Set Tool v' + v; });
+    const box = (html) => { let b = $('#updbar'); if (!b) { b = document.createElement('div'); b.id = 'updbar'; b.className = 'updbar'; document.body.appendChild(b); } b.innerHTML = html; return b; };
+    window.native.onUpdate((ev, d) => {
+      if (ev === 'update-available') {
+        const b = box(`<h3>Има нова версия ${esc(d.version)}</h3><p>${esc(d.notes || '')}</p>${d.fullDownload ? '<p>Тази версия изисква ново пълно изтегляне.</p><div class="row"><button class="btn primary" id="updPage">Отвори страницата за изтегляне</button><button class="btn" id="updLater">По-късно</button></div>' : '<div class="row"><button class="btn primary" id="updGo">Обнови сега</button><button class="btn" id="updLater">По-късно</button></div>'}`);
+        b.querySelector('#updLater').onclick = () => b.remove();
+        const pg = b.querySelector('#updPage'); if (pg) pg.onclick = () => window.native.openUrl(d.page || 'https://github.com/Hogzzmeade/pa5x-set-tool');
+        const go = b.querySelector('#updGo'); if (go) go.onclick = async () => {
+          if (state.edits && state.edits.size && !confirm('Имаш незаписани промени в стилове. Програмата ще се рестартира и те ще се загубят. Продължаваш ли?')) return;
+          go.disabled = true; go.textContent = 'Изтеглям…'; const r = await window.native.installUpdate();
+          if (!r.ok) { go.disabled = false; go.textContent = 'Опитай пак'; toast('Обновлението не успя: ' + r.error); } else go.textContent = 'Рестартирам…';
+        };
+      } else if (ev === 'update-progress') { const go = $('#updGo'); if (go) go.textContent = `Изтеглям… ${d.done}/${d.total}`; }
+      else if (ev === 'update-none') toast('Имаш най-новата версия (' + d.version + ')');
+      else if (ev === 'update-error') toast('Не може да се провери за обновления: ' + d.message);
+    });
+    $('#chkUpd').onclick = (e) => { e.preventDefault(); toast('Проверявам…'); window.native.checkUpdate(); };
+  } else { const c = document.getElementById('chkUpd'); if (c) c.style.display = 'none'; }
+
+  // ===================== styles: load / edits =====================
+  state.edits = new Map(); // fileItem -> { tree, history: [Uint8Array], name }
+  async function getStyle(x) {
+    const ed = state.edits.get(x);
+    if (ed) { if (!ed.parsed) ed.parsed = C.parseStyle(C.serializeTree(ed.tree), x.name); return ed.parsed; }
+    if (state.styleCache.has(x)) return state.styleCache.get(x);
+    const s = C.parseStyle(new Uint8Array(await x.f.arrayBuffer()), x.name); state.styleCache.set(x, s); return s;
+  }
+  async function getTree(x) { const ed = state.edits.get(x); if (ed) return ed.tree; return C.parseTree(new Uint8Array(await x.f.arrayBuffer())); }
+  const allStyleItems = () => state.styles.flatMap((b, bi) => b.items.map((x, i) => ({ x, bi, i, bank: b.bank })));
+
+  // ===================== player =====================
+  const P = new window.PAPlayer(); window.PA5XApp && (window.PA5XApp.P = P); let playerReady = false; let curStyleItem = null; let curStyleBank = 0;
+  async function ensurePlayer() {
+    if (playerReady) return true;
+    if (!window.native) { toast('Прослушването работи в програмата за Windows'); return false; }
+    status('Зареждам звуците…');
+    try { await P.init(() => window.native.readAppFile('gm.sf3')); playerReady = true; status('Звуците са заредени'); P.onState = renderTransport; return true; }
+    catch (e) { status('Звукът не може да се стартира: ' + e.message, true); return false; }
+  }
+  const ROOTS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const rootIdx = (r) => { if (!r) return 0; const m = /^([A-G])(#|b)?/.exec(r); if (!m) return 0; let i = ROOTS.indexOf(m[1]); if (m[2] === '#') i++; if (m[2] === 'b') i--; return (i + 12) % 12; };
+  let origRoot = 0, origChordLabel = '';
+  const ELEMENT_BTNS = [['Intro1', 'INTRO 1'], ['Intro2', 'INTRO 2'], ['CountIn', 'INTRO 3'], ['Var1', 'VAR 1'], ['Var2', 'VAR 2'], ['Var3', 'VAR 3'], ['Var4', 'VAR 4'], ['Fill1', 'FILL 1'], ['Fill2', 'FILL 2'], ['Fill3', 'FILL 3'], ['Fill4', 'FILL 4'], ['Break', 'BREAK'], ['End1', 'END 1'], ['End2', 'END 2']];
+  async function loadIntoPlayer(x, s) {
+    curStyleItem = x; P.loadStyle(s, opts.channels);
+    const oc = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord; return null; })();
+    origRoot = oc ? rootIdx(oc.root) : 0; origChordLabel = oc ? oc.root + (/min/i.test(oc.chord) ? 'm' : '') : '';
+    P.transpose = 0; renderTransport();
+  }
+  function renderTransport() {
+    const bar = $('#transport'); if (!bar) return;
+    const s = P.style; if (!s) { bar.innerHTML = '<span class="hint">Избери стил, за да го прослушаш. Звук: вграден синтезатор или MIDI към PA5X.</span>'; return; }
+    const pos = P.playing ? P.position() : null; const cur = pos && pos.id;
+    const keyNow = ROOTS[(origRoot + P.transpose + 120) % 12];
+    if (!bar.dataset.built || bar.dataset.style !== s.fileName) {
+      bar.dataset.built = '1'; bar.dataset.style = s.fileName;
+      bar.innerHTML = `<div class="tp-name" title="${esc(s.name)}">${esc(s.name)}</div>
+        <button class="pbtn start" id="tpStart" title="Start/Stop (интервал)">▶</button>
+        <div class="els">${ELEMENT_BTNS.map(([id, l]) => { const e = s.elements.find(z => z.id === id && z.length); return `<button class="ebtn ${/^Var/.test(id) ? 'v' : /^Fill|^Break/.test(id) ? 'f' : 'i'}" data-el="${id}" ${e ? '' : 'disabled'}>${l}</button>`; }).join('')}</div>
+        <div class="tp-ctl"><label>Темпо<input type="number" id="tpTempo" min="30" max="300" step="1"></label>
+          <label>Тоналност<select id="tpKey">${ROOTS.map((r, i) => `<option value="${i}">${r}${/m$/.test(origChordLabel) ? 'm' : ''}</option>`).join('')}</select></label>
+          <label>Сила<input type="range" id="tpVol" min="0" max="1.5" step="0.05" value="${P.volume}"></label>
+          <label>Звук<select id="tpOut"><option value="synth">Вграден синтезатор</option></select></label></div>
+        <div class="tp-pos" id="tpPos"></div>`;
+      $('#tpStart').onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.stop(); else P.start(P.lastVar || 'Var1'); };
+      bar.querySelectorAll('.ebtn').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const id = b.dataset.el; if (P.playing) P.queue(id); else P.start(id); });
+      $('#tpTempo').onchange = e => { const v = Math.max(30, Math.min(300, +e.target.value || s.tempo)); P.setTempo(v); renderTransport(); };
+      $('#tpTempo').onkeydown = e => { if (e.key === 'Enter') e.target.blur(); };
+      $('#tpKey').onchange = e => { let d = (+e.target.value - origRoot + 12) % 12; if (d > 6) d -= 12; P.transpose = d; };
+      $('#tpVol').oninput = e => P.setVolume(+e.target.value);
+      $('#tpOut').onfocus = fillOutputs; $('#tpOut').onmousedown = fillOutputs;
+      $('#tpOut').onchange = async e => { if (!(await ensurePlayer())) return; P.setOutput(e.target.value); toast(e.target.value === 'synth' ? 'Звук: вграден синтезатор' : 'Звук: MIDI към ' + e.target.selectedOptions[0].textContent + '. Настрой MIDI IN каналите на PA5X да съвпадат с каналите на пистите.'); };
+    }
+    if (document.activeElement !== $('#tpTempo')) $('#tpTempo').value = Math.round(P.tempo); if (document.activeElement !== $('#tpKey')) $('#tpKey').value = (origRoot + P.transpose + 12) % 12;
+    $('#tpStart').textContent = P.playing ? '■' : '▶'; $('#tpStart').classList.toggle('on', P.playing);
+    bar.querySelectorAll('.ebtn').forEach(b => { b.classList.toggle('cur', b.dataset.el === cur); b.classList.toggle('next', !!pos && (b.dataset.el === pos.pending || (!pos.pending && b.dataset.el === P.lastVar && b.dataset.el !== cur))); });
+    $('#tpPos').textContent = pos ? `${C.ELEMENT_LABEL[pos.id] || pos.id} · такт ${pos.bar}/${pos.bars} · удар ${pos.beat}` : `${keyNow}${/m$/.test(origChordLabel) ? 'm' : ''} · ${Math.round(P.tempo)} BPM`;
+  }
+  async function fillOutputs() {
+    const sel = $('#tpOut'); if (sel.dataset.filled) return; sel.dataset.filled = '1';
+    const outs = await P.midiOutputs(); for (const o of outs) { const op = document.createElement('option'); op.value = o.id; op.textContent = 'MIDI: ' + o.name; sel.appendChild(op); }
+    if (!outs.length) { const op = document.createElement('option'); op.disabled = true; op.textContent = '(няма MIDI устройства)'; sel.appendChild(op); }
+  }
+  setInterval(() => { if (P.playing) renderTransport(); }, 150);
+  document.addEventListener('keydown', async e => {
+    if (e.target.matches('input,select,textarea')) return;
+    if (e.code === 'Space' && P.style) { e.preventDefault(); if (!(await ensurePlayer())) return; P.playing ? P.stop() : P.start(P.lastVar || 'Var1'); }
+  });
+
+  // ===================== style view =====================
+  const opts = { includeChords: false, keepKorgSysex: false, setupPerElement: true, channels: { ...C.DEFAULT_CHANNELS } };
+  async function showStyle(x, bi) {
+    let s; try { s = await getStyle(x); } catch (e) { $('#detail').innerHTML = `<h2>${esc(x.name)}</h2><p class="err">Файлът не може да се прочете: ${esc(e.message)}</p>`; return; }
+    curStyleBank = bi; if (!P.playing || curStyleItem !== x) { P.stop(); await loadIntoPlayer(x, s); }
+    const ed = state.edits.get(x);
+    const tracks = C.TRACK_ORDER.filter(t => t !== 'Chords' && s.elements.some(e => e.tracks.some(tr => tr.name === t)));
+    const firstSound = (t) => { for (const id of ['Var1', 'Var2', 'Var3', 'Var4']) { const el = s.elements.find(e => e.id === id); const tr = el && el.tracks.find(z => z.name === t); if (tr) return tr.sound; } for (const el of s.elements) { const tr = el.tracks.find(z => z.name === t); if (tr) return tr.sound; } };
+    const ts = [...new Set(s.elements.map(e => e.ts.label))].join(', ');
+    const orig = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord.root + ' ' + t.origChord.chord; return '—'; })();
+    const ms = (t) => `<button class="ms m${P.mutes.has(t) ? ' on' : ''}" data-m="${t}" title="Mute">M</button><button class="ms s${P.solos.has(t) ? ' on' : ''}" data-s="${t}" title="Solo">S</button>`;
+    let h = `<h2>${esc(s.name)}${ed ? ' <span class="mod">● променен</span>' : ''}</h2>
+      <div class="meta"><span>Темпо: <b>${s.tempo} BPM</b></span><span>Такт: <b>${esc(ts)}</b></span><span>Оригинален акорд: <b>${esc(orig)}</b></span><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
+      ${ed ? `<div class="card warnc"><h3>Незаписани промени (${ed.history.length})</h3><ul class="chg">${ed.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+        <div class="row"><button class="btn primary" id="saveAs">Запиши като нов стил…</button><button class="btn" id="saveOver">Презапиши оригинала (с резервно копие)</button><button class="btn" id="undo">Отмени последното</button><button class="btn" id="discard">Откажи всички</button></div></div>` : ''}
+      <div class="card"><h3>Елементи и писти</h3><div style="overflow:auto"><table class="et"><tr><th></th><th>Елемент</th><th class="c">Тактове</th><th class="c">Такт</th>${tracks.map(t => `<th class="c">${t}<div class="msw">${ms(t)}</div></th>`).join('')}</tr>
+      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}" title="${tr ? 'Звук ' + C.fmtSound(tr.sound) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
+      <tr><td></td><td class="hint">Звук (MSB.LSB.Prog)</td><td></td><td></td>${tracks.map(t => `<td class="c snd">${C.fmtSound(firstSound(t))}</td>`).join('')}</tr>
+      </table></div><p class="hint">Числата са брой ноти. M = заглуши пистата, S = само тази писта. Интервал = Start/Stop.</p></div>
+      <div class="card"><h3>Копиране от друг стил</h3>${copyFormHtml(s)}</div>
+      <div class="card"><h3>Pads на стила (${s.pads.length})</h3>${s.pads.length ? s.pads.map((p, i) => `<button class="btn padb" data-p="${i}">▶ Pad ${i + 1}: ${esc(p.name)}</button>`).join(' ') : '<span class="hint">Няма зададени Pads</span>'}</div>
+      <div class="card"><h3>Keyboard Sets на стила (${s.keyboardSets.length})</h3><div class="grid2">${s.keyboardSets.map((k, i) => ksCard(k, i + 1, i)).join('') || '<span class="hint">Няма</span>'}</div><div id="kbHost"></div></div>
+      <div class="card"><h3>Експорт към MIDI</h3>
+        <div class="row"><button class="btn primary" id="expAll">Целият стил → .mid</button><button class="btn" id="expEach">Всеки елемент отделно → .zip</button><button class="btn" id="expBank">Цялата банка „${esc(x.bank)}“ → .zip</button></div>
+        <div class="elsel" id="elsel">${s.elements.map(e => `<label><input type="checkbox" value="${e.id}" ${e.length ? 'checked' : ''}>${esc(e.label)}</label>`).join('')}</div>
+        <div class="row"><label class="opt"><input type="checkbox" id="oChords" ${opts.includeChords ? 'checked' : ''}> Писта с акордите (Chords)</label><label class="opt"><input type="checkbox" id="oSetup" ${opts.setupPerElement ? 'checked' : ''}> Звук/обем в началото на всеки елемент</label><label class="opt"><input type="checkbox" id="oSysex" ${opts.keepKorgSysex ? 'checked' : ''}> Запази KORG SysEx</label></div>
+        <div class="chmap">${C.TRACK_ORDER.map(t => `<label>${t}<select data-t="${t}">${Array.from({ length: 16 }, (_, i) => `<option ${opts.channels[t] === i + 1 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>`).join('')}</div>
+        <p class="hint">MIDI каналите важат и за експорта, и за свиренето към PA5X.</p></div>`;
+    $('#detail').innerHTML = h;
+    // playback hooks
+    document.querySelectorAll('.playel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.queue(b.dataset.el); else P.start(b.dataset.el); });
+    document.querySelectorAll('.ms').forEach(b => b.onclick = () => { const t = b.dataset.m || b.dataset.s; const set = b.dataset.m ? P.mutes : P.solos; set.has(t) ? set.delete(t) : set.add(t); b.classList.toggle('on', set.has(t)); });
+    document.querySelectorAll('.padb').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const p = s.pads[+b.dataset.p]; if (p.smf) P.playClip(p.smf, p.sound, [14, 15, 13, 12][+b.dataset.p % 4]); });
+    document.querySelectorAll('.kssel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const k = s.keyboardSets[+b.dataset.k]; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); document.querySelectorAll('.kssel').forEach(z => z.classList.toggle('on', z === b)); });
+    // export hooks
+    $('#oChords').onchange = e => opts.includeChords = e.target.checked; $('#oSetup').onchange = e => opts.setupPerElement = e.target.checked; $('#oSysex').onchange = e => opts.keepKorgSysex = e.target.checked;
+    document.querySelectorAll('.chmap select').forEach(sel => sel.onchange = () => opts.channels[sel.dataset.t] = +sel.value);
+    const chosen = () => [...document.querySelectorAll('#elsel input:checked')].map(i => i.value);
+    $('#expAll').onclick = () => { const els = chosen(); if (!els.length) return toast('Избери поне един елемент'); download(safe(s.name) + '.mid', C.exportStyleMidi(s, { ...opts, elements: els }), 'audio/midi'); };
+    $('#expEach').onclick = () => { const files = s.elements.filter(e => chosen().includes(e.id) && e.length).map((e, i) => ({ name: `${String(i + 1).padStart(2, '0')} ${safe(e.label)}.mid`, data: C.exportStyleMidi(s, { ...opts, elements: [e.id] }) })); download(safe(s.name) + '_elements.zip', C.makeZip(files), 'application/zip'); };
+    $('#expBank').onclick = () => exportMany(state.styles[bi].items.map(i => ({ ...i, bankName: '' })), safe(x.bank) + '_MIDI.zip');
+    bindCopyForm(x, bi, s);
+    if (ed) {
+      $('#undo').onclick = () => { ed.tree = C.parseTree(ed.history.pop()); ed.log.pop(); ed.parsed = null; if (!ed.history.length) state.edits.delete(x); refreshStyle(x, bi); };
+      $('#discard').onclick = () => { if (!confirm('Да се откажат ли всички незаписани промени в този стил?')) return; state.edits.delete(x); refreshStyle(x, bi); };
+      $('#saveAs').onclick = () => saveStyle(x, bi, false); $('#saveOver').onclick = () => saveStyle(x, bi, true);
+    }
+    renderTransport();
+  }
+  function refreshStyle(x, bi) { const keep = $('#detail').scrollTop; P.stop(); curStyleItem = null; renderList(); showStyle(x, bi).then(() => { $('#detail').scrollTop = keep; }); }
+
+  // ===================== copy form =====================
+  const copySel = { src: null, srcEl: 'Var1', what: '*', dstEl: 'Var1', dstTrack: '' };
+  function copyFormHtml(s) {
+    const items = allStyleItems();
+    const elOpts = (els, sel) => els.map(([id, l]) => `<option value="${id}" ${id === sel ? 'selected' : ''}>${l}</option>`).join('');
+    const known = Object.keys(C.SCENE_INFO).map(id => [id, C.ELEMENT_LABEL[id] || id]);
+    return `<div class="copyf">
+      <label>От стил<select id="cpSrc">${state.styles.map((b, bi) => `<optgroup label="${esc(b.bank)}">${b.items.map((it, i) => `<option value="${bi}:${i}">${esc(it.name.replace(/\.stg$/i, ''))}${state.edits.has(it) ? ' ●' : ''}</option>`).join('')}</optgroup>`).join('')}</select></label>
+      <label>Елемент<select id="cpSrcEl"></select></label>
+      <label>Какво<select id="cpWhat"></select></label>
+      <span class="arrow">→</span>
+      <label>В елемент<select id="cpDstEl">${elOpts(known, copySel.dstEl)}</select></label>
+      <label>В писта<select id="cpDstTr"></select></label>
+      <button class="btn primary" id="cpGo">Копирай</button>
+      <button class="btn" id="cpListen" title="Прослушай избрания елемент от изходния стил">▶ Прослушай източника</button>
+    </div><div id="cpInfo" class="hint"></div>`;
+  }
+  async function bindCopyForm(x, bi, s) {
+    const items = allStyleItems(); const me = items.find(z => z.x === x);
+    if (!copySel.src || !items.find(z => z.x === copySel.src)) copySel.src = x;
+    const srcIt = items.find(z => z.x === copySel.src); $('#cpSrc').value = srcIt.bi + ':' + srcIt.i;
+    const refresh = async () => {
+      const [b, i] = $('#cpSrc').value.split(':').map(Number); const sx = state.styles[b].items[i]; copySel.src = sx;
+      let ss; try { ss = await getStyle(sx); } catch (e) { $('#cpInfo').textContent = 'Изходният стил не може да се прочете'; return; }
+      const els = ss.elements.filter(e => e.length); if (!els.find(e => e.id === copySel.srcEl)) copySel.srcEl = els[0] ? els[0].id : '';
+      $('#cpSrcEl').innerHTML = els.map(e => `<option value="${e.id}" ${e.id === copySel.srcEl ? 'selected' : ''}>${esc(e.label)} (${e.bars} т., ${e.ts.label})</option>`).join('');
+      const el = ss.elements.find(e => e.id === copySel.srcEl);
+      const trs = el ? el.tracks.filter(t => t.name !== 'Chords' && t.info.notes) : [];
+      if (copySel.what !== '*' && !trs.find(t => t.name === copySel.what)) copySel.what = '*';
+      $('#cpWhat').innerHTML = `<option value="*">Целия елемент (всички писти)</option>` + trs.map(t => `<option value="${t.name}" ${t.name === copySel.what ? 'selected' : ''}>Писта ${t.name} (${t.info.notes} ноти)</option>`).join('');
+      const what = copySel.what;
+      if (what === '*') { $('#cpDstTr').innerHTML = '<option value="">—</option>'; $('#cpDstTr').disabled = true; }
+      else { const comp = C.compatibleTracks(what); if (!comp.includes(copySel.dstTrack)) copySel.dstTrack = what; $('#cpDstTr').disabled = false; $('#cpDstTr').innerHTML = comp.map(t => `<option ${t === copySel.dstTrack ? 'selected' : ''}>${t}</option>`).join(''); }
+      const dEl = s.elements.find(e => e.id === copySel.dstEl);
+      $('#cpInfo').textContent = !el ? '' : (what === '*' ? `${el.label} от „${ss.name}“ ще замени ${dEl ? C.ELEMENT_LABEL[copySel.dstEl] + ' (' + dEl.bars + ' т.)' : 'липсващия ' + C.ELEMENT_LABEL[copySel.dstEl] + ' (ще бъде създаден)'}.`
+        : `Пистата ${what} от ${el.label} ще отиде в ${copySel.dstTrack} на ${C.ELEMENT_LABEL[copySel.dstEl]}. Звукът и настройките на пистата се копират заедно с нея.`) + (el && dEl && el.ts.label !== dEl.ts.label ? ` Внимание: тактът е различен (${el.ts.label} → ${dEl.ts.label}).` : '');
+    };
+    $('#cpSrc').onchange = () => { refresh(); }; $('#cpSrcEl').onchange = e => { copySel.srcEl = e.target.value; refresh(); };
+    $('#cpWhat').onchange = e => { copySel.what = e.target.value; refresh(); }; $('#cpDstEl').onchange = e => { copySel.dstEl = e.target.value; refresh(); };
+    $('#cpDstTr').onchange = e => { copySel.dstTrack = e.target.value; refresh(); };
+    $('#cpListen').onclick = async () => { if (!(await ensurePlayer())) return; const ss = await getStyle(copySel.src); P.stop(); await loadIntoPlayer(copySel.src, ss); P.start(copySel.srcEl); toast('Свири източникът: ' + ss.name + '. Избери отново стила отляво, за да се върнеш.'); };
+    $('#cpGo').onclick = async () => {
+      try {
+        const srcTree = await getTree(copySel.src); const srcName = (await getStyle(copySel.src)).name;
+        let ed = state.edits.get(x); const tree = ed ? ed.tree : await getTree(x);
+        const before = C.serializeTree(tree); let res;
+        if (copySel.what === '*') res = C.copyElement(srcTree, copySel.srcEl, tree, copySel.dstEl);
+        else res = C.copyTrack(srcTree, copySel.srcEl, copySel.what, tree, copySel.dstEl, copySel.dstTrack || copySel.what);
+        C.parseStyle(C.serializeTree(tree), x.name); // validate
+        if (!ed) { ed = { tree, history: [], log: [] }; state.edits.set(x, ed); }
+        ed.history.push(before); ed.parsed = null;
+        ed.log.push(copySel.what === '*' ? `${C.ELEMENT_LABEL[copySel.srcEl]} от „${srcName}“ → ${C.ELEMENT_LABEL[copySel.dstEl]}` : `${copySel.what} (${C.ELEMENT_LABEL[copySel.srcEl]}, „${srcName}“) → ${copySel.dstTrack || copySel.what} в ${C.ELEMENT_LABEL[copySel.dstEl]}`);
+        if (res.warnings.length) toast(res.warnings.join(' · ')); else toast('Копирано. Прослушай и запиши, когато си готов.');
+        refreshStyle(x, bi);
+      } catch (e) { toast('Не може: ' + e.message); }
+    };
+    refresh();
+  }
+
+  // ===================== save =====================
+
+  function askText(title, def, hint) {
+    return new Promise(res => {
+      const m = document.createElement('div'); m.className = 'modal';
+      m.innerHTML = `<div class="mbox"><h3>${esc(title)}</h3><input id="askIn" value="${esc(def)}"><p class="hint">${esc(hint || '')}</p><div class="row" style="justify-content:flex-end"><button class="btn" id="askNo">Отказ</button><button class="btn primary" id="askOk">Запиши</button></div></div>`;
+      document.body.appendChild(m); const inp = m.querySelector('#askIn'); inp.focus(); inp.select();
+      const done = (v) => { m.remove(); res(v); };
+      m.querySelector('#askOk').onclick = () => done(inp.value.trim() || null); m.querySelector('#askNo').onclick = () => done(null);
+      inp.onkeydown = e => { if (e.key === 'Enter') done(inp.value.trim() || null); if (e.key === 'Escape') done(null); };
+    });
+  }
+
+  async function saveStyle(x, bi, overwrite) {
+    const ed = state.edits.get(x); if (!ed || !window.native) return;
+    try {
+      let res;
+      if (overwrite) {
+        if (!confirm('Оригиналният файл ще бъде заменен. Резервно копие ще се запише в папка „' + state.root + '_backup“ до сета. Продължаваш ли?')) return;
+        res = await window.native.writeStyle({ rel: x.f._rel, overwrite: true, data: C.serializeTree(ed.tree) });
+      } else {
+        const base = x.name.replace(/\.stg$/i, ''); const name = await askText('Име на новия стил', base + ' 2', 'Ще бъде записан в същата банка: ' + x.bank); if (!name) return;
+        const t2 = C.cloneNode(ed.tree); C.renameStyle(t2, name.trim());
+        res = await window.native.writeStyle({ rel: x.f._rel, newName: safe(name.trim()) + '.stg', data: C.serializeTree(t2) });
+      }
+      if (!res || !res.ok) { if (res && res.error) toast('Грешка: ' + res.error); return; }
+      state.edits.delete(x); state.styleCache.delete(x);
+      toast((overwrite ? 'Стилът е презаписан. Резервно копие: ' + res.backup : 'Записан нов стил: ' + res.path) + (res.metadir ? ' (добавен в списъка на банката)' : ''));
+      const sel = x.f._rel; await openNative(state.rootPath, true);
+      const it = allStyleItems().find(z => z.x.f._rel === (overwrite ? sel : res.rel)); if (it) { state.sel = it.x; renderList(); showStyle(it.x, it.bi); }
+    } catch (e) { toast('Грешка при запис: ' + e.message); }
+  }
+
+  // ===================== keyboard sets =====================
+  function ksCard(k, n, idx) {
+    return `<div class="ks"><div class="t">${n ? n + '. ' : ''}${esc(k.name || '(без име)')}</div>${k.tracks.map(t => `<div class="l"><span>${t.name}${t.mute ? ' <span class="hint">(mute)</span>' : ''}</span><span class="snd">${C.fmtSound(t.sound)}${t.sound && t.sound.vol !== null ? ' · vol ' + t.sound.vol : ''}</span></div>`).join('')}${k.splitPoint !== null && k.splitPoint !== undefined ? `<div class="l"><span>Split point</span><span>${noteName(k.splitPoint)}</span></div>` : ''}${idx !== undefined ? `<button class="btn kssel" data-k="${idx}">🎹 Свири с този Keyboard Set</button>` : ''}</div>`;
+  }
+  const noteName = (n) => ROOTS[n % 12] + (Math.floor(n / 12) - 1);
+  let kbCleanup = null;
+  function mountKeyboard(host, k) {
+    if (kbCleanup) kbCleanup();
+    const lo = 36, hi = 96; const whites = []; for (let n = lo; n <= hi; n++) if (![1, 3, 6, 8, 10].includes(n % 12)) whites.push(n);
+    const W = 100 / whites.length; let html = `<div class="kbwrap"><div class="kbinfo">🎹 ${esc(k.name || '')} · split ${noteName(k.splitPoint ?? 60)} · Клавиши на компютъра: Z–M и Q–U (октава ↓/↑ с „,“ и „.“)</div><div class="kb">`;
+    whites.forEach((n, i) => { html += `<div class="wk${n < (k.splitPoint ?? 60) ? ' lo' : ''}" data-n="${n}" style="left:${i * W}%;width:${W}%">${n % 12 === 0 ? '<span>' + noteName(n) + '</span>' : ''}</div>`; });
+    whites.forEach((n, i) => { if (n + 1 <= hi && [1, 3, 6, 8, 10].includes((n + 1) % 12)) html += `<div class="bk" data-n="${n + 1}" style="left:${(i + 1) * W - W * 0.32}%;width:${W * 0.64}%"></div>`; });
+    host.innerHTML = html + '</div></div>';
+    const down = new Set();
+    const on = (n, v = 100) => { if (down.has(n)) return; down.add(n); P.kbNote(n, v); const el = host.querySelector(`[data-n="${n}"]`); if (el) el.classList.add('down'); };
+    const off = (n) => { if (!down.has(n)) return; down.delete(n); P.kbNote(n, 0); const el = host.querySelector(`[data-n="${n}"]`); if (el) el.classList.remove('down'); };
+    let mouseN = null;
+    host.querySelector('.kb').onpointerdown = e => { const n = +e.target.closest('[data-n]')?.dataset.n; if (!n) return; mouseN = n; on(n, 90 + Math.round(Math.random() * 10)); e.target.setPointerCapture?.(e.pointerId); };
+    host.querySelector('.kb').onpointerover = e => { if (mouseN === null) return; const n = +e.target.closest('[data-n]')?.dataset.n; if (n && n !== mouseN) { off(mouseN); mouseN = n; on(n); } };
+    const up = () => { if (mouseN !== null) { off(mouseN); mouseN = null; } }; window.addEventListener('pointerup', up);
+    const MAP = 'zsxdcvgbhnjmq2w3er5t6y7u'; let oct = 60;
+    const kd = e => { if (e.target.matches('input,select,textarea') || e.repeat) return; if (e.key === ',') { oct = Math.max(36, oct - 12); return; } if (e.key === '.') { oct = Math.min(84, oct + 12); return; } const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) on(oct + i); };
+    const ku = e => { const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) off(oct + i); };
+    window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+    kbCleanup = () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); for (const n of [...down]) off(n); };
+  }
+  async function showKset(x) {
+    let k; try { k = C.parseKeyboardSetFile(new Uint8Array(await x.f.arrayBuffer()), x.name); } catch (e) { $('#detail').innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+    $('#detail').innerHTML = `<h2>${esc(k.name)}</h2><div class="meta"><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
+      <div class="card"><h3>Пистите</h3><table><tr><th>Писта</th><th>Звук (MSB.LSB.Prog)</th><th class="c">Volume</th><th class="c">Pan</th><th class="c">Обхват</th><th class="c">Mute</th></tr>
+      ${k.tracks.map(t => `<tr><td>${t.name}</td><td class="snd">${C.fmtSound(t.sound)}</td><td class="c">${t.sound?.vol ?? '—'}</td><td class="c">${t.sound?.pan ?? '—'}</td><td class="c">${t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—'}</td><td class="c">${t.mute ? 'да' : ''}</td></tr>`).join('')}</table>
+      ${k.splitPoint !== null ? `<p class="hint">Split point: ${noteName(k.splitPoint)}</p>` : ''}</div>
+      <div class="card"><h3>Прослушване</h3><button class="btn primary" id="ksPlay">🎹 Включи клавиатурата</button><div id="kbHost"></div></div>`;
+    $('#ksPlay').onclick = async () => { if (!(await ensurePlayer())) return; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); $('#ksPlay').style.display = 'none'; };
+  }
+
+  async function exportMany(items, zipName) {
+    const files = []; let bad = 0;
+    for (const [i, x] of items.entries()) {
+      status(`Експорт ${i + 1}/${items.length}: ${x.name}`); await new Promise(r => setTimeout(r));
+      try { const s = await getStyle(x); files.push({ name: (x.bankName ? safe(x.bankName) + '/' : '') + safe(x.name.replace(/\.stg$/i, '')) + '.mid', data: C.exportStyleMidi(s, opts) }); } catch (e) { bad++; }
+      if (state.styleCache.size > 40) state.styleCache.clear();
+    }
+    download(zipName, C.makeZip(files), 'application/zip'); status(`Готово: ${files.length} стила експортирани${bad ? `, ${bad} с грешка` : ''}`);
+  }
+
+  function showPads() {
+    $('#detail').innerHTML = `<h2>Pads</h2><div class="card"><h3>Pad пресети (MATRIXPRESET)</h3>${state.padPresets.map(p => `<span class="tag">${esc(p.n)}</span>`).join('') || '<span class="hint">Няма</span>'}
+      <p class="hint">Съдържанието на Pad пресетите е компресирано. Разчитането му предстои в следваща версия. Pads на всеки стил се виждат в страницата на стила.</p></div>`;
+  }
+  function showSounds() {
+    $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => `<div class="card"><h3>${esc(b.bank)} (${b.names.length})</h3>${b.names.map(n => `<span class="tag">${esc(n)}</span>`).join('')}</div>`).join('') || '<p class="hint">Няма</p>'}`;
+  }
+  // ===================== FILE VIEWER =====================
+  const K = window.PAKorf;
+  const fv = { files: [], sel: null, cache: new Map(), rowSel: null, q: '', audio: null, src: null };
+  const kindOf = (n) => { const e = (n.split('.').pop() || '').toLowerCase(); return { stg: 'Style', ksc: 'Keyboard Set', pcg: 'Sound (PCG)', pcm: 'PCM', mtp: 'Pads / Matrix', kmp: 'Multisample', pad: 'Pad' }[e] || e.toUpperCase(); };
+  const fmtKB = (n) => n >= 1048576 ? (n / 1048576).toFixed(2) + ' MB' : (n / 1024).toFixed(1) + ' KB';
+  function setMode(m) {
+    document.body.classList.toggle('fvmode', m === 'fv');
+    document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    if (m === 'fv') { if (P && P.playing) P.stop(); renderFvFiles(); }
+  }
+  async function fvLoad(f) {
+    if (fv.cache.has(f.path)) return fv.cache.get(f.path);
+    const bytes = new Uint8Array(await window.native.fvRead(f.path)); const ext = f.name.split('.').pop().toLowerCase(); let r;
+    try {
+      if (ext === 'stg') { const s = C.parseStyle(bytes, f.name); r = { type: 'stg', style: s }; }
+      else if (ext === 'ksc') { r = { type: 'ksc', ks: C.parseKeyboardSetFile(bytes, f.name) }; }
+      else if (K.isKorf(bytes)) { const k = K.parseKorf(bytes); r = { type: k.samples.length ? 'pcm' : 'korf', korf: k }; if (k.samples.length) r.bytes = bytes; }
+      else r = { type: 'unknown', error: 'Неразпознат формат (възможно е от по-стар модел PA)' };
+    } catch (e) { r = { type: 'unknown', error: e.message }; }
+    if (r.type !== 'pcm') { /* keep only PCM bytes for preview */ }
+    fv.cache.set(f.path, r); if (fv.cache.size > 60) { const k0 = fv.cache.keys().next().value; if (k0 !== f.path) fv.cache.delete(k0); }
+    return r;
+  }
+  function fvRows(f, r) {
+    if (r.type === 'pcm') return { cols: ['ID', 'Име на семпъл', 'Размер', 'Честота', 'Семпли', 'Продълж.', 'Тип', 'Канали', 'Цикъл'], rows: r.korf.samples.map((s, i) => ({ i, cells: [s.slot != null ? s.slot + 1 : i + 1, s.name || '—', s.dataLen.toLocaleString('bg') + ' б (' + fmtKB(s.dataLen) + ')', (s.rate / 1000).toFixed(1) + ' kHz / ' + s.bits + ' бита', s.frames.toLocaleString('bg'), s.duration >= 1 ? s.duration.toFixed(2) + ' s' : Math.round(s.duration * 1000) + ' ms', s.compressed ? 'Компресиран' : 'Нормален', s.channels > 1 ? 'стерео' : 'моно', s.loopStart > 0 && s.loopStart < s.loopEnd ? s.loopStart + '–' + s.loopEnd : '—'], warn: s.compressed })).sort((a, b) => a.cells[0] - b.cells[0]) };
+    if (r.type === 'korf') return { cols: ['ID', 'Име', 'Тип', 'Версия', 'Дата', 'Създаден с'], rows: r.korf.entries.map((e, i) => ({ i, cells: [e.slot != null ? e.slot + 1 : i + 1, e.name || '—', e.type || '', e.ver != null ? `Ver ${e.ver} Rev ${e.rev}` : '', e.date || '', e.createdWith || ''] })).sort((a, b) => a.cells[0] - b.cells[0]) };
+    if (r.type === 'stg') { const s = r.style; return { head: `${s.name} · ${s.tempo} BPM · ${[...new Set(s.elements.map(e => e.ts.label))].join(', ')} · Keyboard Sets: ${s.keyboardSets.map(k => k.name || '—').join(', ') || 'няма'} · Pads: ${s.pads.map(p => p.name).join(', ') || 'няма'}`, cols: ['#', 'Елемент', 'Тактове', 'Такт', 'Писти', 'Ноти'], rows: s.elements.map((e, i) => ({ i, cells: [i + 1, e.label, e.bars || 'празен', e.ts.label, e.tracks.filter(t => t.name !== 'Chords').map(t => t.name).join(', '), e.tracks.reduce((a, t) => a + t.info.notes, 0)] })) }; }
+    if (r.type === 'ksc') return { head: `${r.ks.name} · split ${r.ks.splitPoint != null ? noteName(r.ks.splitPoint) : '—'}`, cols: ['Писта', 'Звук (MSB.LSB.Prog)', 'Volume', 'Pan', 'Обхват', 'Mute'], rows: r.ks.tracks.map((t, i) => ({ i, cells: [t.name, C.fmtSound(t.sound), t.sound?.vol ?? '—', t.sound?.pan ?? '—', t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—', t.mute ? 'да' : ''] })) };
+    return { head: r.error || '', cols: [], rows: [] };
+  }
+  function renderFvFiles() {
+    const L = $('#fvFiles'); if (!L) return; const q = ($('#fvQ').value || '').toLowerCase();
+    if (!fv.files.length) { L.innerHTML = '<div class="hint" style="padding:12px">Няма заредени файлове.<br><br>Пусни тук файлове или цяла папка (STYLE, SOUND, PCM, KEYBOARDSET…) или използвай бутоните горе.</div>'; $('#fvCount').textContent = ''; return; }
+    let h = ''; let last = null;
+    for (const [i, f] of fv.files.entries()) {
+      if (q && !f.name.toLowerCase().includes(q) && !(fv.cache.get(f.path)?.names || '').includes(q)) continue;
+      if (f.dir !== last) { h += `<div class="fvgrp">${esc(f.dir)}</div>`; last = f.dir; }
+      h += `<div class="fvf${fv.sel === f ? ' sel' : ''}" data-i="${i}" title="${esc(f.path)}"><span>${esc(f.name)}</span><span class="sz">${fmtKB(f.size)}</span></div>`;
+    }
+    L.innerHTML = h; $('#fvCount').textContent = `${fv.files.length} файла · ${fmtKB(fv.files.reduce((a, f) => a + f.size, 0))}`;
+    L.querySelectorAll('.fvf').forEach(el => el.onclick = () => fvSelect(fv.files[+el.dataset.i]));
+  }
+  async function fvSelect(f) {
+    fvStop(); fv.sel = f; fv.rowSel = null; renderFvFiles(); $('#fvPath').textContent = f.path; $('#fvTable').innerHTML = '<div class="hint" style="padding:14px">Зареждам…</div>'; $('#fvPrev').innerHTML = '';
+    const r = await fvLoad(f); if (fv.sel !== f) return; renderFvTable(f, r);
+  }
+  function renderFvTable(f, r) {
+    const t = fvRows(f, r); const q = fv.q.toLowerCase();
+    const rows = t.rows.filter(x => !q || x.cells.some(c => String(c).toLowerCase().includes(q)));
+    $('#fvTable').innerHTML = `${t.head ? `<div class="fvhead">${esc(t.head)}</div>` : ''}<table class="fvt"><tr>${t.cols.map(c => `<th>${c}</th>`).join('')}</tr>${rows.map(x => `<tr data-i="${x.i}" class="${fv.rowSel === x.i ? 'sel' : ''}">${x.cells.map((c, j) => `<td class="${x.warn && j === 6 ? 'warn' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+    $('#fvInfo').textContent = `${f.name} · ${kindOf(f.name)} · ${t.rows.length} ${r.type === 'pcm' ? 'семпъла' : 'записа'}`;
+    $('#fvWav').disabled = r.type !== 'pcm' || fv.rowSel == null; $('#fvWavAll').disabled = r.type !== 'pcm';
+    $('#fvTable').querySelectorAll('tr[data-i]').forEach(tr => { tr.onclick = () => { fv.rowSel = +tr.dataset.i; $('#fvTable').querySelectorAll('tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel'); $('#fvWav').disabled = r.type !== 'pcm'; if (r.type === 'pcm') fvPreview(r, r.korf.samples[fv.rowSel]); };
+      tr.ondblclick = () => { if (r.type === 'pcm') fvPlay(r, r.korf.samples[+tr.dataset.i]); }; });
+  }
+  function fvPreview(r, s) {
+    const box = $('#fvPrev'); const chs = K.decodeSample(r.bytes, s); s._dec = chs;
+    box.innerHTML = `<div class="pvbar"><button class="btn primary" id="pvPlay">▶ Прослушай</button><button class="btn" id="pvStop">■</button><span><b>${esc(s.name || '')}</b> · ${(s.rate / 1000).toFixed(1)} kHz · ${s.bits} бита · ${s.channels > 1 ? 'стерео' : 'моно'} · ${s.frames.toLocaleString('bg')} семпъла · ${s.duration.toFixed(3)} s${s.compressed ? ' · <span class="warnt">компресиран: декодирането е експериментално</span>' : ''}</span><button class="btn" id="pvWav">Експорт .WAV</button></div><canvas id="pvC"></canvas>`;
+    const cv = $('#pvC'); const W = cv.clientWidth || 900, H = 150; cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; const g = cv.getContext('2d'); g.scale(devicePixelRatio, devicePixelRatio);
+    g.fillStyle = '#121418'; g.fillRect(0, 0, W, H); const per = chs.length; const hh = H / per;
+    chs.forEach((d, c) => { const mid = hh * c + hh / 2; g.strokeStyle = '#2e333d'; g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke(); g.fillStyle = '#5cc28a'; const step = d.length / W;
+      for (let x = 0; x < W; x++) { let mn = 1, mx = -1; const a = Math.floor(x * step), b = Math.min(d.length, Math.floor((x + 1) * step) + 1); for (let i = a; i < b; i++) { const v = d[i]; if (v < mn) mn = v; if (v > mx) mx = v; } if (mx < mn) continue; g.fillRect(x, mid - mx * hh / 2, 1, Math.max(1, (mx - mn) * hh / 2)); } });
+    if (s.loopStart > 0 && s.loopStart < s.loopEnd) { const x = s.loopStart / s.frames * W; g.strokeStyle = '#f0a03c'; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.setLineDash([]); g.fillStyle = '#f0a03c'; g.font = '11px Segoe UI'; g.fillText('loop', x + 3, 12); }
+    $('#pvPlay').onclick = () => fvPlay(r, s); $('#pvStop').onclick = fvStop; $('#pvWav').onclick = () => fvExportWav(r, [s]);
+  }
+  function fvStop() { if (fv.src) { try { fv.src.stop(); } catch (e) { } fv.src = null; } }
+  function fvPlay(r, s) {
+    fvStop(); if (!fv.audio) fv.audio = new AudioContext(); const chs = s._dec || K.decodeSample(r.bytes, s);
+    const buf = fv.audio.createBuffer(chs.length, chs[0].length, s.rate || 44100); chs.forEach((d, c) => buf.copyToChannel(d, c));
+    const src = fv.audio.createBufferSource(); src.buffer = buf; src.connect(fv.audio.destination); fv.audio.resume(); src.start(); fv.src = src;
+  }
+  const wavName = (s, i) => `${String(s.slot != null ? s.slot + 1 : i + 1).padStart(3, '0')} ${safe(s.name || 'sample')}.wav`;
+  async function fvExportWav(r, list) {
+    const mk = (s) => K.wavBytes(s._dec || K.decodeSample(r.bytes, s), s.rate || 44100, s.loopStart > 0 && s.loopStart < s.loopEnd ? { start: s.loopStart, end: s.loopEnd } : null);
+    if (list.length === 1) return download(wavName(list[0], 0), mk(list[0]), 'audio/wav');
+    const files = list.map((s, i) => ({ name: wavName(s, i), data: mk(s) })); download(safe(fv.sel.name.replace(/\.\w+$/, '')) + '_WAV.zip', C.makeZip(files), 'application/zip');
+  }
+  // ---- reports ----
+  const REP_COLS = ['Файл', 'Папка', 'Вид', 'ID', 'Име', 'Тип', 'Версия', 'Дата', 'Създаден с', 'Честота', 'Бита', 'Канали', 'Семпли', 'Продълж. (ms)', 'Компресиран', 'Темпо', 'Такт', 'Подробности'];
+  function repRows(f, r) {
+    const base = [f.name, f.dir, kindOf(f.name)]; const out = [];
+    if (r.type === 'pcm') for (const [i, s] of r.korf.samples.entries()) { const e = s.entry || {}; out.push([...base, s.slot != null ? s.slot + 1 : i + 1, s.name || '', 'Sample', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', s.rate, s.bits, s.channels, s.frames, Math.round(s.duration * 1000), s.compressed ? 'да' : 'не', '', '', s.loopStart > 0 ? `loop ${s.loopStart}-${s.loopEnd}` : '']); }
+    else if (r.type === 'korf') for (const [i, e] of r.korf.entries.entries()) out.push([...base, e.slot != null ? e.slot + 1 : i + 1, e.name || '', e.type || '', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', '', '', '', '', '', '', '', '', '']);
+    else if (r.type === 'stg') { const s = r.style; out.push([...base, '', s.name, 'Style', '', '', '', '', '', '', '', '', '', s.tempo, [...new Set(s.elements.map(e => e.ts.label))].join(' '), s.elements.filter(e => e.length).map(e => `${e.id}:${e.bars}т`).join(' ') + ' | KS: ' + s.keyboardSets.map(k => k.name).join(', ')]); }
+    else if (r.type === 'ksc') out.push([...base, '', r.ks.name, 'Keyboard Set', '', '', '', '', '', '', '', '', '', '', '', r.ks.tracks.map(t => `${t.name}=${C.fmtSound(t.sound)}${t.mute ? '(m)' : ''}`).join(' ')]);
+    else out.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '', '', r.error || '']);
+    return out;
+  }
+  async function fvReport(fmt, all) {
+    const list = all ? fv.files : (fv.sel ? [fv.sel] : []); if (!list.length) return toast('Няма избран файл');
+    const rows = [];
+    for (const [i, f] of list.entries()) { status(`Доклад: ${i + 1}/${list.length} ${f.name}`); await new Promise(r => setTimeout(r)); try { rows.push(...repRows(f, await fvLoad(f))); } catch (e) { rows.push([f.name, f.dir, kindOf(f.name), '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Грешка: ' + e.message]); } }
+    const title = all ? 'всички файлове' : list[0].name; const stamp = new Date().toLocaleString('bg');
+    let out;
+    if (fmt === 'csv') { const q = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }; out = '﻿' + [REP_COLS, ...rows].map(r => r.map(q).join(';')).join('\r\n'); }
+    else {
+      const lines = [`PA5X Set Tool — доклад: ${title}`, `Създаден: ${stamp}`, `Записи: ${rows.length}`, ''];
+      let cur = null;
+      for (const r of rows) {
+        if (r[0] !== cur) { cur = r[0]; lines.push('', `=== ${r[1]}/${r[0]} (${r[2]}) ===`); }
+        const parts = [r[3] !== '' ? String(r[3]).padStart(3) + '.' : '', r[4]];
+        if (r[9] !== '') parts.push(`${r[9]} Hz`, `${r[10]} бита`, r[11] > 1 ? 'стерео' : 'моно', `${r[12]} семпъла`, `${r[13]} ms`, r[14] === 'да' ? 'компресиран' : '');
+        else { if (r[5]) parts.push(r[5]); if (r[6]) parts.push('ver ' + r[6]); if (r[7]) parts.push(r[7]); if (r[8]) parts.push(r[8]); if (r[15] !== '') parts.push(r[15] + ' BPM', r[16]); }
+        if (r[17]) parts.push(r[17]);
+        lines.push('  ' + parts.filter(Boolean).join(' · '));
+      }
+      out = '﻿' + lines.join('\r\n');
+    }
+    status('Докладът е готов'); download(`Доклад ${safe(title.replace(/\.\w+$/, ''))}.${fmt}`, new TextEncoder().encode(out), fmt === 'csv' ? 'text/csv' : 'text/plain');
+  }
+  async function fvAddFiles(list, select) {
+    const known = new Set(fv.files.map(f => f.path)); const added = list.filter(f => !known.has(f.path));
+    fv.files.push(...added); fv.files.sort((a, b) => a.dir.localeCompare(b.dir) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    setMode('fv'); renderFvFiles(); if (added.length && (select || !fv.sel)) fvSelect(added[0]);
+    if (!added.length && list.length) { const f = fv.files.find(x => x.path === list[0].path); if (f) fvSelect(f); }
+  }
+  function initFileViewer() {
+    if (!window.native || !window.native.fvPick) { const b = document.querySelector('#modes'); if (b) b.style.display = 'none'; return; }
+    document.querySelectorAll('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.m));
+    $('#fvOpenF').onclick = async () => fvAddFiles(await window.native.fvPick('files'), true);
+    $('#fvOpenD').onclick = async () => fvAddFiles(await window.native.fvPick('folder'), true);
+    $('#fvClear').onclick = () => { fvStop(); fv.files = []; fv.sel = null; fv.cache.clear(); renderFvFiles(); $('#fvTable').innerHTML = ''; $('#fvPrev').innerHTML = ''; $('#fvInfo').textContent = ''; $('#fvPath').textContent = ''; };
+    $('#fvQ').oninput = renderFvFiles; $('#fvS').oninput = (e) => { fv.q = e.target.value; if (fv.sel) fvLoad(fv.sel).then(r => renderFvTable(fv.sel, r)); };
+    $('#fvRepTxt').onclick = () => fvReport('txt', $('#fvRepAll').checked); $('#fvRepCsv').onclick = () => fvReport('csv', $('#fvRepAll').checked);
+    $('#fvWav').onclick = async () => { const r = await fvLoad(fv.sel); if (r.type === 'pcm' && fv.rowSel != null) fvExportWav(r, [r.korf.samples[fv.rowSel]]); };
+    $('#fvWavAll').onclick = async () => { const r = await fvLoad(fv.sel); if (r.type === 'pcm') { status('Подготвям WAV файловете…'); await new Promise(x => setTimeout(x)); fvExportWav(r, r.korf.samples); } };
+    $('#fvAssoc').onclick = async () => { const r = await window.native.fvAssoc(true); toast(r.ok ? 'Готово: .STG .KSC .PCG .PCM .MTP .KMP се отварят с PA5X Set Tool (двоен клик). Ако Windows попита „С какво да се отвори“, избери PA5X Set Tool.' : 'Не успях: ' + (r.error || 'грешка в регистъра')); };
+    const pane = $('#fv');
+    pane.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); pane.classList.add('drag'); });
+    pane.addEventListener('dragleave', e => { if (e.target === pane) pane.classList.remove('drag'); });
+    pane.addEventListener('drop', async e => { e.preventDefault(); e.stopPropagation(); pane.classList.remove('drag'); const paths = [...e.dataTransfer.files].map(f => window.native.pathForFile(f)).filter(Boolean); if (paths.length) fvAddFiles(await window.native.fvAdd(paths), true); });
+    window.native.onFvOpen(list => fvAddFiles(list, true));
+    window.native.fvPending().then(list => { if (list.length) fvAddFiles(list, true); });
+    renderFvFiles();
+  }
+  initFileViewer();
+})();
+</script>
+</body>
+</html>

@@ -105,12 +105,34 @@
   footer a{color:var(--acc2);text-decoration:none} footer a:hover{text-decoration:underline}
   .updbar{position:fixed;top:62px;right:16px;z-index:40;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:14px 16px;width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
   .updbar h3{margin:0 0 6px;font-size:15px;color:var(--acc)} .updbar p{margin:0 0 10px;color:var(--dim);font-size:13px;white-space:pre-line}
+
+  .modes{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .modes button{background:none;border:0;padding:6px 14px;cursor:pointer;color:var(--dim)} .modes button.on{background:var(--acc);color:#1b1206;font-weight:600}
+  .fv{display:none;grid-template-columns:300px 1fr;min-height:0}
+  body.fvmode .fv{display:grid} body.fvmode main, body.fvmode .transport{display:none}
+  body.fvmode .app{grid-template-rows:auto 1fr auto auto}
+  .fv.drag{outline:3px dashed var(--acc);outline-offset:-6px}
+  .fvleft{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+  .fvtools{display:flex;gap:6px;padding:8px}
+  .fvfiles{flex:1;overflow:auto} .fvgrp{padding:5px 10px;font-size:11px;color:var(--acc);background:var(--panel2);text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0}
+  .fvf{display:flex;justify-content:space-between;padding:4px 10px 4px 16px;cursor:pointer;font-size:13px;border-bottom:1px solid #20242b} .fvf:hover{background:#262a32} .fvf.sel{background:#2f2a20;color:#ffd9a3}
+  .fvf .sz{color:var(--dim);font-size:12px} .fvcount{padding:5px 10px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
+  .fvright{display:flex;flex-direction:column;min-height:0;min-width:0}
+  .fvbar{display:flex;gap:6px;padding:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)} .fvbar input#fvS{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px;width:220px} .fvbar .sep{flex:1}
+  .fvinfo{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;font-size:13px}
+  .fvtable{flex:1;overflow:auto;padding:0 12px 12px} .fvhead{padding:6px 0 10px;color:var(--text)}
+  .fvt th{position:sticky;top:0;background:var(--panel);z-index:1} .fvt tr[data-i]{cursor:pointer} .fvt tr[data-i]:hover{background:#262a32} .fvt tr.sel{background:#2f2a20}
+  .fvt td.warn{color:#f0a03c} .warnt{color:#f0a03c}
+  .fvprev{border-top:1px solid var(--line);background:var(--panel)} .fvprev:empty{display:none}
+  .pvbar{display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap;font-size:13px} .pvbar span{flex:1}
+  #pvC{display:block;width:100%;height:150px}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <h1>PA5X <b>Set Tool</b></h1>
+    <div class="modes" id="modes"><button data-m="set" class="on">Сет</button><button data-m="fv">File Viewer</button></div>
     <span class="setname" id="setname">Няма отворен сет</span>
     <button class="btn primary" id="openBtn">Отвори SET/KST папка…</button>
     <input type="file" id="dirInput" webkitdirectory directory multiple hidden>
@@ -136,6 +158,26 @@
       </div>
     </section>
   </main>
+  <section id="fv" class="fv">
+    <div class="fvleft">
+      <div class="fvtools"><button class="btn primary" id="fvOpenF">Файлове…</button><button class="btn" id="fvOpenD">Папка…</button><button class="btn" id="fvClear" title="Изчисти списъка">✕</button></div>
+      <div class="search"><input id="fvQ" placeholder="Филтър по име на файл…"></div>
+      <div class="fvfiles" id="fvFiles"></div>
+      <div class="fvcount" id="fvCount"></div>
+    </div>
+    <div class="fvright">
+      <div class="fvbar">
+        <input id="fvS" placeholder="Търсене в съдържанието…">
+        <button class="btn" id="fvWav" disabled>Експорт избрания .WAV</button><button class="btn" id="fvWavAll" disabled>Експорт всички .WAV</button>
+        <span class="sep"></span>
+        <label class="opt"><input type="checkbox" id="fvRepAll"> всички файлове</label><button class="btn" id="fvRepTxt">Доклад .TXT</button><button class="btn" id="fvRepCsv">Доклад .CSV</button>
+        <button class="btn" id="fvAssoc" title="Двоен клик върху .STG .KSC .PCG .PCM .MTP .KMP в Windows ще ги отваря тук">Свържи файловете с програмата</button>
+      </div>
+      <div class="fvinfo"><span id="fvInfo"></span><span id="fvPath" class="hint"></span></div>
+      <div class="fvtable" id="fvTable"><div class="empty"><div class="drop"><div class="big">File Viewer</div><p>Бърз преглед на Styles, Keyboard Sets, Pads, PCG и PCM<br>без да зареждаш целия сет.</p><p>Пусни файлове или папка тук, или използвай „Файлове…“ / „Папка…“.</p></div></div></div>
+      <div class="fvprev" id="fvPrev"></div>
+    </div>
+  </section>
   <div id="transport" class="transport"></div>
   <footer><span id="status">Готов</span><span><span id="ver">PA5X Set Tool</span> · <a href="#" id="chkUpd">Провери за обновления</a></span></footer>
 </div>
@@ -146,6 +188,9 @@
 </script>
 <script>
 /*__PLAYER__*/
+</script>
+<script>
+/*__KORF__*/
 </script>
 <script>
 (() => {
@@ -542,6 +587,142 @@
   function showSounds() {
     $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => `<div class="card"><h3>${esc(b.bank)} (${b.names.length})</h3>${b.names.map(n => `<span class="tag">${esc(n)}</span>`).join('')}</div>`).join('') || '<p class="hint">Няма</p>'}`;
   }
+  // ===================== FILE VIEWER =====================
+  const K = window.PAKorf;
+  const fv = { files: [], sel: null, cache: new Map(), rowSel: null, q: '', audio: null, src: null };
+  const kindOf = (n) => { const e = (n.split('.').pop() || '').toLowerCase(); return { stg: 'Style', ksc: 'Keyboard Set', pcg: 'Sound (PCG)', pcm: 'PCM', mtp: 'Pads / Matrix', kmp: 'Multisample', pad: 'Pad' }[e] || e.toUpperCase(); };
+  const fmtKB = (n) => n >= 1048576 ? (n / 1048576).toFixed(2) + ' MB' : (n / 1024).toFixed(1) + ' KB';
+  function setMode(m) {
+    document.body.classList.toggle('fvmode', m === 'fv');
+    document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    if (m === 'fv') { if (P && P.playing) P.stop(); renderFvFiles(); }
+  }
+  async function fvLoad(f) {
+    if (fv.cache.has(f.path)) return fv.cache.get(f.path);
+    const bytes = new Uint8Array(await window.native.fvRead(f.path)); const ext = f.name.split('.').pop().toLowerCase(); let r;
+    try {
+      if (ext === 'stg') { const s = C.parseStyle(bytes, f.name); r = { type: 'stg', style: s }; }
+      else if (ext === 'ksc') { r = { type: 'ksc', ks: C.parseKeyboardSetFile(bytes, f.name) }; }
+      else if (K.isKorf(bytes)) { const k = K.parseKorf(bytes); r = { type: k.samples.length ? 'pcm' : 'korf', korf: k }; if (k.samples.length) r.bytes = bytes; }
+      else r = { type: 'unknown', error: 'Неразпознат формат (възможно е от по-стар модел PA)' };
+    } catch (e) { r = { type: 'unknown', error: e.message }; }
+    if (r.type !== 'pcm') { /* keep only PCM bytes for preview */ }
+    fv.cache.set(f.path, r); if (fv.cache.size > 60) { const k0 = fv.cache.keys().next().value; if (k0 !== f.path) fv.cache.delete(k0); }
+    return r;
+  }
+  function fvRows(f, r) {
+    if (r.type === 'pcm') return { cols: ['ID', 'Име на семпъл', 'Размер', 'Честота', 'Семпли', 'Продълж.', 'Тип', 'Канали', 'Цикъл'], rows: r.korf.samples.map((s, i) => ({ i, cells: [s.slot != null ? s.slot + 1 : i + 1, s.name || '—', s.dataLen.toLocaleString('bg') + ' б (' + fmtKB(s.dataLen) + ')', (s.rate / 1000).toFixed(1) + ' kHz / ' + s.bits + ' бита', s.frames.toLocaleString('bg'), s.duration >= 1 ? s.duration.toFixed(2) + ' s' : Math.round(s.duration * 1000) + ' ms', s.compressed ? 'Компресиран' : 'Нормален', s.channels > 1 ? 'стерео' : 'моно', s.loopStart > 0 && s.loopStart < s.loopEnd ? s.loopStart + '–' + s.loopEnd : '—'], warn: s.compressed })).sort((a, b) => a.cells[0] - b.cells[0]) };
+    if (r.type === 'korf') return { cols: ['ID', 'Име', 'Тип', 'Версия', 'Дата', 'Създаден с'], rows: r.korf.entries.map((e, i) => ({ i, cells: [e.slot != null ? e.slot + 1 : i + 1, e.name || '—', e.type || '', e.ver != null ? `Ver ${e.ver} Rev ${e.rev}` : '', e.date || '', e.createdWith || ''] })).sort((a, b) => a.cells[0] - b.cells[0]) };
+    if (r.type === 'stg') { const s = r.style; return { head: `${s.name} · ${s.tempo} BPM · ${[...new Set(s.elements.map(e => e.ts.label))].join(', ')} · Keyboard Sets: ${s.keyboardSets.map(k => k.name || '—').join(', ') || 'няма'} · Pads: ${s.pads.map(p => p.name).join(', ') || 'няма'}`, cols: ['#', 'Елемент', 'Тактове', 'Такт', 'Писти', 'Ноти'], rows: s.elements.map((e, i) => ({ i, cells: [i + 1, e.label, e.bars || 'празен', e.ts.label, e.tracks.filter(t => t.name !== 'Chords').map(t => t.name).join(', '), e.tracks.reduce((a, t) => a + t.info.notes, 0)] })) }; }
+    if (r.type === 'ksc') return { head: `${r.ks.name} · split ${r.ks.splitPoint != null ? noteName(r.ks.splitPoint) : '—'}`, cols: ['Писта', 'Звук (MSB.LSB.Prog)', 'Volume', 'Pan', 'Обхват', 'Mute'], rows: r.ks.tracks.map((t, i) => ({ i, cells: [t.name, C.fmtSound(t.sound), t.sound?.vol ?? '—', t.sound?.pan ?? '—', t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—', t.mute ? 'да' : ''] })) };
+    return { head: r.error || '', cols: [], rows: [] };
+  }
+  function renderFvFiles() {
+    const L = $('#fvFiles'); if (!L) return; const q = ($('#fvQ').value || '').toLowerCase();
+    if (!fv.files.length) { L.innerHTML = '<div class="hint" style="padding:12px">Няма заредени файлове.<br><br>Пусни тук файлове или цяла папка (STYLE, SOUND, PCM, KEYBOARDSET…) или използвай бутоните горе.</div>'; $('#fvCount').textContent = ''; return; }
+    let h = ''; let last = null;
+    for (const [i, f] of fv.files.entries()) {
+      if (q && !f.name.toLowerCase().includes(q) && !(fv.cache.get(f.path)?.names || '').includes(q)) continue;
+      if (f.dir !== last) { h += `<div class="fvgrp">${esc(f.dir)}</div>`; last = f.dir; }
+      h += `<div class="fvf${fv.sel === f ? ' sel' : ''}" data-i="${i}" title="${esc(f.path)}"><span>${esc(f.name)}</span><span class="sz">${fmtKB(f.size)}</span></div>`;
+    }
+    L.innerHTML = h; $('#fvCount').textContent = `${fv.files.length} файла · ${fmtKB(fv.files.reduce((a, f) => a + f.size, 0))}`;
+    L.querySelectorAll('.fvf').forEach(el => el.onclick = () => fvSelect(fv.files[+el.dataset.i]));
+  }
+  async function fvSelect(f) {
+    fvStop(); fv.sel = f; fv.rowSel = null; renderFvFiles(); $('#fvPath').textContent = f.path; $('#fvTable').innerHTML = '<div class="hint" style="padding:14px">Зареждам…</div>'; $('#fvPrev').innerHTML = '';
+    const r = await fvLoad(f); if (fv.sel !== f) return; renderFvTable(f, r);
+  }
+  function renderFvTable(f, r) {
+    const t = fvRows(f, r); const q = fv.q.toLowerCase();
+    const rows = t.rows.filter(x => !q || x.cells.some(c => String(c).toLowerCase().includes(q)));
+    $('#fvTable').innerHTML = `${t.head ? `<div class="fvhead">${esc(t.head)}</div>` : ''}<table class="fvt"><tr>${t.cols.map(c => `<th>${c}</th>`).join('')}</tr>${rows.map(x => `<tr data-i="${x.i}" class="${fv.rowSel === x.i ? 'sel' : ''}">${x.cells.map((c, j) => `<td class="${x.warn && j === 6 ? 'warn' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+    $('#fvInfo').textContent = `${f.name} · ${kindOf(f.name)} · ${t.rows.length} ${r.type === 'pcm' ? 'семпъла' : 'записа'}`;
+    $('#fvWav').disabled = r.type !== 'pcm' || fv.rowSel == null; $('#fvWavAll').disabled = r.type !== 'pcm';
+    $('#fvTable').querySelectorAll('tr[data-i]').forEach(tr => { tr.onclick = () => { fv.rowSel = +tr.dataset.i; $('#fvTable').querySelectorAll('tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel'); $('#fvWav').disabled = r.type !== 'pcm'; if (r.type === 'pcm') fvPreview(r, r.korf.samples[fv.rowSel]); };
+      tr.ondblclick = () => { if (r.type === 'pcm') fvPlay(r, r.korf.samples[+tr.dataset.i]); }; });
+  }
+  function fvPreview(r, s) {
+    const box = $('#fvPrev'); const chs = K.decodeSample(r.bytes, s); s._dec = chs;
+    box.innerHTML = `<div class="pvbar"><button class="btn primary" id="pvPlay">▶ Прослушай</button><button class="btn" id="pvStop">■</button><span><b>${esc(s.name || '')}</b> · ${(s.rate / 1000).toFixed(1)} kHz · ${s.bits} бита · ${s.channels > 1 ? 'стерео' : 'моно'} · ${s.frames.toLocaleString('bg')} семпъла · ${s.duration.toFixed(3)} s${s.compressed ? ' · <span class="warnt">компресиран: декодирането е експериментално</span>' : ''}</span><button class="btn" id="pvWav">Експорт .WAV</button></div><canvas id="pvC"></canvas>`;
+    const cv = $('#pvC'); const W = cv.clientWidth || 900, H = 150; cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; const g = cv.getContext('2d'); g.scale(devicePixelRatio, devicePixelRatio);
+    g.fillStyle = '#121418'; g.fillRect(0, 0, W, H); const per = chs.length; const hh = H / per;
+    chs.forEach((d, c) => { const mid = hh * c + hh / 2; g.strokeStyle = '#2e333d'; g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke(); g.fillStyle = '#5cc28a'; const step = d.length / W;
+      for (let x = 0; x < W; x++) { let mn = 1, mx = -1; const a = Math.floor(x * step), b = Math.min(d.length, Math.floor((x + 1) * step) + 1); for (let i = a; i < b; i++) { const v = d[i]; if (v < mn) mn = v; if (v > mx) mx = v; } if (mx < mn) continue; g.fillRect(x, mid - mx * hh / 2, 1, Math.max(1, (mx - mn) * hh / 2)); } });
+    if (s.loopStart > 0 && s.loopStart < s.loopEnd) { const x = s.loopStart / s.frames * W; g.strokeStyle = '#f0a03c'; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.setLineDash([]); g.fillStyle = '#f0a03c'; g.font = '11px Segoe UI'; g.fillText('loop', x + 3, 12); }
+    $('#pvPlay').onclick = () => fvPlay(r, s); $('#pvStop').onclick = fvStop; $('#pvWav').onclick = () => fvExportWav(r, [s]);
+  }
+  function fvStop() { if (fv.src) { try { fv.src.stop(); } catch (e) { } fv.src = null; } }
+  function fvPlay(r, s) {
+    fvStop(); if (!fv.audio) fv.audio = new AudioContext(); const chs = s._dec || K.decodeSample(r.bytes, s);
+    const buf = fv.audio.createBuffer(chs.length, chs[0].length, s.rate || 44100); chs.forEach((d, c) => buf.copyToChannel(d, c));
+    const src = fv.audio.createBufferSource(); src.buffer = buf; src.connect(fv.audio.destination); fv.audio.resume(); src.start(); fv.src = src;
+  }
+  const wavName = (s, i) => `${String(s.slot != null ? s.slot + 1 : i + 1).padStart(3, '0')} ${safe(s.name || 'sample')}.wav`;
+  async function fvExportWav(r, list) {
+    const mk = (s) => K.wavBytes(s._dec || K.decodeSample(r.bytes, s), s.rate || 44100, s.loopStart > 0 && s.loopStart < s.loopEnd ? { start: s.loopStart, end: s.loopEnd } : null);
+    if (list.length === 1) return download(wavName(list[0], 0), mk(list[0]), 'audio/wav');
+    const files = list.map((s, i) => ({ name: wavName(s, i), data: mk(s) })); download(safe(fv.sel.name.replace(/\.\w+$/, '')) + '_WAV.zip', C.makeZip(files), 'application/zip');
+  }
+  // ---- reports ----
+  const REP_COLS = ['Файл', 'Папка', 'Вид', 'ID', 'Име', 'Тип', 'Версия', 'Дата', 'Създаден с', 'Честота', 'Бита', 'Канали', 'Семпли', 'Продълж. (ms)', 'Компресиран', 'Темпо', 'Такт', 'Подробности'];
+  function repRows(f, r) {
+    const base = [f.name, f.dir, kindOf(f.name)]; const out = [];
+    if (r.type === 'pcm') for (const [i, s] of r.korf.samples.entries()) { const e = s.entry || {}; out.push([...base, s.slot != null ? s.slot + 1 : i + 1, s.name || '', 'Sample', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', s.rate, s.bits, s.channels, s.frames, Math.round(s.duration * 1000), s.compressed ? 'да' : 'не', '', '', s.loopStart > 0 ? `loop ${s.loopStart}-${s.loopEnd}` : '']); }
+    else if (r.type === 'korf') for (const [i, e] of r.korf.entries.entries()) out.push([...base, e.slot != null ? e.slot + 1 : i + 1, e.name || '', e.type || '', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', '', '', '', '', '', '', '', '', '']);
+    else if (r.type === 'stg') { const s = r.style; out.push([...base, '', s.name, 'Style', '', '', '', '', '', '', '', '', '', s.tempo, [...new Set(s.elements.map(e => e.ts.label))].join(' '), s.elements.filter(e => e.length).map(e => `${e.id}:${e.bars}т`).join(' ') + ' | KS: ' + s.keyboardSets.map(k => k.name).join(', ')]); }
+    else if (r.type === 'ksc') out.push([...base, '', r.ks.name, 'Keyboard Set', '', '', '', '', '', '', '', '', '', '', '', r.ks.tracks.map(t => `${t.name}=${C.fmtSound(t.sound)}${t.mute ? '(m)' : ''}`).join(' ')]);
+    else out.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '', '', r.error || '']);
+    return out;
+  }
+  async function fvReport(fmt, all) {
+    const list = all ? fv.files : (fv.sel ? [fv.sel] : []); if (!list.length) return toast('Няма избран файл');
+    const rows = [];
+    for (const [i, f] of list.entries()) { status(`Доклад: ${i + 1}/${list.length} ${f.name}`); await new Promise(r => setTimeout(r)); try { rows.push(...repRows(f, await fvLoad(f))); } catch (e) { rows.push([f.name, f.dir, kindOf(f.name), '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Грешка: ' + e.message]); } }
+    const title = all ? 'всички файлове' : list[0].name; const stamp = new Date().toLocaleString('bg');
+    let out;
+    if (fmt === 'csv') { const q = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }; out = '﻿' + [REP_COLS, ...rows].map(r => r.map(q).join(';')).join('\r\n'); }
+    else {
+      const lines = [`PA5X Set Tool — доклад: ${title}`, `Създаден: ${stamp}`, `Записи: ${rows.length}`, ''];
+      let cur = null;
+      for (const r of rows) {
+        if (r[0] !== cur) { cur = r[0]; lines.push('', `=== ${r[1]}/${r[0]} (${r[2]}) ===`); }
+        const parts = [r[3] !== '' ? String(r[3]).padStart(3) + '.' : '', r[4]];
+        if (r[9] !== '') parts.push(`${r[9]} Hz`, `${r[10]} бита`, r[11] > 1 ? 'стерео' : 'моно', `${r[12]} семпъла`, `${r[13]} ms`, r[14] === 'да' ? 'компресиран' : '');
+        else { if (r[5]) parts.push(r[5]); if (r[6]) parts.push('ver ' + r[6]); if (r[7]) parts.push(r[7]); if (r[8]) parts.push(r[8]); if (r[15] !== '') parts.push(r[15] + ' BPM', r[16]); }
+        if (r[17]) parts.push(r[17]);
+        lines.push('  ' + parts.filter(Boolean).join(' · '));
+      }
+      out = '﻿' + lines.join('\r\n');
+    }
+    status('Докладът е готов'); download(`Доклад ${safe(title.replace(/\.\w+$/, ''))}.${fmt}`, new TextEncoder().encode(out), fmt === 'csv' ? 'text/csv' : 'text/plain');
+  }
+  async function fvAddFiles(list, select) {
+    const known = new Set(fv.files.map(f => f.path)); const added = list.filter(f => !known.has(f.path));
+    fv.files.push(...added); fv.files.sort((a, b) => a.dir.localeCompare(b.dir) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    setMode('fv'); renderFvFiles(); if (added.length && (select || !fv.sel)) fvSelect(added[0]);
+    if (!added.length && list.length) { const f = fv.files.find(x => x.path === list[0].path); if (f) fvSelect(f); }
+  }
+  function initFileViewer() {
+    if (!window.native || !window.native.fvPick) { const b = document.querySelector('#modes'); if (b) b.style.display = 'none'; return; }
+    document.querySelectorAll('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.m));
+    $('#fvOpenF').onclick = async () => fvAddFiles(await window.native.fvPick('files'), true);
+    $('#fvOpenD').onclick = async () => fvAddFiles(await window.native.fvPick('folder'), true);
+    $('#fvClear').onclick = () => { fvStop(); fv.files = []; fv.sel = null; fv.cache.clear(); renderFvFiles(); $('#fvTable').innerHTML = ''; $('#fvPrev').innerHTML = ''; $('#fvInfo').textContent = ''; $('#fvPath').textContent = ''; };
+    $('#fvQ').oninput = renderFvFiles; $('#fvS').oninput = (e) => { fv.q = e.target.value; if (fv.sel) fvLoad(fv.sel).then(r => renderFvTable(fv.sel, r)); };
+    $('#fvRepTxt').onclick = () => fvReport('txt', $('#fvRepAll').checked); $('#fvRepCsv').onclick = () => fvReport('csv', $('#fvRepAll').checked);
+    $('#fvWav').onclick = async () => { const r = await fvLoad(fv.sel); if (r.type === 'pcm' && fv.rowSel != null) fvExportWav(r, [r.korf.samples[fv.rowSel]]); };
+    $('#fvWavAll').onclick = async () => { const r = await fvLoad(fv.sel); if (r.type === 'pcm') { status('Подготвям WAV файловете…'); await new Promise(x => setTimeout(x)); fvExportWav(r, r.korf.samples); } };
+    $('#fvAssoc').onclick = async () => { const r = await window.native.fvAssoc(true); toast(r.ok ? 'Готово: .STG .KSC .PCG .PCM .MTP .KMP се отварят с PA5X Set Tool (двоен клик). Ако Windows попита „С какво да се отвори“, избери PA5X Set Tool.' : 'Не успях: ' + (r.error || 'грешка в регистъра')); };
+    const pane = $('#fv');
+    pane.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); pane.classList.add('drag'); });
+    pane.addEventListener('dragleave', e => { if (e.target === pane) pane.classList.remove('drag'); });
+    pane.addEventListener('drop', async e => { e.preventDefault(); e.stopPropagation(); pane.classList.remove('drag'); const paths = [...e.dataTransfer.files].map(f => window.native.pathForFile(f)).filter(Boolean); if (paths.length) fvAddFiles(await window.native.fvAdd(paths), true); });
+    window.native.onFvOpen(list => fvAddFiles(list, true));
+    window.native.fvPending().then(list => { if (list.length) fvAddFiles(list, true); });
+    renderFvFiles();
+  }
+  initFileViewer();
 })();
 </script>
 </body>

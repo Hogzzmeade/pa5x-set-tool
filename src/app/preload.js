@@ -12,6 +12,12 @@ contextBridge.exposeInMainWorld('native', {
   appVersion: () => ipcRenderer.invoke('app-version'),
   openUrl: (u) => ipcRenderer.invoke('open-url', u),
   onUpdate: (cb) => { for (const ev of ['update-available', 'update-none', 'update-error', 'update-progress']) ipcRenderer.on(ev, (_e, d) => cb(ev, d)); },
+  fvPending: () => ipcRenderer.invoke('fv-pending'),
+  fvAdd: (paths) => ipcRenderer.invoke('fv-add', paths),
+  fvPick: (kind) => ipcRenderer.invoke('fv-pick', kind),
+  fvRead: (p) => ipcRenderer.invoke('fv-read', p),
+  fvAssoc: (on) => ipcRenderer.invoke('fv-assoc', on),
+  onFvOpen: (cb) => ipcRenderer.on('fv-open', (_e, d) => cb(d)),
   lastDir: () => ipcRenderer.invoke('last-dir'),
   pathForFile: (f) => { try { return webUtils.getPathForFile(f); } catch (e) { return null; } },
 });

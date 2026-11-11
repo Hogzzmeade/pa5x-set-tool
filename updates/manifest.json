@@ -1,12 +1,12 @@
 {
-  "version": "0.4.0",
-  "notes": "Първа версия с автоматични обновления.",
+  "version": "0.5.0",
+  "notes": "File Viewer: бърз преглед на Styles, Keyboard Sets, Pads, PCG и PCM без зареждане на целия сет. Плъзгане на файлове и папки, двоен клик върху файл в Windows, доклади TXT/CSV, вълна, прослушване и експорт на PCM в WAV.",
   "date": "2026-11-11",
   "files": [
     {
       "name": "app-main.js",
-      "size": 10264,
-      "sha256": "c3ba6c996db2c781faeba735fb0b4f60b5ac81c7b9bb035b17405e902d0ebd64"
+      "size": 13582,
+      "sha256": "7285b0ca3ac1a2dde765b4e0f157e7744fc0e350a96e0c0f09f8d731683887d4"
     },
     {
       "name": "icon.png",
@@ -15,18 +15,18 @@
     },
     {
       "name": "index.html",
-      "size": 91466,
-      "sha256": "4179ba121de2e1c9453a7613b25a353117d467d78b2d5dbed3be607fd0a72826"
+      "size": 118105,
+      "sha256": "8c72639b981670766cb29970c31fe515bb9e943d1a47b7c512f498721e8a4552"
     },
     {
       "name": "package.json",
       "size": 131,
-      "sha256": "46238553e0933166dfc2ef0b076ea04e38a8f2ca8eb91e459daff59236f502b7"
+      "sha256": "3883865e83418880de0012768a6d89acbcb64d6c35a1d445484855845389236f"
     },
     {
       "name": "preload.js",
-      "size": 1077,
-      "sha256": "215349a73f2183bc8ac6f9368740062caeeece6ded1015293e39b6b784227509"
+      "size": 1415,
+      "sha256": "48be61463044d319a6209cd4a46110693b52fa32957b09652218a061b06f0895"
     },
     {
       "name": "spessa.bundle.js",

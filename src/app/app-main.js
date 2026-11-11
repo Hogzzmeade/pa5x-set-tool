@@ -71,6 +71,44 @@ ipcMain.handle('show-in-folder', (_e, p) => { if (p) shell.showItemInFolder(p); 
 ipcMain.handle('last-dir', () => loadCfg().lastDir || null);
 
 
+
+// ---------------- File Viewer: explicit user-chosen files only ----------------
+const FV_EXT = /\.(stg|ksc|pcg|pcm|mtp|kmp|pad|sbl|sbd)$/i;
+const fvAllowed = new Set(); let fvPending = [];
+function fvExpand(paths) {
+  const out = [];
+  const add = (p) => { try { const st = fs.statSync(p); if (st.isDirectory()) { for (const n of fs.readdirSync(p)) add(path.join(p, n)); } else if (st.isFile() && FV_EXT.test(p)) { fvAllowed.add(path.resolve(p)); out.push({ path: path.resolve(p), name: path.basename(p), size: st.size, dir: path.basename(path.dirname(p)) }); } } catch (e) { } };
+  for (const p of paths) { add(p); if (out.length > 5000) break; } return out;
+}
+const argFiles = (argv) => argv.slice(1).filter(a => !a.startsWith('-') && FV_EXT.test(a) && fs.existsSync(a));
+fvPending = argFiles(process.argv);
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) { app.quit(); }
+app.on('second-instance', (_e, argv) => { const f = argFiles(argv); if (win) { if (win.isMinimized()) win.restore(); win.focus(); if (f.length) win.webContents.send('fv-open', fvExpand(f)); } });
+ipcMain.handle('fv-pending', () => { const r = fvExpand(fvPending); fvPending = []; return r; });
+ipcMain.handle('fv-add', (_e, paths) => fvExpand((paths || []).filter(p => typeof p === 'string')));
+ipcMain.handle('fv-pick', async (_e, kind) => {
+  const r = await dialog.showOpenDialog(win, kind === 'folder' ? { title: 'Избери папка (SET / KST или част от него)', properties: ['openDirectory'] } : { title: 'Избери файлове', properties: ['openFile', 'multiSelections'], filters: [{ name: 'KORG PA файлове', extensions: ['stg', 'ksc', 'pcg', 'pcm', 'mtp', 'kmp', 'pad'] }, { name: 'Всички', extensions: ['*'] }] });
+  return r.canceled ? [] : fvExpand(r.filePaths);
+});
+ipcMain.handle('fv-read', async (_e, p) => { const r = path.resolve(String(p)); if (!fvAllowed.has(r)) throw new Error('not allowed'); const b = await fs.promises.readFile(r); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); });
+ipcMain.handle('fv-assoc', async (_e, on) => {
+  if (process.platform !== 'win32') return { ok: false, error: 'Само за Windows' };
+  const { execFile } = require('child_process'); const exe = process.execPath; const reg = (args) => new Promise(res => execFile('reg.exe', args, { windowsHide: true }, (err) => res(!err)));
+  const exts = ['stg', 'ksc', 'pcg', 'pcm', 'mtp', 'kmp']; const prog = 'PA5XSetTool.File'; const base = 'HKCU\\Software\\Classes\\';
+  let ok = true;
+  if (on) {
+    ok = await reg(['add', base + prog, '/ve', '/d', 'KORG PA файл', '/f']) && ok;
+    ok = await reg(['add', base + prog + '\\DefaultIcon', '/ve', '/d', `"${exe}",0`, '/f']) && ok;
+    ok = await reg(['add', base + prog + '\\shell\\open\\command', '/ve', '/d', `"${exe}" "%1"`, '/f']) && ok;
+    for (const x of exts) { ok = await reg(['add', base + '.' + x, '/ve', '/d', prog, '/f']) && ok; ok = await reg(['add', base + '.' + x + '\\OpenWithProgids', '/v', prog, '/t', 'REG_NONE', '/f']) && ok; }
+  } else {
+    for (const x of exts) { await reg(['delete', base + '.' + x + '\\OpenWithProgids', '/v', prog, '/f']); await reg(['delete', base + '.' + x, '/ve', '/f']); }
+    await reg(['delete', base + prog, '/f']);
+  }
+  return { ok };
+});
+
 // ---------------- self-update ----------------
 const { net } = require('electron'); const crypto = require('crypto');
 const cmpVer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
@@ -118,6 +156,7 @@ ipcMain.handle('install-update', async () => {
 ipcMain.handle('open-url', (_e, u) => { if (/^https:\/\/github\.com\//.test(u)) shell.openExternal(u); });
 
 app.whenReady().then(() => {
+  if (!gotLock) return;
   Menu.setApplicationMenu(null);
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(perm === 'midi' || perm === 'midiSysex'));
   session.defaultSession.setPermissionCheckHandler((wc, perm) => perm === 'midi' || perm === 'midiSysex');
