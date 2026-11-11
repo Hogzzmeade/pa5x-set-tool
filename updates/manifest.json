@@ -1,0 +1,43 @@
+{
+  "version": "0.4.0",
+  "notes": "Първа версия с автоматични обновления.",
+  "date": "2026-11-11",
+  "files": [
+    {
+      "name": "app-main.js",
+      "size": 10264,
+      "sha256": "c3ba6c996db2c781faeba735fb0b4f60b5ac81c7b9bb035b17405e902d0ebd64"
+    },
+    {
+      "name": "icon.png",
+      "size": 1612,
+      "sha256": "bb11ff09a7f347ab954cf4a4ccc530ceca62c080d8232e8de8f1ce311648cee7"
+    },
+    {
+      "name": "index.html",
+      "size": 91466,
+      "sha256": "4179ba121de2e1c9453a7613b25a353117d467d78b2d5dbed3be607fd0a72826"
+    },
+    {
+      "name": "package.json",
+      "size": 131,
+      "sha256": "46238553e0933166dfc2ef0b076ea04e38a8f2ca8eb91e459daff59236f502b7"
+    },
+    {
+      "name": "preload.js",
+      "size": 1077,
+      "sha256": "215349a73f2183bc8ac6f9368740062caeeece6ded1015293e39b6b784227509"
+    },
+    {
+      "name": "spessa.bundle.js",
+      "size": 306534,
+      "sha256": "09594b476eab9900006726d5c0fbdacdd51b1409be577a02180a3233d1a2b773"
+    },
+    {
+      "name": "spessasynth_processor.min.js",
+      "size": 762072,
+      "sha256": "0556bc243223e6dceb173e4ef61e378a693e753f0a966f8e1d6445004b3e8153"
+    }
+  ],
+  "page": "https://github.com/Hogzzmeade/pa5x-set-tool/releases"
+}
