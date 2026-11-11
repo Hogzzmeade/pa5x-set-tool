@@ -1,6 +1,6 @@
 {
-  "version": "0.7.0",
-  "notes": "Нов таб Style Play: стиловете по банки и страници, десен бутон → Play, MINI Player с мастър волюм, фейдъри за всяка писта, Mute/Solo, смяна на вариациите и елементите, позиция, такт, тоналност и темпо.",
+  "version": "0.7.1",
+  "notes": "Properties: меню за елементите на стила — звук (избор от Factory и User), VOL, EXP, LOW/HIGH KEY, ReMap на оригиналния акорд, тип, тоналност, Chord Table, темпо, прослушване с A/B сравнение, прилагане към всички елементи, Update/Reset Style и доклад.",
   "date": "2026-11-11",
   "files": [
     {
@@ -15,13 +15,13 @@
     },
     {
       "name": "index.html",
-      "size": 237629,
-      "sha256": "8721eaeb894e508be8e1cea34a550ab5c376cd97d75a8b58f1d095fd6f6bf7d7"
+      "size": 262793,
+      "sha256": "002d227cd0d189ea15d70cb7384066735c62a84ac4bb71eace23c261409b24d9"
     },
     {
       "name": "package.json",
       "size": 131,
-      "sha256": "fe237ee73b2936275451de19d1e8cd2f3d3f984005e3e6837505621aec524673"
+      "sha256": "34ed45772978c856cb80be2c5784743d987330eed07d85634ca7569336d5eeab"
     },
     {
       "name": "preload.js",

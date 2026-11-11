@@ -304,6 +304,34 @@
   function renameStyle(root, newName) { const s = stcOf(root); s.name = newName.replace(/\.stg$/i, '') + '.stc'; }
 
 
+
+  // ---------- track properties (style element editor) ----------
+  function clipNode(root, elId, track) { const scn = sceneOf(root, elId); return scn && child(scn, clipName(track)); }
+  function getTrackProps(root, elId, track) {
+    const cl = clipNode(root, elId, track); if (!cl) return null;
+    const smf = parseSMF(child(cl, 'Main.mid').data); const x = leafText(child(cl, 'ClipDescription.xml'));
+    const cc = (n) => { for (const e of smf.tracks[0] || []) if (e.kind === 'ch' && (e.status & 0xf0) === 0xb0 && e.data[0] === n) return e.data[1]; return null; };
+    let pc = null; for (const e of smf.tracks[0] || []) if (e.kind === 'ch' && (e.status & 0xf0) === 0xc0) { pc = e.data[0]; break; }
+    const cvs = new Set(); x.replace(/<\w+ cv="(\d+)"\/>/g, (_, n) => { cvs.add(+n); return ''; });
+    const table = []; x.replace(/<CHORD_TABLE>([\s\S]*?)<\/CHORD_TABLE>/, (_, t) => { t.replace(/<(\w+) cv="(\d+)"\/>/g, (__, ch, n) => { table.push([ch, +n]); return ''; }); return ''; });
+    const orig = []; x.replace(/<ORIGINAL_CHORD>([\s\S]*?)<\/ORIGINAL_CHORD>/, (_, t) => { t.replace(/<CV(\d+) root="([^"]*)" chord="([^"]*)"\/>/g, (__, n, r, ch) => { orig.push({ cv: +n, root: r, chord: ch }); return ''; }); return ''; });
+    return { sound: { msb: cc(0), lsb: cc(32), pc, vol: cc(7) }, vol: cc(7), exp: cc(11), reverb: cc(91), chorus: cc(93), type: xmlAttr(x, 'Pattern', 'type') || '', keyLow: +(xmlAttr(x, 'KeyLow', 'value') ?? 0), keyHigh: +(xmlAttr(x, 'KeyHigh', 'value') ?? 127), hasKeyRange: /<KeyLow /.test(x), orig, table, cvs: [...cvs].sort() };
+  }
+  function setTrackProps(root, elId, track, p) { // p: {msb,lsb,pc,vol,exp,keyLow,keyHigh,origRoot,origChord}
+    const cl = clipNode(root, elId, track); if (!cl) return false; const leaf = child(cl, 'Main.mid'); const smf = parseSMF(leaf.data); const t0 = smf.tracks[0];
+    const firstCh = t0.find(e => e.kind === 'ch'); const tIns = firstCh ? firstCh.t : 0; const ch = firstCh ? firstCh.status & 15 : 0;
+    const setCC = (n, v) => { if (v == null) return; const e = t0.find(e => e.kind === 'ch' && (e.status & 0xf0) === 0xb0 && e.data[0] === n); if (e) e.data = new Uint8Array([n, v & 127]); else { const i = t0.indexOf(firstCh); t0.splice(i < 0 ? t0.length : i, 0, { t: tIns, kind: 'ch', status: 0xb0 | ch, data: new Uint8Array([n, v & 127]) }); } };
+    if (p.pc != null) { setCC(0, p.msb); setCC(32, p.lsb); const e = t0.find(e => e.kind === 'ch' && (e.status & 0xf0) === 0xc0); if (e) e.data = new Uint8Array([p.pc & 127]); else { const i = t0.findIndex(e => e.kind === 'ch' && (e.status & 0xf0) === 0xb0 && e.data[0] === 32); t0.splice(i < 0 ? t0.length : i + 1, 0, { t: tIns, kind: 'ch', status: 0xc0 | ch, data: new Uint8Array([p.pc & 127]) }); } }
+    setCC(7, p.vol); setCC(11, p.exp);
+    if (p.pc != null || p.vol != null || p.exp != null) leaf.data = writeSMF(smf.division, smf.tracks.map(tr => tr.map((e, i) => ({ ...e, prio: 0 }))));
+    const xl = child(cl, 'ClipDescription.xml'); let x = leafText(xl);
+    if (p.keyLow != null && /<KeyLow /.test(x)) x = x.replace(/<KeyLow value="\d+"\/>/, `<KeyLow value="${p.keyLow}"/>`);
+    if (p.keyHigh != null && /<KeyHigh /.test(x)) x = x.replace(/<KeyHigh value="\d+"\/>/, `<KeyHigh value="${p.keyHigh}"/>`);
+    if (p.origRoot) x = x.replace(/<CV1 root="[^"]*" chord="[^"]*"\/>/, `<CV1 root="${p.origRoot}" chord="${p.origChord || 'Maj'}"/>`);
+    xl.data = enc8(x); return true;
+  }
+  function setStyleTempo(root, bpm) { const sd = child(root, 'StageDescription.xml'); if (!sd) return; const us = Math.round(60000000 / bpm); sd.data = enc8(leafText(sd).replace(/(<Tempo\b[^>]*\bvalue=")\d+(")/, `$1${us}$2`)); }
+
   // ---------- note editing ----------
   function clipNotes(midBytes) { // -> { division, setupEnd, end, notes:[{t,dur,key,vel,ch}], others:[events of music tracks], smf }
     const smf = parseSMF(midBytes); const setup = smf.tracks[0] || []; const setupEnd = setup.length ? setup[setup.length - 1].t : 0;
@@ -394,6 +422,6 @@
     const all = [...parts, ...cd, endRec]; const total = all.reduce((s, x) => s + x.length, 0); const out = new Uint8Array(total); let p = 0; for (const x of all) { out.set(x, p); p += x.length; } return out;
   }
 
-  const api = { clipNotes, buildClipMidi, clipLeaf, setClipMidi, pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
+  const api = { getTrackProps, setTrackProps, setStyleTempo, clipNode, clipNotes, buildClipMidi, clipLeaf, setClipMidi, pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PACore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
