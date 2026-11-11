@@ -66,6 +66,39 @@
     if (smpl) { str('smpl'); w32(60); w32(0); w32(0); w32(Math.round(1e9 / rate)); w32(60); w32(0); w32(0); w32(0); w32(1); w32(0); w32(0); w32(0); w32(loop.start); w32(Math.max(loop.start, loop.end - 1)); w32(0); w32(0); }
     return new Uint8Array(buf);
   }
-  const api = { isKorf, parseKorf, decodeSample, wavBytes };
+
+  // KORG "OC31" block compression: an LZO1Z-like scheme (literal runs t+2 / 18+ext, 14-bit offsets hi<<6|lo>>2, +1).
+  function oc31(block) {
+    const b = block; const k = (() => { for (let i = 0; i + 3 < b.length; i++) if (b[i] === 0x4f && b[i + 1] === 0x43 && b[i + 2] === 0x33 && b[i + 3] === 0x31) return i; return -1; })();
+    if (k < 0) return null; const N = (b[k + 4] | (b[k + 5] << 8) | (b[k + 6] << 16) | (b[k + 7] << 24)) >>> 0; const s = b.subarray(k + 8);
+    const out = new Uint8Array(N); let o = 0, ip = 0, afterLit = false;
+    const cp = (d, n) => { for (let i = 0; i < n && o < N; i++) { out[o] = d <= o ? out[o - d] : 0; o++; } };
+    const lit = (n) => { for (let i = 0; i < n && o < N && ip < s.length; i++) out[o++] = s[ip++]; };
+    const ext = (base) => { let e = 0; while (s[ip] === 255) { e += 255; ip++; } return e + base + s[ip++]; };
+    while (ip < s.length && o < N) {
+      const t = s[ip++]; let low;
+      if (t < 16 && !afterLit) { lit(t === 0 ? ext(18) : t + 2); afterLit = true; continue; }
+      if (t < 16) { const b1 = s[ip++]; cp(1 + 0x800 + (t >> 2) + (b1 << 2), 3); low = b1; }
+      else if (t >= 64) { const b1 = s[ip++]; cp(((t & 31) << 6) + (b1 >> 2) + 1, (t >> 5) + 1); low = b1; }
+      else if (t >= 32) { let n = t & 31; if (n === 0) n = ext(32); const b0 = s[ip], b1 = s[ip + 1]; ip += 2; cp((b0 << 6) + (b1 >> 2) + 1, n + 2); low = b1; }
+      else { let n = t & 7; if (n === 0) n = ext(7); const b0 = s[ip], b1 = s[ip + 1]; ip += 2; const d = ((t & 8) << 11) + (b0 << 6) + (b1 >> 2); if (d === 0) break; cp(d + 0x4000, n + 2); low = b1; }
+      const nl = low & 3; if (nl) { lit(nl); afterLit = true; } else afterLit = false;
+    }
+    return o === N ? out : out.subarray(0, o);
+  }
+  // Pad presets (MATRIXPRESET/Pads.MTP): each preset holds 16 pad file paths.
+  function padPresets(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); const k = parseKorf(b); const res = [];
+    const data = k.chunks.filter(c => c.id === '1d000030');
+    data.forEach((c, i) => {
+      const raw = oc31(b.subarray(c.off, c.off + c.size)); if (!raw) return;
+      const paths = []; let s = 0;
+      for (let j = 0; j <= raw.length; j++) if (j === raw.length || raw[j] === 0) { if (j - s > 3) { const str = td.decode(raw.subarray(s, j)); const m = str.indexOf(':\\'); if (m >= 0) paths.push(str.slice(m - 1)); } s = j + 1; }
+      const e = k.entries[i] || {};
+      res.push({ name: e.name || 'Preset ' + (i + 1), slot: e.slot, date: e.date, pads: paths.map(p => { const parts = p.split('\\'); const file = parts.pop(); return { path: p, name: file.replace(/\.pdc$/i, ''), category: parts.pop() || '', source: /\\FACTORY\\/i.test(p) ? 'Factory' : /\\USER\\/i.test(p) ? 'User' : (parts[3] || '') }; }) });
+    });
+    return res.sort((a, b) => (a.slot ?? 99) - (b.slot ?? 99));
+  }
+  const api = { oc31, padPresets, isKorf, parseKorf, decodeSample, wavBytes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PAKorf = api;
 })(typeof window !== 'undefined' ? window : globalThis);

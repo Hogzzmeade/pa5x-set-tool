@@ -160,6 +160,11 @@
       for (const e of evs) { const tk = e.t - setupEnd; if (tk < 0) continue; const m = this.noteMsg(e, ch, 0); if (m) { this.send(m, t0 + tk * sp); this.track(ch, m); } }
     }
 
+    // ---- single note preview (editor) ----
+    async audition(sound, setupEvents, ch, key, vel) {
+      await this.ctx.resume(); const t = this.ctx.currentTime + 0.01; this.setupChannel(ch, sound, setupEvents || [], t);
+      this.send([0x90 | ch, key, vel], t); this.send([0x80 | ch, key, 0], t + 0.35);
+    }
     // ---- live keyboard (keyboard sets) ----
     async setKeyboardSet(ks) {
       await this.ctx.resume(); this.ks = ks; const t = this.ctx.currentTime;

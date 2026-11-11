@@ -303,6 +303,36 @@
   function deleteTrack(root, id, track) { const scn = sceneOf(root, id); if (!scn) return; scn.children = scn.children.filter(c => c.name !== clipName(track)); sortScene(scn); }
   function renameStyle(root, newName) { const s = stcOf(root); s.name = newName.replace(/\.stg$/i, '') + '.stc'; }
 
+
+  // ---------- note editing ----------
+  function clipNotes(midBytes) { // -> { division, setupEnd, end, notes:[{t,dur,key,vel,ch}], others:[events of music tracks], smf }
+    const smf = parseSMF(midBytes); const setup = smf.tracks[0] || []; const setupEnd = setup.length ? setup[setup.length - 1].t : 0;
+    const notes = [], others = []; let end = setupEnd; const open = new Map();
+    for (let ti = 1; ti < smf.tracks.length; ti++) for (const e of smf.tracks[ti]) {
+      if (e.kind === 'meta' && e.type === 0x2f) { end = Math.max(end, e.t); continue; }
+      if (e.kind === 'ch') { const hi = e.status & 0xf0, ch = e.status & 15;
+        if (hi === 0x90 && e.data[1] > 0) { const k = ch * 128 + e.data[0]; if (!open.has(k)) open.set(k, []); const n = { t: e.t - setupEnd, dur: 0, key: e.data[0], vel: e.data[1], ch }; open.get(k).push(n); notes.push(n); continue; }
+        if (hi === 0x80 || hi === 0x90) { const k = ch * 128 + e.data[0]; const q = open.get(k); if (q && q.length) { const n = q.shift(); n.dur = Math.max(1, e.t - setupEnd - n.t); } continue; } }
+      others.push({ ...e, t: e.t - setupEnd, track: ti });
+    }
+    for (const q of open.values()) for (const n of q) if (!n.dur) n.dur = Math.max(1, end - setupEnd - n.t);
+    notes.sort((a, b) => a.t - b.t || a.key - b.key);
+    return { division: smf.division, setupEnd, end: end - setupEnd, notes, others, smf };
+  }
+  function buildClipMidi(cn, notes, newEnd) {
+    const end = (newEnd ?? cn.end) + cn.setupEnd; const tracks = [cn.smf.tracks[0].map(e => ({ ...e }))];
+    const nt = Math.max(1, cn.smf.tracks.length - 1); for (let i = 1; i <= nt; i++) tracks.push([]);
+    for (const e of cn.others) { const t = Math.min(end, e.t + cn.setupEnd); tracks[Math.min(e.track || 1, nt)].push({ ...e, t, prio: 1 }); }
+    for (const n of notes) { if (n.t < 0 || n.t >= end - cn.setupEnd) continue; const on = n.t + cn.setupEnd, off = Math.min(end, on + Math.max(1, Math.round(n.dur))); const ch = n.ch & 15;
+      tracks[1].push({ t: on, kind: 'ch', status: 0x90 | ch, data: new Uint8Array([n.key & 127, Math.max(1, Math.min(127, Math.round(n.vel)))]), prio: 2 });
+      tracks[1].push({ t: off, kind: 'ch', status: 0x80 | ch, data: new Uint8Array([n.key & 127, 64]), prio: 0 }); }
+    for (let i = 1; i <= nt; i++) tracks[i].push({ t: end, kind: 'meta', type: 0x2f, data: new Uint8Array(0) });
+    tracks[0] = tracks[0].filter(e => !(e.kind === 'meta' && e.type === 0x2f)); tracks[0].push({ t: cn.setupEnd, kind: 'meta', type: 0x2f, data: new Uint8Array(0) });
+    return writeSMF(cn.division, tracks);
+  }
+  function clipLeaf(root, elId, track) { const scn = sceneOf(root, elId); const clip = scn && child(scn, clipName(track)); return clip && child(clip, 'Main.mid'); }
+  function setClipMidi(root, elId, track, bytes) { const l = clipLeaf(root, elId, track); if (!l) throw new Error('Няма такава писта'); l.data = bytes; }
+
   // ---------- export ----------
   const KORG_SYSEX = (e) => e.kind === 'sysex' && e.data[0] === 0x42;
   function exportStyleMidi(style, opts) {
@@ -364,6 +394,6 @@
     const all = [...parts, ...cd, endRec]; const total = all.reduce((s, x) => s + x.length, 0); const out = new Uint8Array(total); let p = 0; for (const x of all) { out.set(x, p); p += x.length; } return out;
   }
 
-  const api = { pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
+  const api = { clipNotes, buildClipMidi, clipLeaf, setClipMidi, pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PACore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

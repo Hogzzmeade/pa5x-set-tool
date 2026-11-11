@@ -128,6 +128,21 @@
   #pvC{display:block;width:100%;height:150px}
   .sndn{font-size:12px;color:#c9d1dc;white-space:normal;max-width:130px}
   .ks .l .sndn{max-width:none;text-align:right}
+  .padgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .padc{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px;min-height:74px;position:relative}
+  .padc .pn{position:absolute;top:6px;right:8px;font-size:11px;color:var(--dim)} .padc .pname{font-weight:600;margin-right:16px} .padc .pcat{font-size:12px;color:var(--acc2);margin-top:4px}
+  .cell.edc{cursor:pointer} .cell.edc:hover{outline:1px solid var(--acc)}
+  .nemodal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;display:flex}
+  .nebox{flex:1;margin:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .nebar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line)} .nebar .sep{flex:1}
+  .nebar label{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--dim)} .nebar select,.nebar input{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden} .seg button{background:var(--panel2);border:0;padding:5px 9px;cursor:pointer} .seg button.on{background:var(--acc);color:#1b1206}
+  .nemain{flex:1;display:flex;min-height:0} .nevel{display:flex;height:92px;border-top:1px solid var(--line)}
+  .nekeys{width:120px;flex:none;overflow:hidden;background:#1a1d22;border-right:1px solid var(--line)} .nekeys.velh{display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px}
+  .nek{font-size:10px;line-height:1;display:flex;align-items:center;padding-left:6px;background:#e9e5dc;color:#333;border-bottom:1px solid #cfcac0;box-sizing:border-box;cursor:pointer;white-space:nowrap;overflow:hidden}
+  .nek.b{background:#2a2a2a;color:#bbb;border-bottom-color:#111} .nek.c{font-weight:600}
+  .nescroll{flex:1;overflow:auto;position:relative} #neVScroll{overflow-x:auto;overflow-y:hidden}
+  .nestat{padding:5px 10px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -246,7 +261,7 @@
     state.styles = await group('STYLE', '.stg');
     state.ksets = await group('KEYBOARDSET', '.ksc');
     state.padPresets = []; state.userSounds = [];
-    for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...C.korfNames(new Uint8Array(await x.f.arrayBuffer())).map(n => ({ n, file: x.name }))); } catch (e) { } }
+    for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...window.PAKorf.padPresets(new Uint8Array(await x.f.arrayBuffer())).map(p => ({ ...p, n: p.name, file: x.name }))); } catch (e) { } }
     for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { const ent = window.PAKorf.parseKorf(new Uint8Array(await x.f.arrayBuffer())).entries.filter(e => e.name).sort((a, b) => a.slot - b.slot); state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), file: x.name, entries: ent, names: ent.map(e => e.name) }); } catch (e) { } }
     C.setSoundIndex(C.buildSoundIndex(state.userSounds.map(b => ({ name: b.file, entries: b.entries })))); state.styleCache.clear();
     const ns = state.styles.reduce((s, b) => s + b.items.length, 0), nk = state.ksets.reduce((s, b) => s + b.items.length, 0);
@@ -289,10 +304,11 @@
       h += `<div class="bank" data-key="${key}"><span>${col ? '▸' : '▾'} ${esc(b.bank)}</span><span class="n">${items.length}</span></div>`;
       if (!col) for (const x of items) h += `<div class="item${state.sel === x ? ' sel' : ''}" data-b="${bi}" data-i="${b.items.indexOf(x)}" title="${esc(x.path)}">${state.edits && state.edits.has(x) ? '<span class="mod">●</span> ' : ''}${esc(x.name.replace(/\.(stg|ksc)$/i, ''))}</div>`;
     }
-    if (state.tab === 'pads') h = state.padPresets.length ? state.padPresets.map(p => `<div class="item">${esc(p.n)}</div>`).join('') : '<div class="item hint">Няма Pad пресети</div>';
+    if (state.tab === 'pads') h = state.padPresets.length ? state.padPresets.map((p, i) => `<div class="item pp${state.padSel === i ? ' sel' : ''}" data-pp="${i}">${esc(p.n)} <span class="hint">· ${p.pads.length} пада</span></div>`).join('') : '<div class="item hint">Няма Pad пресети</div>';
     if (state.tab === 'sounds') h = state.userSounds.map(b => `<div class="bank"><span>${esc(b.bank)}</span><span class="n">${b.names.length}</span></div>` + b.entries.map(e => `<div class="item" title="${esc(C.soundTitle(Object.assign({ pc: e.slot }, C.pcgBankFromFile(b.file) || {})))}">${String(e.slot + 1).padStart(3, '0')} ${esc(e.name)}</div>`).join('')).join('') || '<div class="item hint">Няма User звуци</div>';
     if (!state.files.length) h = '';
     L.innerHTML = h;
+    L.querySelectorAll('.item.pp').forEach(el => el.onclick = () => { state.padSel = +el.dataset.pp; renderList(); showPads(); });
     L.querySelectorAll('.bank[data-key]').forEach(el => el.onclick = () => { const k = el.dataset.key; state.collapsed.has(k) ? state.collapsed.delete(k) : state.collapsed.add(k); renderList(); });
     L.querySelectorAll('.item[data-b]').forEach(el => el.onclick = () => { const x = banks[+el.dataset.b].items[+el.dataset.i]; state.sel = x; renderList(); state.tab === 'styles' ? showStyle(x, +el.dataset.b) : showKset(x); });
   }
@@ -414,9 +430,9 @@
       ${ed ? `<div class="card warnc"><h3>Незаписани промени (${ed.history.length})</h3><ul class="chg">${ed.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
         <div class="row"><button class="btn primary" id="saveAs">Запиши като нов стил…</button><button class="btn" id="saveOver">Презапиши оригинала (с резервно копие)</button><button class="btn" id="undo">Отмени последното</button><button class="btn" id="discard">Откажи всички</button></div></div>` : ''}
       <div class="card"><h3>Елементи и писти</h3><div style="overflow:auto"><table class="et"><tr><th></th><th>Елемент</th><th class="c">Тактове</th><th class="c">Такт</th>${tracks.map(t => `<th class="c">${t}<div class="msw">${ms(t)}</div></th>`).join('')}</tr>
-      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}" title="${tr ? esc(C.soundLabel(tr.sound) + ' · ' + C.soundTitle(tr.sound)) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
+      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}${tr ? ' edc' : ''}"${tr ? ` data-ed="${e.id}|${t}"` : ''} title="${tr ? esc(C.soundLabel(tr.sound) + ' · ' + C.soundTitle(tr.sound)) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
       <tr><td></td><td class="hint">Звук</td><td></td><td></td>${tracks.map(t => `<td class="c sndn" title="${esc(C.soundTitle(firstSound(t)))}">${esc(C.soundLabel(firstSound(t)))}</td>`).join('')}</tr>
-      </table></div><p class="hint">Числата са брой ноти. M = заглуши пистата, S = само тази писта. Интервал = Start/Stop.</p></div>
+      </table></div><p class="hint">Числата са брой ноти. Клик върху число отваря редактора на нотите. M = заглуши пистата, S = само тази писта. Интервал = Start/Stop.</p></div>
       <div class="card"><h3>Копиране от друг стил</h3>${copyFormHtml(s)}</div>
       <div class="card"><h3>Pads на стила (${s.pads.length})</h3>${s.pads.length ? s.pads.map((p, i) => `<button class="btn padb" data-p="${i}" title="${esc(C.soundLabel(p.sound) + ' · ' + C.soundTitle(p.sound))}">▶ Pad ${i + 1}: ${esc(p.name)}</button>`).join(' ') : '<span class="hint">Няма зададени Pads</span>'}</div>
       <div class="card"><h3>Keyboard Sets на стила (${s.keyboardSets.length})</h3><div class="grid2">${s.keyboardSets.map((k, i) => ksCard(k, i + 1, i)).join('') || '<span class="hint">Няма</span>'}</div><div id="kbHost"></div></div>
@@ -429,6 +445,7 @@
     $('#detail').innerHTML = h;
     // playback hooks
     document.querySelectorAll('.playel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.queue(b.dataset.el); else P.start(b.dataset.el); });
+    document.querySelectorAll('.edc').forEach(c => c.onclick = () => { const [eid, tn] = c.dataset.ed.split('|'); openNoteEditor(x, bi, eid, tn); });
     document.querySelectorAll('.ms').forEach(b => b.onclick = () => { const t = b.dataset.m || b.dataset.s; const set = b.dataset.m ? P.mutes : P.solos; set.has(t) ? set.delete(t) : set.add(t); b.classList.toggle('on', set.has(t)); });
     document.querySelectorAll('.padb').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const p = s.pads[+b.dataset.p]; if (p.smf) P.playClip(p.smf, p.sound, [14, 15, 13, 12][+b.dataset.p % 4]); });
     document.querySelectorAll('.kssel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const k = s.keyboardSets[+b.dataset.k]; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); document.querySelectorAll('.kssel').forEach(z => z.classList.toggle('on', z === b)); });
@@ -587,9 +604,16 @@
     download(zipName, C.makeZip(files), 'application/zip'); status(`Готово: ${files.length} стила експортирани${bad ? `, ${bad} с грешка` : ''}`);
   }
 
+  function padGrid(p) {
+    return `<div class="padgrid">${p.pads.map((x, i) => `<div class="padc" title="${esc(x.path)}"><div class="pn">${i + 1}</div><div class="pname">${esc(x.name)}</div><div class="pcat">${esc(x.category)}${x.source ? ' · ' + esc(x.source) : ''}</div></div>`).join('')}</div>`;
+  }
   function showPads() {
-    $('#detail').innerHTML = `<h2>Pads</h2><div class="card"><h3>Pad пресети (MATRIXPRESET)</h3>${state.padPresets.map(p => `<span class="tag">${esc(p.n)}</span>`).join('') || '<span class="hint">Няма</span>'}
-      <p class="hint">Съдържанието на Pad пресетите е компресирано. Разчитането му предстои в следваща версия. Pads на всеки стил се виждат в страницата на стила.</p></div>`;
+    const list = state.padPresets; const i = state.padSel ?? 0;
+    if (!list.length) { $('#detail').innerHTML = '<h2>Pads</h2><p class="hint">В сета няма Pad пресети.</p>'; return; }
+    const p = list[Math.min(i, list.length - 1)];
+    $('#detail').innerHTML = `<h2>${esc(p.name)}</h2><div class="meta"><span>Pad пресет ${(p.slot ?? i) + 1} от ${list.length}</span><span>Падове: <b>${p.pads.length}</b></span>${p.date ? `<span>Дата: <b>${esc(p.date)}</b></span>` : ''}<span>Файл: <b>${esc(p.file)}</b></span></div>
+      <div class="card"><h3>Падове</h3>${padGrid(p)}<p class="hint">Пътищата сочат към падовете в паметта на клавира (FACTORY = фабрични). Посочи пад, за да видиш пълния път.</p></div>
+      <div class="card"><h3>Всички Pad пресети</h3><table><tr><th>#</th><th>Име</th>${Array.from({ length: 4 }, (_, k) => `<th>Пад ${k + 1}</th>`).join('')}<th></th></tr>${list.map((q, j) => `<tr class="${j === i ? 'sel' : ''}"><td>${j + 1}</td><td>${esc(q.name)}</td>${q.pads.slice(0, 4).map(x => `<td>${esc(x.name)}</td>`).join('')}<td class="hint">${q.pads.length > 4 ? '+' + (q.pads.length - 4) : ''}</td></tr>`).join('')}</table></div>`;
   }
   function showSounds() {
     $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => { const bk = C.pcgBankFromFile(b.file); return `<div class="card"><h3>${esc(b.bank)} (${b.entries.length})${bk ? ` <span class="hint">· MSB ${bk.msb} · LSB ${bk.lsb}</span>` : ''}</h3><table><tr><th>Слот</th><th>Име</th><th>MSB.LSB.Prog</th><th>Дата</th></tr>${b.entries.map(e => `<tr><td>${e.slot + 1}</td><td>${esc(e.name)}</td><td class="snd">${bk ? `${bk.msb}.${bk.lsb}.${e.slot + 1}` : ''}</td><td class="hint">${esc(e.date || '')}</td></tr>`).join('')}</table></div>`; }).join('') || '<p class="hint">Няма</p>'}`;
@@ -610,7 +634,7 @@
     try {
       if (ext === 'stg') { const s = C.parseStyle(bytes, f.name); r = { type: 'stg', style: s, idx: await fvSetIndex(f) }; }
       else if (ext === 'ksc') { r = { type: 'ksc', ks: C.parseKeyboardSetFile(bytes, f.name), idx: await fvSetIndex(f) }; }
-      else if (K.isKorf(bytes)) { const k = K.parseKorf(bytes); r = { type: k.samples.length ? 'pcm' : 'korf', korf: k }; if (k.samples.length) r.bytes = bytes; }
+      else if (K.isKorf(bytes)) { const k = K.parseKorf(bytes); r = { type: k.samples.length ? 'pcm' : 'korf', korf: k }; if (k.samples.length) r.bytes = bytes; if (k.chunks.some(c => c.id === '1d000030')) { try { r.pads = K.padPresets(bytes); } catch (e) { } } }
       else r = { type: 'unknown', error: 'Неразпознат формат (възможно е от по-стар модел PA)' };
     } catch (e) { r = { type: 'unknown', error: e.message }; }
     if (r.type !== 'pcm') { /* keep only PCM bytes for preview */ }
@@ -627,6 +651,7 @@
   const sndLbl = (s, idx) => C.soundLabel(s, idx || null);
   function fvRows(f, r) {
     if (r.type === 'pcm') return { cols: ['ID', 'Име на семпъл', 'Размер', 'Честота', 'Семпли', 'Продълж.', 'Тип', 'Канали', 'Цикъл'], rows: r.korf.samples.map((s, i) => ({ i, cells: [s.slot != null ? s.slot + 1 : i + 1, s.name || '—', s.dataLen.toLocaleString('bg') + ' б (' + fmtKB(s.dataLen) + ')', (s.rate / 1000).toFixed(1) + ' kHz / ' + s.bits + ' бита', s.frames.toLocaleString('bg'), s.duration >= 1 ? s.duration.toFixed(2) + ' s' : Math.round(s.duration * 1000) + ' ms', s.compressed ? 'Компресиран' : 'Нормален', s.channels > 1 ? 'стерео' : 'моно', s.loopStart > 0 && s.loopStart < s.loopEnd ? s.loopStart + '–' + s.loopEnd : '—'], warn: s.compressed })).sort((a, b) => a.cells[0] - b.cells[0]) };
+    if (r.type === 'korf' && r.pads) return { head: `${r.pads.length} Pad пресета × ${r.pads[0] ? r.pads[0].pads.length : 0} пада`, cols: ['Пресет', 'Пад', 'Име', 'Категория', 'Източник', 'Път'], rows: r.pads.flatMap((p, pi) => p.pads.map((x, i) => ({ i: pi * 100 + i, cells: [p.name, i + 1, x.name, x.category, x.source, x.path] }))) };
     if (r.type === 'korf') { const bk = C.pcgBankFromFile(f.name); return { cols: ['ID', 'Име', 'Тип', ...(bk ? ['MSB.LSB.Prog'] : []), 'Версия', 'Дата', 'Създаден с'], rows: r.korf.entries.map((e, i) => ({ i, cells: [e.slot != null ? e.slot + 1 : i + 1, e.name || '—', e.type || '', ...(bk ? [e.slot != null ? `${bk.msb}.${bk.lsb}.${e.slot + 1}` : ''] : []), e.ver != null ? `Ver ${e.ver} Rev ${e.rev}` : '', e.date || '', e.createdWith || ''] })).sort((a, b) => a.cells[0] - b.cells[0]) }; }
     if (r.type === 'stg') { const s = r.style; return { head: `${s.name} · ${s.tempo} BPM · ${[...new Set(s.elements.map(e => e.ts.label))].join(', ')} · Keyboard Sets: ${s.keyboardSets.map(k => k.name || '—').join(', ') || 'няма'} · Pads: ${s.pads.map(p => p.name).join(', ') || 'няма'}`, sounds: C.TRACK_ORDER.filter(t => t !== 'Chords').map(t => { for (const e of s.elements) { const tr = e.tracks.find(z => z.name === t); if (tr) return t + ': ' + sndLbl(tr.sound, r.idx); } return null; }).filter(Boolean).join(' · '), cols: ['#', 'Елемент', 'Тактове', 'Такт', 'Писти', 'Ноти'], rows: s.elements.map((e, i) => ({ i, cells: [i + 1, e.label, e.bars || 'празен', e.ts.label, e.tracks.filter(t => t.name !== 'Chords').map(t => t.name).join(', '), e.tracks.reduce((a, t) => a + t.info.notes, 0)] })) }; }
     if (r.type === 'ksc') return { head: `${r.ks.name} · split ${r.ks.splitPoint != null ? noteName(r.ks.splitPoint) : '—'}`, cols: ['Писта', 'Звук', 'Банка / номер', 'Volume', 'Pan', 'Обхват', 'Mute'], rows: r.ks.tracks.map((t, i) => ({ i, cells: [t.name, sndLbl(t.sound, r.idx), C.soundTitle(t.sound, r.idx || null), t.sound?.vol ?? '—', t.sound?.pan ?? '—', t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—', t.mute ? 'да' : ''] })) };
@@ -684,6 +709,7 @@
   function repRows(f, r) {
     const base = [f.name, f.dir, kindOf(f.name)]; const out = [];
     if (r.type === 'pcm') for (const [i, s] of r.korf.samples.entries()) { const e = s.entry || {}; out.push([...base, s.slot != null ? s.slot + 1 : i + 1, s.name || '', 'Sample', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', s.rate, s.bits, s.channels, s.frames, Math.round(s.duration * 1000), s.compressed ? 'да' : 'не', '', '', s.loopStart > 0 ? `loop ${s.loopStart}-${s.loopEnd}` : '']); }
+    else if (r.type === 'korf' && r.pads) for (const p of r.pads) p.pads.forEach((x, i) => out.push([...base, i + 1, x.name, 'Pad', '', p.date || '', '', '', '', '', '', '', '', '', '', `${p.name} · ${x.category} · ${x.path}`]));
     else if (r.type === 'korf') for (const [i, e] of r.korf.entries.entries()) out.push([...base, e.slot != null ? e.slot + 1 : i + 1, e.name || '', e.type || '', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', '', '', '', '', '', '', '', '', '']);
     else if (r.type === 'stg') { const s = r.style; out.push([...base, '', s.name, 'Style', '', '', '', '', '', '', '', '', '', s.tempo, [...new Set(s.elements.map(e => e.ts.label))].join(' '), s.elements.filter(e => e.length).map(e => `${e.id}:${e.bars}т`).join(' ') + ' | KS: ' + s.keyboardSets.map(k => k.name).join(', ')]); }
     else if (r.type === 'ksc') out.push([...base, '', r.ks.name, 'Keyboard Set', '', '', '', '', '', '', '', '', '', '', '', r.ks.tracks.map(t => `${t.name}=${sndLbl(t.sound, r.idx)} [${C.fmtSound(t.sound)}]${t.mute ? '(m)' : ''}`).join(' ')]);
@@ -736,6 +762,141 @@
     window.native.onFvOpen(list => fvAddFiles(list, true));
     window.native.fvPending().then(list => { if (list.length) fvAddFiles(list, true); });
     renderFvFiles();
+  }
+  // ===================== NOTE EDITOR (piano roll) =====================
+  const GM_DRUMS = { 35: 'Ac. Bass Drum', 36: 'Bass Drum', 37: 'Side Stick', 38: 'Snare', 39: 'Hand Clap', 40: 'El. Snare', 41: 'Low Floor Tom', 42: 'Closed Hi-Hat', 43: 'High Floor Tom', 44: 'Pedal Hi-Hat', 45: 'Low Tom', 46: 'Open Hi-Hat', 47: 'Low-Mid Tom', 48: 'Hi-Mid Tom', 49: 'Crash 1', 50: 'High Tom', 51: 'Ride 1', 52: 'Chinese Cym.', 53: 'Ride Bell', 54: 'Tambourine', 55: 'Splash', 56: 'Cowbell', 57: 'Crash 2', 58: 'Vibraslap', 59: 'Ride 2', 60: 'Hi Bongo', 61: 'Low Bongo', 62: 'Mute Hi Conga', 63: 'Open Hi Conga', 64: 'Low Conga', 65: 'High Timbale', 66: 'Low Timbale', 67: 'High Agogo', 68: 'Low Agogo', 69: 'Cabasa', 70: 'Maracas', 71: 'Short Whistle', 72: 'Long Whistle', 73: 'Short Guiro', 74: 'Long Guiro', 75: 'Claves', 76: 'Hi Wood Block', 77: 'Low Wood Block', 78: 'Mute Cuica', 79: 'Open Cuica', 80: 'Mute Triangle', 81: 'Open Triangle' };
+  const BLACK = [1, 3, 6, 8, 10];
+  async function openNoteEditor(x, bi, elId, track) {
+    const ed0 = state.edits.get(x); const tree = ed0 ? ed0.tree : await getTree(x); const leaf = C.clipLeaf(tree, elId, track);
+    if (!leaf) return toast('Тази писта няма клип в този елемент');
+    const s = await getStyle(x); const el = s.elements.find(e => e.id === elId); const tr = el.tracks.find(t => t.name === track);
+    const cn = C.clipNotes(leaf.data); const div = cn.division; const ts = el.ts; const beat = div * 4 / (2 ** ts.den); const bar = beat * ts.num;
+    const isDrum = (tr.sound && tr.sound.msb === 120) || track === 'Drum' || track === 'Perc';
+    const ch0 = cn.notes[0] ? cn.notes[0].ch : 0;
+    let notes = cn.notes.map((n, i) => ({ ...n, id: i })); let nid = notes.length; const undo = [], redo = []; let sel = new Set(); let clip = [];
+    const E = { pxPerTick: 0.06, rowH: 13, snap: div / 4, mode: 'select', lo: 0, hi: 127, playhead: 0 };
+    const keysUsed = notes.map(n => n.key); const kmin = keysUsed.length ? Math.min(...keysUsed) : 48, kmax = keysUsed.length ? Math.max(...keysUsed) : 72;
+    E.lo = Math.max(0, Math.min(kmin - 6, isDrum ? 35 : 36)); E.hi = Math.min(127, Math.max(kmax + 6, isDrum ? 81 : 84));
+    const snapshot = () => JSON.stringify(notes); const pushUndo = () => { undo.push(snapshot()); if (undo.length > 200) undo.shift(); redo.length = 0; };
+    const restore = (j) => { notes = JSON.parse(j); nid = notes.reduce((m, n) => Math.max(m, n.id + 1), 0); sel = new Set([...sel].filter(id => notes.some(n => n.id === id))); draw(); };
+    const nn = (k) => isDrum && GM_DRUMS[k] ? `${k} ${GM_DRUMS[k]}` : ROOTS[k % 12] + (Math.floor(k / 12) - 1);
+    const m = document.createElement('div'); m.className = 'nemodal';
+    m.innerHTML = `<div class="nebox">
+      <div class="nebar"><b>${esc(C.ELEMENT_LABEL[elId] || elId)} · ${esc(track)}</b><span class="hint">${esc(s.name)} · ${esc(C.soundLabel(tr.sound))} · ${el.bars} т. · ${ts.label}</span><span class="sep"></span>
+        <div class="seg"><button data-mode="select" class="on" title="Избор / местене (S)">↖ Избор</button><button data-mode="pencil" title="Молив: клик добавя нота (P)">✎ Молив</button></div>
+        <label>Мрежа<select id="neSnap"><option value="1">1/4</option><option value="2">1/8</option><option value="4" selected>1/16</option><option value="8">1/32</option><option value="3">1/8 трип.</option><option value="6">1/16 трип.</option><option value="0">без</option></select></label>
+        <button class="btn" id="neQ" title="Квантизирай избраните (Q)">Квантизирай</button>
+        <button class="btn" id="neTd" title="−1 полутон (↓)">−1</button><button class="btn" id="neTu" title="+1 полутон (↑)">+1</button><button class="btn" id="neOd" title="−октава">−12</button><button class="btn" id="neOu" title="+октава">+12</button>
+        <label>Сила<input type="number" id="neVel" min="1" max="127" style="width:56px"></label>
+        <button class="btn" id="neZo">−</button><button class="btn" id="neZi">+</button>
+        <button class="btn" id="neUndo" title="Ctrl+Z">↶</button><button class="btn" id="neRedo" title="Ctrl+Y">↷</button>
+        <button class="btn" id="nePlay">▶ Прослушай</button>
+        <button class="btn primary" id="neOk">Приложи</button><button class="btn" id="neCancel">Затвори</button></div>
+      <div class="nemain"><div class="nekeys" id="neKeys"></div><div class="nescroll" id="neScroll"><canvas id="neC"></canvas></div></div>
+      <div class="nevel"><div class="nekeys velh">Сила</div><div class="nescroll" id="neVScroll"><canvas id="neV"></canvas></div></div>
+      <div class="nestat" id="neStat"></div></div>`;
+    document.body.appendChild(m);
+    const cv = m.querySelector('#neC'), vc = m.querySelector('#neV'), sc = m.querySelector('#neScroll'), vs = m.querySelector('#neVScroll'), kc = m.querySelector('#neKeys');
+    const rows = () => E.hi - E.lo + 1; const yOf = (k) => (E.hi - k) * E.rowH; const kOf = (y) => E.hi - Math.floor(y / E.rowH);
+    const W = () => Math.max(400, Math.ceil(cn.end * E.pxPerTick) + 40); const snapT = (t) => E.snap ? Math.round(t / E.snap) * E.snap : Math.round(t);
+    function sizeAll() { const dpr = devicePixelRatio || 1; cv.width = W() * dpr; cv.height = rows() * E.rowH * dpr; cv.style.width = W() + 'px'; cv.style.height = rows() * E.rowH + 'px'; vc.width = W() * dpr; vc.height = 90 * dpr; vc.style.width = W() + 'px'; vc.style.height = '90px';
+      kc.innerHTML = Array.from({ length: rows() }, (_, i) => { const k = E.hi - i; return `<div class="nek${BLACK.includes(k % 12) ? ' b' : ''}${k % 12 === 0 ? ' c' : ''}" data-k="${k}" style="height:${E.rowH}px">${(k % 12 === 0 || isDrum) ? esc(nn(k)) : ''}</div>`; }).join(''); }
+    function draw() {
+      const dpr = devicePixelRatio || 1; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); const w = W(), h = rows() * E.rowH;
+      g.fillStyle = '#16191e'; g.fillRect(0, 0, w, h);
+      for (let k = E.lo; k <= E.hi; k++) { if (BLACK.includes(k % 12)) { g.fillStyle = '#12151a'; g.fillRect(0, yOf(k), w, E.rowH); } if (k % 12 === 0) { g.fillStyle = '#2a2f38'; g.fillRect(0, yOf(k) + E.rowH - 1, w, 1); } }
+      const step = E.snap || div / 4; for (let t = 0; t <= cn.end; t += step) { const x = t * E.pxPerTick; g.fillStyle = t % bar === 0 ? '#4a5260' : t % beat === 0 ? '#2f353f' : '#21252c'; g.fillRect(Math.round(x), 0, 1, h); if (t % bar === 0) { g.fillStyle = '#7c8594'; g.font = '10px Segoe UI'; g.fillText(String(t / bar + 1), x + 3, 10); } }
+      g.fillStyle = 'rgba(240,160,60,.08)'; g.fillRect(cn.end * E.pxPerTick, 0, w, h);
+      for (const n of notes) { const x = n.t * E.pxPerTick, y = yOf(n.key), ww = Math.max(3, n.dur * E.pxPerTick); const on = sel.has(n.id); const a = 0.45 + 0.55 * n.vel / 127;
+        g.fillStyle = on ? `rgba(240,160,60,${a})` : `rgba(92,194,138,${a})`; g.fillRect(x, y + 1, ww, E.rowH - 2); g.strokeStyle = on ? '#ffd9a3' : '#2c6b48'; g.strokeRect(x + .5, y + 1.5, ww - 1, E.rowH - 3); }
+      g.fillStyle = '#4fb3d9'; g.fillRect(E.playhead * E.pxPerTick, 0, 1, h);
+      const v = vc.getContext('2d'); v.setTransform(dpr, 0, 0, dpr, 0, 0); v.fillStyle = '#121418'; v.fillRect(0, 0, w, 90);
+      for (const n of notes) { const x = n.t * E.pxPerTick; const hh = n.vel / 127 * 84; v.fillStyle = sel.has(n.id) ? '#f0a03c' : '#5cc28a'; v.fillRect(x, 90 - hh, 3, hh); v.beginPath(); v.arc(x + 1.5, 90 - hh, 2.5, 0, 7); v.fill(); }
+      const sn = notes.filter(n => sel.has(n.id)); const vi = m.querySelector('#neVel'); if (document.activeElement !== vi) vi.value = sn.length ? Math.round(sn.reduce((a, n) => a + n.vel, 0) / sn.length) : '';
+      m.querySelector('#neStat').textContent = `${notes.length} ноти · избрани ${sn.length}${sn.length === 1 ? ` · ${nn(sn[0].key)} · такт ${Math.floor(sn[0].t / bar) + 1}.${Math.floor((sn[0].t % bar) / beat) + 1} · дължина ${sn[0].dur} · сила ${sn[0].vel}` : ''} · двоен клик: добави/изтрий · Del: изтрий · Ctrl+C/V: копирай/постави · Shift: добавяне към избора`;
+    }
+    const at = (ev) => { const r = cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; };
+    const hit = (p) => { for (let i = notes.length - 1; i >= 0; i--) { const n = notes[i]; const x = n.t * E.pxPerTick, ww = Math.max(3, n.dur * E.pxPerTick); if (p.x >= x && p.x <= x + ww && kOf(p.y) === n.key) return { n, edge: p.x > x + ww - 6 }; } return null; };
+    const audition = (k, vel) => { if (!playerReady) return; P.audition(tr.sound, tr.info.setup, isDrum ? 9 : 15, k, vel || 100); };
+    let drag = null;
+    cv.addEventListener('pointerdown', (ev) => {
+      const p = at(ev); const h = hit(p); cv.setPointerCapture(ev.pointerId); E.playhead = Math.max(0, snapT(p.x / E.pxPerTick));
+      if (h) { if (!sel.has(h.n.id)) { if (!ev.shiftKey) sel.clear(); sel.add(h.n.id); } else if (ev.shiftKey) { sel.delete(h.n.id); draw(); return; }
+        pushUndo(); drag = { kind: h.edge ? 'resize' : 'move', x0: p.x, k0: kOf(p.y), orig: notes.filter(n => sel.has(n.id)).map(n => ({ id: n.id, t: n.t, key: n.key, dur: n.dur })), moved: false }; audition(h.n.key, h.n.vel); }
+      else if (E.mode === 'pencil') { pushUndo(); const n = { id: nid++, t: Math.max(0, snapT(p.x / E.pxPerTick - (E.snap || 0) / 2)), dur: E.snap || div / 4, key: kOf(p.y), vel: 100, ch: ch0 }; if (n.t < cn.end) { notes.push(n); sel = new Set([n.id]); audition(n.key, 100); drag = { kind: 'resize', x0: p.x, orig: [{ id: n.id, t: n.t, key: n.key, dur: n.dur }], moved: false }; } }
+      else { if (!ev.shiftKey) sel.clear(); drag = { kind: 'box', x0: p.x, y0: p.y, base: new Set(sel) }; }
+      draw();
+    });
+    cv.addEventListener('pointermove', (ev) => {
+      const p = at(ev); if (!drag) { const h = hit(p); cv.style.cursor = h ? (h.edge ? 'ew-resize' : 'move') : (E.mode === 'pencil' ? 'crosshair' : 'default'); return; }
+      const dt = (p.x - drag.x0) / E.pxPerTick;
+      if (drag.kind === 'move') { const dk = kOf(p.y) - drag.k0; const q = E.snap ? Math.round(dt / E.snap) * E.snap : Math.round(dt);
+        for (const o of drag.orig) { const n = notes.find(z => z.id === o.id); n.t = Math.max(0, Math.min(cn.end - 1, o.t + q)); n.key = Math.max(0, Math.min(127, o.key + dk)); }
+        if (dk !== drag.lastDk && drag.orig.length) { drag.lastDk = dk; audition(drag.orig[0].key + dk, 100); } }
+      else if (drag.kind === 'resize') for (const o of drag.orig) { const n = notes.find(z => z.id === o.id); const q = E.snap ? Math.round((o.t + o.dur + dt) / E.snap) * E.snap - o.t : o.dur + dt; n.dur = Math.max(E.snap ? E.snap / 2 : 10, Math.round(q)); }
+      else if (drag.kind === 'box') { const x1 = Math.min(drag.x0, p.x), x2 = Math.max(drag.x0, p.x), k1 = kOf(Math.max(drag.y0, p.y)), k2 = kOf(Math.min(drag.y0, p.y)); sel = new Set(drag.base);
+        for (const n of notes) { const x = n.t * E.pxPerTick, xe = x + n.dur * E.pxPerTick; if (xe >= x1 && x <= x2 && n.key >= k1 && n.key <= k2) sel.add(n.id); }
+        draw(); const g = cv.getContext('2d'); g.strokeStyle = '#f0a03c'; g.setLineDash([4, 3]); g.strokeRect(x1, Math.min(drag.y0, p.y), x2 - x1, Math.abs(p.y - drag.y0)); g.setLineDash([]); return; }
+      drag.moved = true; draw();
+    });
+    cv.addEventListener('pointerup', () => { if (drag && (drag.kind === 'move' || drag.kind === 'resize') && !drag.moved && E.mode !== 'pencil') undo.pop(); drag = null; draw(); });
+    cv.addEventListener('dblclick', (ev) => { const p = at(ev); const h = hit(p); pushUndo();
+      if (h) { notes = notes.filter(n => n.id !== h.n.id); sel.delete(h.n.id); }
+      else { const n = { id: nid++, t: Math.max(0, E.snap ? Math.floor(p.x / E.pxPerTick / E.snap) * E.snap : Math.round(p.x / E.pxPerTick)), dur: E.snap || div / 4, key: kOf(p.y), vel: 100, ch: ch0 }; if (n.t < cn.end) { notes.push(n); sel = new Set([n.id]); audition(n.key, 100); } }
+      draw(); });
+    // velocity lane
+    let vdrag = false; const setVel = (ev) => { const r = vc.getBoundingClientRect(); const x = ev.clientX - r.left, y = ev.clientY - r.top; const v = Math.max(1, Math.min(127, Math.round((90 - y) / 84 * 127)));
+      const tgt = sel.size ? notes.filter(n => sel.has(n.id) && Math.abs(n.t * E.pxPerTick - x) < 6) : []; const near = notes.filter(n => Math.abs(n.t * E.pxPerTick - x) < 4);
+      for (const n of (tgt.length ? notes.filter(z => sel.has(z.id)) : near)) n.vel = v; draw(); };
+    vc.addEventListener('pointerdown', (ev) => { pushUndo(); vdrag = true; vc.setPointerCapture(ev.pointerId); setVel(ev); }); vc.addEventListener('pointermove', (ev) => { if (vdrag) setVel(ev); }); vc.addEventListener('pointerup', () => { vdrag = false; });
+    kc.addEventListener('pointerdown', (ev) => { const k = +ev.target.closest('[data-k]')?.dataset.k; if (!isNaN(k)) audition(k, 100); });
+    sc.addEventListener('scroll', () => { vs.scrollLeft = sc.scrollLeft; kc.scrollTop = sc.scrollTop; }); vs.addEventListener('scroll', () => { sc.scrollLeft = vs.scrollLeft; });
+    // toolbar
+    m.querySelectorAll('.seg button').forEach(b => b.onclick = () => { E.mode = b.dataset.mode; m.querySelectorAll('.seg button').forEach(z => z.classList.toggle('on', z === b)); });
+    const snapSel = m.querySelector('#neSnap'); snapSel.onchange = () => { const v = +snapSel.value; E.snap = v === 0 ? 0 : v === 3 ? div / 3 : v === 6 ? div / 6 : div / v; draw(); };
+    const xf = (fn) => { const sn = notes.filter(n => sel.has(n.id)); if (!sn.length) return toast('Първо избери ноти (клик, Shift+клик или рамка)'); pushUndo(); sn.forEach(fn); draw(); };
+    m.querySelector('#neQ').onclick = () => xf(n => { const q = E.snap || div / 4; n.t = Math.min(cn.end - 1, Math.round(n.t / q) * q); });
+    m.querySelector('#neTd').onclick = () => xf(n => n.key = Math.max(0, n.key - 1)); m.querySelector('#neTu').onclick = () => xf(n => n.key = Math.min(127, n.key + 1));
+    m.querySelector('#neOd').onclick = () => xf(n => n.key = Math.max(0, n.key - 12)); m.querySelector('#neOu').onclick = () => xf(n => n.key = Math.min(127, n.key + 12));
+    m.querySelector('#neVel').onchange = (e) => { const v = Math.max(1, Math.min(127, +e.target.value || 100)); xf(n => n.vel = v); };
+    m.querySelector('#neZi').onclick = () => { E.pxPerTick *= 1.4; sizeAll(); draw(); }; m.querySelector('#neZo').onclick = () => { E.pxPerTick = Math.max(0.01, E.pxPerTick / 1.4); sizeAll(); draw(); };
+    m.querySelector('#neUndo').onclick = () => { if (undo.length) { redo.push(snapshot()); restore(undo.pop()); } };
+    m.querySelector('#neRedo').onclick = () => { if (redo.length) { undo.push(snapshot()); restore(redo.pop()); } };
+    const bytesNow = () => C.buildClipMidi(cn, notes);
+    m.querySelector('#nePlay').onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) { P.stop(); m.querySelector('#nePlay').textContent = '▶ Прослушай'; return; }
+      const t2 = C.cloneNode(tree); C.setClipMidi(t2, elId, track, bytesNow()); const s2 = C.parseStyle(C.serializeTree(t2), x.name); P.loadStyle(s2, opts.channels); curStyleItem = null; P.start(elId); m.querySelector('#nePlay').textContent = '■ Спри'; };
+    const close = () => { P.stop(); document.removeEventListener('keydown', onKey, true); m.remove(); };
+    m.querySelector('#neCancel').onclick = () => { if (undo.length && !confirm('Има неприложени промени в нотите. Да се затвори ли без тях?')) return; close(); };
+    m.querySelector('#neOk').onclick = () => {
+      if (!undo.length) { close(); return; }
+      let ed = state.edits.get(x); const before = C.serializeTree(tree);
+      C.setClipMidi(tree, elId, track, bytesNow()); C.parseStyle(C.serializeTree(tree), x.name);
+      if (!ed) { ed = { tree, history: [], log: [] }; state.edits.set(x, ed); }
+      ed.history.push(before); ed.parsed = null; ed.log.push(`Редакция на нотите: ${C.ELEMENT_LABEL[elId] || elId} / ${track} (${notes.length} ноти)`);
+      close(); toast('Промените в нотите са приложени. Запиши стила, когато си готов.'); refreshStyle(x, bi);
+    };
+    function onKey(e) {
+      if (e.target.matches('input,select')) return; const k = e.key.toLowerCase(); let used = true;
+      if ((e.ctrlKey || e.metaKey) && k === 'z') m.querySelector('#neUndo').click();
+      else if ((e.ctrlKey || e.metaKey) && k === 'y') m.querySelector('#neRedo').click();
+      else if ((e.ctrlKey || e.metaKey) && k === 'a') { sel = new Set(notes.map(n => n.id)); draw(); }
+      else if ((e.ctrlKey || e.metaKey) && k === 'c') { const sn = notes.filter(n => sel.has(n.id)); const t0 = Math.min(...sn.map(n => n.t)); clip = sn.map(n => ({ ...n, t: n.t - t0 })); toast(`Копирани ${clip.length} ноти`); }
+      else if ((e.ctrlKey || e.metaKey) && k === 'v') { if (!clip.length) return; pushUndo(); const add = clip.map(n => ({ ...n, id: nid++, t: E.playhead + n.t })).filter(n => n.t < cn.end); notes.push(...add); sel = new Set(add.map(n => n.id)); draw(); }
+      else if (k === 'delete' || k === 'backspace') { if (!sel.size) return; pushUndo(); notes = notes.filter(n => !sel.has(n.id)); sel.clear(); draw(); }
+      else if (k === 'arrowup' || k === 'arrowdown') { const d = (k === 'arrowup' ? 1 : -1) * (e.shiftKey ? 12 : 1); xf(n => n.key = Math.max(0, Math.min(127, n.key + d))); }
+      else if (k === 'arrowleft' || k === 'arrowright') { const d = (k === 'arrowright' ? 1 : -1) * (E.snap || div / 4); xf(n => n.t = Math.max(0, Math.min(cn.end - 1, n.t + d))); }
+      else if (k === 'q') m.querySelector('#neQ').click();
+      else if (k === 'p') m.querySelector('[data-mode=pencil]').click(); else if (k === 's' && !e.ctrlKey) m.querySelector('[data-mode=select]').click();
+      else if (k === 'escape') m.querySelector('#neCancel').click();
+      else if (k === ' ') m.querySelector('#nePlay').click();
+      else used = false;
+      if (used) { e.preventDefault(); e.stopPropagation(); }
+    }
+    document.addEventListener('keydown', onKey, true);
+    E.pxPerTick = Math.max(0.02, Math.min(0.6, ((sc.clientWidth || 900) - 50) / Math.max(1, cn.end)));
+    sizeAll(); draw();
+    const first = notes.length ? Math.min(...notes.map(n => n.key)) : 60; requestAnimationFrame(() => { sc.scrollTop = Math.max(0, yOf(Math.max(...notes.map(n => n.key), first + 12)) - 40); });
+    ensurePlayer();
   }
   initFileViewer();
 })();
