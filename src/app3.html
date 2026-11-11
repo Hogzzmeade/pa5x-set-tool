@@ -195,6 +195,9 @@
 /*__KORF__*/
 </script>
 <script>
+/*__FACTORY__*/
+</script>
+<script>
 (() => {
   const C = window.PACore;
   const $ = (s) => document.querySelector(s);
@@ -324,6 +327,7 @@
     $('#chkUpd').onclick = (e) => { e.preventDefault(); toast('Проверявам…'); window.native.checkUpdate(); };
   } else { const c = document.getElementById('chkUpd'); if (c) c.style.display = 'none'; }
 
+  if (window.PAFactory) C.setFactoryNames(new Map(Object.entries(window.PAFactory)));
   // ===================== styles: load / edits =====================
   state.edits = new Map(); // fileItem -> { tree, history: [Uint8Array], name }
   async function getStyle(x) {

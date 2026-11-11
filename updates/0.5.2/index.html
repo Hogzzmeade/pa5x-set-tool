@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PA5X Set Tool</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%23f0a03c%22/%3E%3Crect x=%223%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3Crect x=%227%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3Crect x=%2211%22 y=%223%22 width=%222%22 height=%2210%22 fill=%22%23222%22/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#14161a;--panel:#1c1f25;--panel2:#23272f;--line:#2e333d;--text:#e6e8eb;--dim:#9aa1ad;--acc:#f0a03c;--acc2:#4fb3d9;--ok:#5cc28a;--bad:#e56b6b}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+  button,select,input{font:inherit;color:inherit}
+  .app{display:grid;grid-template-rows:auto 1fr auto auto;height:100vh}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.3px}
+  header h1 b{color:var(--acc)}
+  .setname{color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+  .btn:hover{border-color:var(--acc)}
+  .btn.primary{background:var(--acc);border-color:var(--acc);color:#1b1206;font-weight:600}
+  .btn:disabled{opacity:.45;cursor:default}
+  main{display:grid;grid-template-columns:340px 1fr;min-height:0}
+  aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+  .tabs{display:flex;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;white-space:nowrap;background:none;border:0;padding:9px 4px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;font-size:13px}
+  .tabs button.on{color:var(--text);border-bottom-color:var(--acc)}
+  .search{padding:8px;border-bottom:1px solid var(--line)}
+  .search input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+  .list{overflow:auto;flex:1}
+  .bank{padding:7px 12px;font-size:12px;color:var(--acc);text-transform:uppercase;letter-spacing:.6px;background:var(--panel2);position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .bank .n{color:var(--dim)}
+  .item{padding:6px 12px 6px 20px;cursor:pointer;border-bottom:1px solid #20242b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item:hover{background:#262a32}
+  .item.sel{background:#2f2a20;color:#ffd9a3}
+  section.detail{overflow:auto;padding:18px 22px;min-height:0}
+  .empty{color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px}
+  .empty .big{font-size:20px;color:var(--text)}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:30px 40px}
+  .drop.hover{border-color:var(--acc)}
+  h2{margin:0 0 4px;font-size:20px}
+  .meta{color:var(--dim);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .meta b{color:var(--text);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:14px;color:var(--acc2);font-weight:600}
+  table{border-collapse:collapse;width:100%}
+  th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;white-space:nowrap}
+  th{color:var(--dim);font-weight:500;position:sticky;top:0;background:var(--panel)}
+  td.c,th.c{text-align:center}
+  .cell{display:inline-block;min-width:34px;padding:1px 6px;border-radius:4px;background:#2b3a2f;color:#a8e4bf;font-size:12px}
+  .cell.zero{background:transparent;color:#4a505b}
+  .snd{font-family:Consolas,monospace;font-size:12px;color:#c9d1dc}
+  .tag{display:inline-block;padding:1px 7px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:12px;margin:2px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .ks{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .ks .t{font-weight:600;margin-bottom:6px}
+  .ks .l{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+  .ks .l span:last-child{color:var(--text)}
+  label.opt{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px}
+  .chmap{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chmap label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);align-items:center}
+  .chmap select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:2px}
+  .elsel{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+  .elsel label{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:12px;display:flex;gap:4px;align-items:center;cursor:pointer}
+  footer{padding:5px 14px;font-size:12px;color:var(--dim);background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:space-between}
+  .err{color:var(--bad)}
+  .hint{color:var(--dim);font-size:12.5px}
+  .toast{position:fixed;right:16px;bottom:36px;background:var(--panel2);border:1px solid var(--acc);padding:10px 14px;border-radius:8px;display:none;max-width:380px}
+
+  .transport{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#191c22;border-top:1px solid var(--line);flex-wrap:wrap;min-height:58px}
+  .tp-name{font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);font-size:18px;cursor:pointer}
+  .pbtn.on{background:var(--acc);color:#1b1206;border-color:var(--acc)}
+  .els{display:flex;gap:4px;flex-wrap:wrap}
+  .ebtn{font-size:11px;font-weight:600;padding:7px 8px;border-radius:5px;border:1px solid var(--line);background:#252a33;cursor:pointer;min-width:54px}
+  .ebtn.v{border-bottom:3px solid #4fb3d9}.ebtn.f{border-bottom:3px solid #c98cf0}.ebtn.i{border-bottom:3px solid #f0a03c}
+  .ebtn:disabled{opacity:.3;cursor:default}
+  .ebtn.cur{background:#3a6b48;color:#fff}.ebtn.next{outline:2px dashed var(--acc);outline-offset:-2px}
+  .tp-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .tp-ctl label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);gap:2px}
+  .tp-ctl input[type=number]{width:62px}.tp-ctl input,.tp-ctl select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px}
+  .tp-pos{margin-left:auto;font-family:Consolas,monospace;color:#a8e4bf;font-size:13px}
+  .ms{font-size:10px;padding:1px 5px;margin:2px 1px 0;border-radius:3px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--dim)}
+  .ms.m.on{background:#a33;color:#fff}.ms.s.on{background:#c9a227;color:#000}
+  .playel{background:none;border:1px solid var(--line);border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--ok);font-size:10px}
+  .playel:hover{background:#2b3a2f}
+  .mod{color:var(--acc);font-size:13px}
+  .warnc{border-color:var(--acc)} .chg{margin:0 0 10px;padding-left:18px;color:var(--dim)}
+  .copyf{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .copyf label{display:flex;flex-direction:column;font-size:11px;color:var(--dim);gap:3px}
+  .copyf select{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:5px;max-width:260px}
+  .copyf .arrow{font-size:20px;color:var(--acc);padding-bottom:4px}
+  #cpInfo{margin-top:8px}
+  .padb{margin:3px}
+  .kssel{margin-top:8px;width:100%}.kssel.on{border-color:var(--acc);color:var(--acc)}
+  .kbwrap{margin-top:12px}.kbinfo{font-size:12px;color:var(--dim);margin-bottom:6px}
+  .kb{position:relative;height:130px;user-select:none;touch-action:none}
+  .wk{position:absolute;top:0;height:130px;background:#f3efe6;border:1px solid #888;border-radius:0 0 5px 5px;box-sizing:border-box;cursor:pointer}
+  .wk.lo{background:#e3ecf3}.wk span{position:absolute;bottom:4px;left:3px;font-size:9px;color:#666}
+  .bk{position:absolute;top:0;height:80px;background:#1b1b1b;border-radius:0 0 4px 4px;z-index:2;cursor:pointer}
+  .wk.down{background:#f0c27a}.bk.down{background:#b07722}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50}
+  .mbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;width:440px}
+  .mbox h3{margin:0 0 10px}.mbox input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+  footer a{color:var(--acc2);text-decoration:none} footer a:hover{text-decoration:underline}
+  .updbar{position:fixed;top:62px;right:16px;z-index:40;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:14px 16px;width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .updbar h3{margin:0 0 6px;font-size:15px;color:var(--acc)} .updbar p{margin:0 0 10px;color:var(--dim);font-size:13px;white-space:pre-line}
+
+  .modes{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .modes button{background:none;border:0;padding:6px 14px;cursor:pointer;color:var(--dim)} .modes button.on{background:var(--acc);color:#1b1206;font-weight:600}
+  .fv{display:none;grid-template-columns:300px 1fr;min-height:0}
+  body.fvmode .fv{display:grid} body.fvmode main, body.fvmode .transport{display:none}
+  body.fvmode .app{grid-template-rows:auto 1fr auto auto}
+  .fv.drag{outline:3px dashed var(--acc);outline-offset:-6px}
+  .fvleft{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+  .fvtools{display:flex;gap:6px;padding:8px}
+  .fvfiles{flex:1;overflow:auto} .fvgrp{padding:5px 10px;font-size:11px;color:var(--acc);background:var(--panel2);text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0}
+  .fvf{display:flex;justify-content:space-between;padding:4px 10px 4px 16px;cursor:pointer;font-size:13px;border-bottom:1px solid #20242b} .fvf:hover{background:#262a32} .fvf.sel{background:#2f2a20;color:#ffd9a3}
+  .fvf .sz{color:var(--dim);font-size:12px} .fvcount{padding:5px 10px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
+  .fvright{display:flex;flex-direction:column;min-height:0;min-width:0}
+  .fvbar{display:flex;gap:6px;padding:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)} .fvbar input#fvS{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px;width:220px} .fvbar .sep{flex:1}
+  .fvinfo{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;font-size:13px}
+  .fvtable{flex:1;overflow:auto;padding:0 12px 12px} .fvhead{padding:6px 0 10px;color:var(--text)}
+  .fvt th{position:sticky;top:0;background:var(--panel);z-index:1} .fvt tr[data-i]{cursor:pointer} .fvt tr[data-i]:hover{background:#262a32} .fvt tr.sel{background:#2f2a20}
+  .fvt td.warn{color:#f0a03c} .warnt{color:#f0a03c}
+  .fvprev{border-top:1px solid var(--line);background:var(--panel)} .fvprev:empty{display:none}
+  .pvbar{display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap;font-size:13px} .pvbar span{flex:1}
+  #pvC{display:block;width:100%;height:150px}
+  .sndn{font-size:12px;color:#c9d1dc;white-space:normal;max-width:130px}
+  .ks .l .sndn{max-width:none;text-align:right}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>PA5X <b>Set Tool</b></h1>
+    <div class="modes" id="modes"><button data-m="set" class="on">Сет</button><button data-m="fv">File Viewer</button></div>
+    <span class="setname" id="setname">Няма отворен сет</span>
+    <button class="btn primary" id="openBtn">Отвори SET/KST папка…</button>
+    <input type="file" id="dirInput" webkitdirectory directory multiple hidden>
+  </header>
+  <main>
+    <aside>
+      <div class="tabs" id="tabs">
+        <button data-tab="styles" class="on">Стилове</button>
+        <button data-tab="ksets">Keyboard Sets</button>
+        <button data-tab="pads">Pads</button>
+        <button data-tab="sounds">User звуци</button>
+      </div>
+      <div class="search"><input id="q" placeholder="Търсене…"></div>
+      <div class="list" id="list"></div>
+    </aside>
+    <section class="detail" id="detail">
+      <div class="empty">
+        <div class="drop" id="drop">
+          <div class="big">Отвори своя PA5X сет</div>
+          <p>Натисни „Отвори SET/KST папка…“ и избери главната папка на сета<br>(тази, в която са STYLE, KEYBOARDSET, PAD, SOUND…),<br>или я пусни тук с мишката.</p>
+          <p class="hint">Файловете се четат само локално, нищо не се качва в интернет.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <section id="fv" class="fv">
+    <div class="fvleft">
+      <div class="fvtools"><button class="btn primary" id="fvOpenF">Файлове…</button><button class="btn" id="fvOpenD">Папка…</button><button class="btn" id="fvClear" title="Изчисти списъка">✕</button></div>
+      <div class="search"><input id="fvQ" placeholder="Филтър по име на файл…"></div>
+      <div class="fvfiles" id="fvFiles"></div>
+      <div class="fvcount" id="fvCount"></div>
+    </div>
+    <div class="fvright">
+      <div class="fvbar">
+        <input id="fvS" placeholder="Търсене в съдържанието…">
+        <button class="btn" id="fvWav" disabled>Експорт избрания .WAV</button><button class="btn" id="fvWavAll" disabled>Експорт всички .WAV</button>
+        <span class="sep"></span>
+        <label class="opt"><input type="checkbox" id="fvRepAll"> всички файлове</label><button class="btn" id="fvRepTxt">Доклад .TXT</button><button class="btn" id="fvRepCsv">Доклад .CSV</button>
+        <button class="btn" id="fvAssoc" title="Двоен клик върху .STG .KSC .PCG .PCM .MTP .KMP в Windows ще ги отваря тук">Свържи файловете с програмата</button>
+      </div>
+      <div class="fvinfo"><span id="fvInfo"></span><span id="fvPath" class="hint"></span></div>
+      <div class="fvtable" id="fvTable"><div class="empty"><div class="drop"><div class="big">File Viewer</div><p>Бърз преглед на Styles, Keyboard Sets, Pads, PCG и PCM<br>без да зареждаш целия сет.</p><p>Пусни файлове или папка тук, или използвай „Файлове…“ / „Папка…“.</p></div></div></div>
+      <div class="fvprev" id="fvPrev"></div>
+    </div>
+  </section>
+  <div id="transport" class="transport"></div>
+  <footer><span id="status">Готов</span><span><span id="ver">PA5X Set Tool</span> · <a href="#" id="chkUpd">Провери за обновления</a></span></footer>
+</div>
+<div class="toast" id="toast"></div>
+<script src="spessa.bundle.js"></script>
+<script>
+// PA5X Set Tool — core: KORG PA5X STG/KSC tree parser, SMF reader/writer, style→MIDI export.
+// Independent implementation written from analysis of the user's own set files.
+(function (root) {
+  'use strict';
+  const td = new TextDecoder('utf-8');
+
+  // ---------- container tree (Root / Branch / Leaf) ----------
+  function readCStr(b, p) { let e = p; while (e < b.length && b[e] !== 0) e++; return [td.decode(b.subarray(p, e)), e + 1]; }
+  function u32(b, p) { return ((b[p] << 24) >>> 0) + (b[p + 1] << 16) + (b[p + 2] << 8) + b[p + 3]; }
+
+  function parseTree(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    function walk(p, end, out) {
+      while (p < end) {
+        let kind; [kind, p] = readCStr(b, p);
+        if (kind === 'Root') {
+          const ver = b.slice(p, p + 2); p += 2; const size = u32(b, p); p += 4;
+          const node = { kind: 'Root', name: '', ver, children: [] };
+          walk(p, Math.min(p + size, b.length), node.children); out.push(node); p += size;
+        } else if (kind === 'Branch' || kind === 'Leaf') {
+          let name; [name, p] = readCStr(b, p); const size = u32(b, p); p += 4;
+          const node = { kind, name, offset: p, size };
+          if (kind === 'Branch') { node.children = []; walk(p, Math.min(p + size, end), node.children); }
+          else node.data = b.subarray(p, p + size);
+          out.push(node); p += size;
+        } else throw new Error('Unknown node "' + kind.slice(0, 16) + '" at ' + p);
+      }
+      return out;
+    }
+    const nodes = walk(0, b.length, []);
+    if (!nodes.length || nodes[0].kind !== 'Root') throw new Error('Not a PA5X tree file');
+    return nodes[0];
+  }
+  // serialize a tree back to bytes (exact inverse of parseTree)
+  function serializeTree(rootNode) {
+    const enc = new TextEncoder(); const chunks = [];
+    const p32 = (v) => new Uint8Array([(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255]);
+    function body(n) { // returns array of Uint8Array for node payload
+      if (n.kind === 'Leaf') return [n.data];
+      const out = []; for (const c of n.children) out.push(...node(c)); return out;
+    }
+    const len = (arr) => arr.reduce((s, x) => s + x.length, 0);
+    function node(n) {
+      const b = body(n); const size = len(b);
+      if (n.kind === 'Root') return [enc.encode('Root\0'), n.ver || new Uint8Array([1, 0]), p32(size), ...b];
+      return [enc.encode(n.kind + '\0' + n.name + '\0'), p32(size), ...b];
+    }
+    const parts = node(rootNode); const out = new Uint8Array(len(parts)); let o = 0; for (const x of parts) { out.set(x, o); o += x.length; } return out;
+  }
+  const child = (n, name) => n && n.children && n.children.find(c => c.name === name);
+  const childrenEnding = (n, ext) => (n && n.children ? n.children.filter(c => c.name.toLowerCase().endsWith(ext)) : []);
+  const leafText = (n) => (n && n.data ? td.decode(n.data) : '');
+  function xmlAttr(xml, tag, attr) {
+    const m = new RegExp('<' + tag + '\\b[^>]*\\b' + attr + '="([^"]*)"').exec(xml); return m ? m[1] : null;
+  }
+  function xmlAll(xml, tag) {
+    const out = []; const re = new RegExp('<' + tag + '\\b([^>]*)/?>', 'g'); let m;
+    while ((m = re.exec(xml))) { const o = {}; m[1].replace(/(\w+)="([^"]*)"/g, (_, k, v) => { o[k] = v; }); out.push(o); }
+    return out;
+  }
+
+  // ---------- Standard MIDI File ----------
+  function readVLQ(b, p) { let v = 0, c; do { c = b[p++]; v = (v << 7) | (c & 0x7f); } while (c & 0x80); return [v, p]; }
+  function parseSMF(b) {
+    if (String.fromCharCode(b[0], b[1], b[2], b[3]) !== 'MThd') throw new Error('Not SMF');
+    const hl = u32(b, 4); const format = (b[8] << 8) | b[9]; const ntr = (b[10] << 8) | b[11]; const division = (b[12] << 8) | b[13];
+    let p = 8 + hl; const tracks = [];
+    for (let i = 0; i < ntr && p + 8 <= b.length; i++) {
+      const len = u32(b, p + 4); let q = p + 8; const end = Math.min(q + len, b.length); let t = 0, rs = 0; const ev = [];
+      while (q < end) {
+        let d; [d, q] = readVLQ(b, q); t += d; const s = b[q];
+        if (s === 0xff) { const type = b[q + 1]; let l; [l, q] = readVLQ(b, q + 2); ev.push({ t, kind: 'meta', type, data: b.slice(q, q + l) }); q += l; }
+        else if (s === 0xf0 || s === 0xf7) { let l; [l, q] = readVLQ(b, q + 1); ev.push({ t, kind: 'sysex', status: s, data: b.slice(q, q + l) }); q += l; }
+        else {
+          if (s & 0x80) { rs = s; q++; }
+          const hi = rs & 0xf0; const n = (hi === 0xc0 || hi === 0xd0) ? 1 : 2;
+          ev.push({ t, kind: 'ch', status: rs, data: b.slice(q, q + n) }); q += n;
+        }
+      }
+      tracks.push(ev); p = end;
+    }
+    return { format, division, tracks };
+  }
+  function vlq(v) { const a = [v & 0x7f]; while ((v >>= 7)) a.unshift((v & 0x7f) | 0x80); return a; }
+  function writeSMF(division, tracks) { // tracks: arrays of {t, kind, ...} absolute ticks
+    const out = [];
+    const push32 = (a, v) => a.push((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255);
+    out.push(0x4d, 0x54, 0x68, 0x64); push32(out, 6); out.push(0, 1, (tracks.length >> 8) & 255, tracks.length & 255, (division >> 8) & 255, division & 255);
+    for (const tr of tracks) {
+      const ev = tr.map((e, i) => [e, i]).sort((a, b) => a[0].t - b[0].t || (a[0].prio || 0) - (b[0].prio || 0) || a[1] - b[1]).map(x => x[0]);
+      const body = []; let last = 0, end = 0;
+      for (const e of ev) {
+        if (e.kind === 'meta' && e.type === 0x2f) { end = Math.max(end, e.t); continue; }
+        body.push(...vlq(e.t - last)); last = e.t;
+        if (e.kind === 'meta') { body.push(0xff, e.type, ...vlq(e.data.length), ...e.data); }
+        else if (e.kind === 'sysex') { body.push(e.status, ...vlq(e.data.length), ...e.data); }
+        else body.push(e.status, ...e.data);
+      }
+      body.push(...vlq(Math.max(0, end - last)), 0xff, 0x2f, 0x00);
+      out.push(0x4d, 0x54, 0x72, 0x6b); push32(out, body.length); for (const x of body) out.push(x);
+    }
+    return new Uint8Array(out);
+  }
+  const textMeta = (t, type, s, prio) => ({ t, kind: 'meta', type, data: new TextEncoder().encode(s), prio: prio || 0 });
+
+  // ---------- domain ----------
+  const ELEMENT_ORDER = ['Intro1', 'Intro2', 'Intro3', 'CountIn', 'Var1', 'Var2', 'Var3', 'Var4', 'Fill1', 'Fill2', 'Fill3', 'Fill4', 'Break', 'End1', 'End2', 'End3'];
+  const ELEMENT_LABEL = { Intro1: 'Intro 1', Intro2: 'Intro 2', Intro3: 'Intro 3', CountIn: 'Intro 3 / Count In', Var1: 'Variation 1', Var2: 'Variation 2', Var3: 'Variation 3', Var4: 'Variation 4', Fill1: 'Fill 1', Fill2: 'Fill 2', Fill3: 'Fill 3', Fill4: 'Fill 4', Break: 'Break', End1: 'Ending 1', End2: 'Ending 2', End3: 'Ending 3' };
+  const TRACK_ORDER = ['Bass', 'Drum', 'Perc', 'Acc1', 'Acc2', 'Acc3', 'Acc4', 'Acc5', 'Chords'];
+  const DEFAULT_CHANNELS = { Bass: 1, Drum: 10, Perc: 9, Acc1: 2, Acc2: 3, Acc3: 4, Acc4: 5, Acc5: 6, Chords: 16 };
+
+  function soundOf(smf) { // first bank select / program change found in setup track
+    const s = { msb: null, lsb: null, pc: null, vol: null, pan: null };
+    for (const tr of smf.tracks) for (const e of tr) {
+      if (e.kind !== 'ch') continue; const hi = e.status & 0xf0;
+      if (hi === 0xb0) { const [c, v] = e.data; if (c === 0 && s.msb === null) s.msb = v; else if (c === 32 && s.lsb === null) s.lsb = v; else if (c === 7 && s.vol === null) s.vol = v; else if (c === 10 && s.pan === null) s.pan = v; }
+      else if (hi === 0xc0 && s.pc === null) s.pc = e.data[0];
+    }
+    return s;
+  }
+  const fmtSound = (s) => (s && s.pc !== null ? `${s.msb ?? '-'}.${s.lsb ?? '-'}.${s.pc + 1}` : '—');
+
+  // split a clip SMF into setup part (track 0) and music part (track 1+), measured from end of setup bar
+  function clipInfo(smf) {
+    const setup = smf.tracks[0] || [];
+    const setupEnd = setup.length ? setup[setup.length - 1].t : 0;
+    const music = []; let end = setupEnd;
+    for (let i = 1; i < smf.tracks.length; i++) for (const e of smf.tracks[i]) {
+      if (e.kind === 'meta' && e.type === 0x2f) { end = Math.max(end, e.t); continue; }
+      music.push(e);
+    }
+    if (smf.tracks.length === 1) end = setupEnd;
+    let notes = 0; for (const e of music) if (e.kind === 'ch' && (e.status & 0xf0) === 0x90 && e.data[1] > 0) notes++;
+    return { setup, setupEnd, music, length: Math.max(0, end - setupEnd), notes };
+  }
+
+  function parseTimeSig(sceneXml) {
+    const n = +(xmlAttr(sceneXml, 'TimeSignature', 'numerator') || 4); const d = +(xmlAttr(sceneXml, 'TimeSignature', 'denominator') || 2);
+    return { num: n, den: d, label: `${n}/${2 ** d}` };
+  }
+
+  function parseKeyboardSetNode(name, ksc) { // ksc branch (or Root of a .ksc file)
+    const tracks = [];
+    const rt = child(child(ksc, 'Main.ssn'), 'RTTracks.scn');
+    if (rt) for (const plc of childrenEnding(rt, '.plc')) {
+      const mid = child(plc, 'Main.mid');
+      let snd = null; try { snd = soundOf(parseSMF(mid.data)); } catch (e) { }
+      tracks.push({ name: plc.name.replace(/\.plc$/i, ''), sound: snd, octave: xmlAttr(leafText(child(plc, 'ClipDescription.xml')), 'Pitch', 'transposition') });
+    } else for (const nm of ['Lower', 'Upper1', 'Upper2', 'Upper3']) { // compact layout inside .ksa
+      const mid = child(ksc, nm + '.mid'); if (!mid) continue;
+      let snd = null; try { snd = soundOf(parseSMF(mid.data)); } catch (e) { }
+      tracks.push({ name: nm, sound: snd });
+    }
+    const xml = leafText(child(ksc, 'ClipDescription.xml'));
+    const kp = {}; (xmlAll(xml, 'KeyboardProcessing')[0] && Object.assign(kp, xmlAll(xml, 'KeyboardProcessing')[0]));
+    const tp = xmlAll(xml, 'Track\\dParams');
+    tracks.forEach((t, i) => { const p = tp[i]; if (p) { t.mute = p.mute === '1'; t.keyLow = +p.keyrangelow; t.keyHigh = +p.keyrangehigh; } });
+    return { name: name.replace(/\.ksc$/i, ''), tracks, splitPoint: kp.splitpoint ? +kp.splitpoint : null, keyboardMode: kp.keyboardmode, chordScanning: kp.chordscanning };
+  }
+
+  function findStc(rootNode) { // walk to the .stc branch
+    let found = null; (function rec(n) { if (found || !n.children) return; for (const c of n.children) { if (c.kind === 'Branch' && /\.stc$/i.test(c.name)) { found = c; return; } rec(c); } })(rootNode); return found;
+  }
+
+  function parseStyle(bytes, fileName) {
+    const rootNode = parseTree(bytes);
+    const stc = findStc(rootNode); if (!stc) throw new Error('No style (.stc) inside');
+    const ssn = child(stc, 'Main.ssn');
+    const sessionXml = leafText(child(ssn, 'SessionDescription.xml'));
+    const stageXml = leafText(child(rootNode, 'StageDescription.xml'));
+    const tempoUs = +(xmlAttr(stageXml, 'Tempo', 'value') || 500000);
+    const elements = [];
+    for (const scn of childrenEnding(ssn, '.scn')) {
+      const id = scn.name.replace(/\.scn$/i, '');
+      const sceneXml = leafText(child(scn, 'SceneDescription.xml'));
+      const ts = parseTimeSig(sceneXml);
+      const tracks = [];
+      for (const clip of scn.children.filter(c => c.kind === 'Branch')) {
+        const tname = clip.name.replace(/\.(pdc|csc)$/i, '');
+        const mid = child(clip, 'Main.mid'); if (!mid) continue;
+        let smf, info; try { smf = parseSMF(mid.data); info = clipInfo(smf); } catch (e) { continue; }
+        const cx = leafText(child(clip, 'ClipDescription.xml'));
+        tracks.push({ name: tname, division: smf.division, smf, info, sound: soundOf(smf), origChord: { root: xmlAttr(cx, 'CV1', 'root'), chord: xmlAttr(cx, 'CV1', 'chord') } });
+      }
+      const division = tracks[0] ? tracks[0].division : 384;
+      const length = Math.max(0, ...tracks.map(t => t.info.length));
+      const barTicks = division * 4 * ts.num / (2 ** ts.den);
+      elements.push({ id, label: ELEMENT_LABEL[id] || id, ts, tracks: tracks.sort((a, b) => TRACK_ORDER.indexOf(a.name) - TRACK_ORDER.indexOf(b.name)), division, length, bars: barTicks ? Math.round(length / barTicks * 100) / 100 : 0 });
+    }
+    elements.sort((a, b) => (ELEMENT_ORDER.indexOf(a.id) + 1 || 99) - (ELEMENT_ORDER.indexOf(b.id) + 1 || 99));
+    // keyboard sets (two layouts) and pads
+    const keyboardSets = []; const pads = [];
+    (function rec(n) {
+      if (!n.children) return;
+      for (const c of n.children) {
+        if (c.kind !== 'Branch') continue;
+        if (/^KbdSet\d+\.scn$/i.test(c.name) || /^ks\d+$/i.test(c.name)) { const k = c.children.find(x => /\.ksc$/i.test(x.name)); if (k) keyboardSets.push(parseKeyboardSetNode(k.name, k)); continue; }
+        if (/^PadSet\d+\.scn$/i.test(c.name)) { for (const p of c.children.filter(x => /\.pdc$/i.test(x.name))) { let snd = null, smf = null; try { smf = parseSMF(child(p, 'Main.mid').data); snd = soundOf(smf); } catch (e) { } pads.push({ name: p.name.replace(/\.pdc$/i, '').replace(/\(\d+\)$/, ''), sound: snd, smf }); } continue; }
+        if (c === stc) continue;
+        rec(c);
+      }
+    })(rootNode);
+    return { name: stc.name.replace(/\.stc$/i, ''), fileName, tempo: Math.round(60000000 / tempoUs * 10) / 10, tempoUs, elements, keyboardSets, pads, sessionXml };
+  }
+
+  function parseKeyboardSetFile(bytes, fileName) {
+    const r = parseTree(bytes); return parseKeyboardSetNode(fileName.replace(/^.*[\\/]/, ''), r);
+  }
+
+  // KORF chunk files (.MTP / .PCG): extract record names
+  function korfNames(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); const out = [];
+    for (let i = 0; i + 34 < b.length; i++) {
+      if (b[i] === 0 && b[i + 1] === 5 && b[i + 2] === 0 && b[i + 3] === 2 && b[i + 4] === 0 && b[i + 5] === 0x1c) {
+        let e = i + 6; while (e < i + 34 && b[e]) e++; const s = td.decode(b.subarray(i + 6, e)); if (s) out.push(s); i += 33;
+      }
+    }
+    return out;
+  }
+
+
+
+  // ---------- sound names (user banks from the set's SOUND/*.PCG; factory names from an optional table) ----------
+  let curSoundIndex = null; let factoryNames = null;
+  function pcgBankFromFile(name) { // USER02.PCG -> {msb:121, lsb:65}; USERDK01.PCG -> {msb:120, lsb:64}
+    const m = /^USER(DK)?(\d+)\.PCG$/i.exec(name); if (!m) return null; return { msb: m[1] ? 120 : 121, lsb: 63 + parseInt(m[2], 10), bank: (m[1] ? 'USER DK ' : 'USER ') + parseInt(m[2], 10) };
+  }
+  function buildSoundIndex(pcgFiles) { // [{name:'USER01.PCG', entries:[{slot,name}]}]
+    const idx = new Map(); idx.banks = new Set();
+    for (const f of pcgFiles) { const b = pcgBankFromFile(f.name); if (!b) continue; idx.banks.add(b.msb + '.' + b.lsb);
+      for (const e of f.entries) if (e.slot != null && e.name) idx.set(`${b.msb}.${b.lsb}.${e.slot}`, { name: e.name, bank: b.bank, slot: e.slot }); }
+    return idx;
+  }
+  function setSoundIndex(idx) { curSoundIndex = idx; }
+  function setFactoryNames(map) { factoryNames = map; }
+  function soundInfo(s, idx) {
+    idx = idx === undefined ? curSoundIndex : idx; if (!s || s.pc === null || s.pc === undefined) return null;
+    const key = `${s.msb}.${s.lsb}.${s.pc}`; const num = `${s.msb ?? '-'}.${s.lsb ?? '-'}.${s.pc + 1}`;
+    const u = idx && idx.get(key); if (u) return { name: u.name, num, src: `${u.bank}, слот ${u.slot + 1}` };
+    if (s.lsb >= 64 && (s.msb === 121 || s.msb === 120)) { const bank = (s.msb === 120 ? 'USER DK ' : 'USER ') + (s.lsb - 63); return { name: null, num, src: idx && idx.banks && idx.banks.has(s.msb + '.' + s.lsb) ? `${bank}, празен слот ${s.pc + 1}` : `${bank} (липсва в сета)` }; }
+    const f = factoryNames && factoryNames.get(key); if (f) return { name: f, num, src: 'фабричен' };
+    return { name: null, num, src: 'фабричен' };
+  }
+  function soundLabel(s, idx) { const i = soundInfo(s, idx); if (!i) return '—'; return i.name || i.num; }
+  function soundTitle(s, idx) { const i = soundInfo(s, idx); if (!i) return ''; return `${i.src} · MSB.LSB.Prog ${i.num}`; }
+
+  // ---------- editing (copy elements / tracks between styles) ----------
+  const SCENE_INFO = { Intro1: [1, 4], Intro2: [2, 5], CountIn: [3, 11], Var1: [4, 0], Var2: [5, 1], Var3: [6, 2], Var4: [7, 3], Fill1: [8, 6], Fill2: [9, 7], Fill3: [10, 13], Fill4: [11, 14], Break: [12, 10], End1: [13, 8], End2: [14, 9] };
+  const TRACK_NUM = { Bass: 1, Drum: 2, Perc: 3, Acc1: 4, Acc2: 5, Acc3: 6, Acc4: 7, Acc5: 8, Chords: 10 };
+  const TRACK_GROUP = { Bass: 'bass', Drum: 'drum', Perc: 'drum', Acc1: 'acc', Acc2: 'acc', Acc3: 'acc', Acc4: 'acc', Acc5: 'acc', Chords: 'chords' };
+  const compatibleTracks = (t) => Object.keys(TRACK_GROUP).filter(x => TRACK_GROUP[x] === TRACK_GROUP[t]);
+  const enc8 = (s) => new TextEncoder().encode(s);
+  function cloneNode(n) { const o = { kind: n.kind, name: n.name }; if (n.ver) o.ver = n.ver.slice(); if (n.children) o.children = n.children.map(cloneNode); if (n.data) o.data = n.data.slice(); return o; }
+  function stcOf(root) { const s = findStc(root); if (!s) throw new Error('Няма стил във файла'); return s; }
+  const ssnOf = (root) => child(stcOf(root), 'Main.ssn');
+  const sceneOf = (root, id) => child(ssnOf(root), id + '.scn');
+  const clipName = (t) => t + (t === 'Chords' ? '.csc' : '.pdc');
+  function setLeafText(parent, name, text) { const l = child(parent, name); l.data = enc8(text); }
+  function sceneTs(scn) { const x = leafText(child(scn, 'SceneDescription.xml')); return parseTimeSig(x).label; }
+  function clipLen(clip) { try { return clipInfo(parseSMF(child(clip, 'Main.mid').data)).length; } catch (e) { return 0; } }
+  function sortScene(scn) {
+    const clips = scn.children.filter(c => c.kind === 'Branch').sort((a, b) => (TRACK_NUM[a.name.replace(/\.\w+$/, '')] || 99) - (TRACK_NUM[b.name.replace(/\.\w+$/, '')] || 99));
+    const rest = scn.children.filter(c => c.kind !== 'Branch'); scn.children = [...clips, ...rest];
+    // rebuild RESOURCE list in SceneDescription.xml
+    const sd = child(scn, 'SceneDescription.xml'); if (!sd) return;
+    let x = leafText(sd); x = x.replace(/\s*<RESOURCE\b[^>]*\/>/g, '');
+    const res = clips.map(c => { const t = c.name.replace(/\.\w+$/, ''); return `  <RESOURCE name="${c.name}" type="${t === 'Chords' ? 'ChordClip' : 'PadClip'}" track="${TRACK_NUM[t] || 1}"/>`; }).join('\n');
+    x = x.replace(/<SCENE>\s*/, '<SCENE>\n' + (res ? res + '\n' : '') + '  ');
+    sd.data = enc8(x);
+  }
+  function ensureScene(dstRoot, id, templateScn) {
+    const ssn = ssnOf(dstRoot); let scn = child(ssn, id + '.scn'); if (scn) return scn;
+    if (!SCENE_INFO[id]) throw new Error('Неизвестен елемент: ' + id);
+    const sdT = templateScn ? leafText(child(templateScn, 'SceneDescription.xml')) : '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<SCENE>\n  <PARAMS>\n    <TimeSignature numerator="4" denominator="2" beatsubdivisions="1"/>\n  </PARAMS>\n</SCENE>\n';
+    scn = { kind: 'Branch', name: id + '.scn', children: [{ kind: 'Leaf', name: 'SceneDescription.xml', data: enc8(sdT) }] };
+    // insert in scene-number order, before non-scene leaves
+    const num = SCENE_INFO[id][0]; const idx = ssn.children.findIndex(c => (c.kind !== 'Branch') || ((SCENE_INFO[c.name.replace(/\.scn$/, '')] || [99])[0] > num));
+    ssn.children.splice(idx < 0 ? ssn.children.length : idx, 0, scn);
+    const sess = child(ssn, 'SessionDescription.xml'); let x = leafText(sess);
+    const lines = [...x.matchAll(/\s*<RESOURCE\b[^>]*\/>/g)].map(m => m[0].trim()); lines.push(`<RESOURCE scenenum="${num}" role="${SCENE_INFO[id][1]}" name="${id}.scn"/>`);
+    lines.sort((a, b) => +/scenenum="(\d+)"/.exec(a)[1] - +/scenenum="(\d+)"/.exec(b)[1]);
+    x = x.replace(/\s*<RESOURCE\b[^>]*\/>/g, ''); x = x.replace(/(<SESSION\b[^>]*>)\s*/, '$1\n' + lines.map(l => '  ' + l).join('\n') + '\n  ');
+    sess.data = enc8(x); return scn;
+  }
+  function copyElement(srcRoot, srcId, dstRoot, dstId) {
+    const src = sceneOf(srcRoot, srcId); if (!src) throw new Error('Елементът ' + srcId + ' липсва в изходния стил');
+    const dst = ensureScene(dstRoot, dstId, src);
+    dst.children = src.children.map(cloneNode); return { warnings: [] };
+  }
+  function copyTrack(srcRoot, srcId, track, dstRoot, dstId, dstTrack) {
+    dstTrack = dstTrack || track;
+    if (TRACK_GROUP[track] !== TRACK_GROUP[dstTrack]) throw new Error(`${track} не може да се копира в ${dstTrack} (различен тип писта)`);
+    const src = sceneOf(srcRoot, srcId); const clip = src && child(src, clipName(track)); if (!clip) throw new Error(`Пистата ${track} липсва в ${srcId}`);
+    const dstExisted = !!sceneOf(dstRoot, dstId); const dst = ensureScene(dstRoot, dstId, src); const warnings = [];
+    if (dstExisted && sceneTs(dst) !== sceneTs(src)) throw new Error(`Различен такт: ${sceneTs(src)} → ${sceneTs(dst)}`);
+    const nc = cloneNode(clip); nc.name = clipName(dstTrack);
+    if (dstTrack !== track) { const cd = child(nc, 'ClipDescription.xml'); /* same Pattern type inside group, nothing else to rename */ }
+    const others = dst.children.filter(c => c.kind === 'Branch' && c.name !== nc.name);
+    if (others.length) { const L = Math.max(...others.map(clipLen)); const l = clipLen(nc); if (L && l && L !== l) warnings.push(`Дължината се различава (${(l / L).toFixed(2)}× спрямо останалите писти)`); }
+    dst.children = dst.children.filter(c => c.name !== nc.name); dst.children.unshift(nc); sortScene(dst);
+    return { warnings };
+  }
+  function deleteTrack(root, id, track) { const scn = sceneOf(root, id); if (!scn) return; scn.children = scn.children.filter(c => c.name !== clipName(track)); sortScene(scn); }
+  function renameStyle(root, newName) { const s = stcOf(root); s.name = newName.replace(/\.stg$/i, '') + '.stc'; }
+
+  // ---------- export ----------
+  const KORG_SYSEX = (e) => e.kind === 'sysex' && e.data[0] === 0x42;
+  function exportStyleMidi(style, opts) {
+    opts = Object.assign({ elements: null, channels: DEFAULT_CHANNELS, includeChords: false, keepKorgSysex: false, setupPerElement: true, markers: true }, opts || {});
+    const els = style.elements.filter(e => !opts.elements || opts.elements.includes(e.id));
+    const division = (els[0] && els[0].division) || 384;
+    const cond = [textMeta(0, 0x03, style.name), { t: 0, kind: 'meta', type: 0x51, data: new Uint8Array([(style.tempoUs >> 16) & 255, (style.tempoUs >> 8) & 255, style.tempoUs & 255]) }];
+    const trackEvents = {}; const names = TRACK_ORDER.filter(n => n !== 'Chords' || opts.includeChords);
+    for (const n of names) trackEvents[n] = [textMeta(0, 0x03, n)];
+    let T = 0, lastTs = null;
+    for (const el of els) {
+      if (!lastTs || lastTs.label !== el.ts.label) { cond.push({ t: T, kind: 'meta', type: 0x58, data: new Uint8Array([el.ts.num, el.ts.den, 24, 8]) }); lastTs = el.ts; }
+      if (opts.markers) cond.push(textMeta(T, 0x06, el.label));
+      for (const tr of el.tracks) {
+        if (!trackEvents[tr.name]) continue;
+        const ch = ((opts.channels[tr.name] || 1) - 1) & 15; const out = trackEvents[tr.name];
+        const scale = division / tr.division;
+        const remap = (e, t) => {
+          if (e.kind === 'ch') { const d = new Uint8Array(e.data); out.push({ t, kind: 'ch', status: (e.status & 0xf0) | ch, data: d, prio: (e.status & 0xf0) === 0x80 || ((e.status & 0xf0) === 0x90 && e.data[1] === 0) ? -1 : 0 }); }
+          else if (e.kind === 'sysex' && (opts.keepKorgSysex || !KORG_SYSEX(e))) out.push({ t, kind: 'sysex', status: e.status, data: e.data });
+        };
+        if (opts.setupPerElement || T === 0) for (const e of tr.info.setup) remap(e, T);
+        const elEnd = Math.round(el.length * scale); const held = new Map();
+        for (const e of tr.info.music) {
+          const rel = Math.round((e.t - tr.info.setupEnd) * scale); if (rel < 0) continue;
+          const isOff = e.kind === 'ch' && ((e.status & 0xf0) === 0x80 || ((e.status & 0xf0) === 0x90 && e.data[1] === 0));
+          const isOn = e.kind === 'ch' && (e.status & 0xf0) === 0x90 && e.data[1] > 0;
+          if (rel >= elEnd && !isOff) continue;
+          if (isOff && !held.get(e.data[0])) continue; // orphan note-off
+          if (isOn) held.set(e.data[0], (held.get(e.data[0]) || 0) + 1);
+          if (isOff) held.set(e.data[0], held.get(e.data[0]) - 1);
+          remap(e, T + Math.min(rel, elEnd));
+        }
+        for (const [k, n] of held) for (let i = 0; i < n; i++) out.push({ t: T + elEnd, kind: 'ch', status: 0x80 | ch, data: new Uint8Array([k, 0]), prio: -1 });
+      }
+      T += Math.round(el.length * division / el.division);
+    }
+    const tracks = [cond.concat([{ t: T, kind: 'meta', type: 0x2f, data: new Uint8Array(0) }])];
+    for (const n of names) { const ev = trackEvents[n]; ev.push({ t: T, kind: 'meta', type: 0x2f, data: new Uint8Array(0) }); tracks.push(ev); }
+    return writeSMF(division, tracks);
+  }
+
+  // ---------- tiny ZIP (store) ----------
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function makeZip(files) { // [{name, data}]
+    const enc = new TextEncoder(); const parts = []; const cd = []; let off = 0;
+    const now = new Date(); const dosT = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1); const dosD = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    const le = (n, w) => { const a = []; for (let i = 0; i < w; i++) a.push((n >>> (8 * i)) & 255); return a; };
+    for (const f of files) {
+      const nm = enc.encode(f.name); const crc = crc32(f.data);
+      const h = [0x50, 0x4b, 3, 4, ...le(20, 2), ...le(0x0800, 2), 0, 0, ...le(dosT, 2), ...le(dosD, 2), ...le(crc, 4), ...le(f.data.length, 4), ...le(f.data.length, 4), ...le(nm.length, 2), 0, 0];
+      parts.push(new Uint8Array(h), nm, f.data);
+      cd.push(new Uint8Array([0x50, 0x4b, 1, 2, ...le(20, 2), ...le(20, 2), ...le(0x0800, 2), 0, 0, ...le(dosT, 2), ...le(dosD, 2), ...le(crc, 4), ...le(f.data.length, 4), ...le(f.data.length, 4), ...le(nm.length, 2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...le(off, 4)]), nm);
+      off += h.length + nm.length + f.data.length;
+    }
+    const cdSize = cd.reduce((s, x) => s + x.length, 0);
+    const endRec = new Uint8Array([0x50, 0x4b, 5, 6, 0, 0, 0, 0, ...le(files.length, 2), ...le(files.length, 2), ...le(cdSize, 4), ...le(off, 4), 0, 0]);
+    const all = [...parts, ...cd, endRec]; const total = all.reduce((s, x) => s + x.length, 0); const out = new Uint8Array(total); let p = 0; for (const x of all) { out.set(x, p); p += x.length; } return out;
+  }
+
+  const api = { pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PACore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// PA5X Set Tool — player: arranger-style playback of styles, pads and keyboard sets.
+// Output: built-in SoundFont synth (SpessaSynth, GM approximation) or Web MIDI to the real keyboard.
+(function (root) {
+  'use strict';
+  const LOOK = 0.12, TICK_MS = 20;
+  const isVar = (id) => /^Var\d$/.test(id);
+  const isOneShot = (id) => /^(Intro|CountIn|Fill|Break|End)/.test(id);
+
+  class Player {
+    constructor() {
+      this.ctx = null; this.synth = null; this.ready = null; this.out = 'synth'; this.midiOut = null; this.midiAccess = null;
+      this.style = null; this.playing = false; this.channels = null; this.mutes = new Set(); this.solos = new Set();
+      this.transpose = 0; this.tempo = 120; this.volume = 1; this.onState = null; this.timer = null;
+      this.drumCh = new Set(); this.held = new Map(); // ch -> Set(notes)
+    }
+    async init(loadBank) {
+      if (this.ready) return this.ready;
+      this.ready = (async () => {
+        this.ctx = new AudioContext({ latencyHint: 'interactive' });
+        await this.ctx.audioWorklet.addModule('spessasynth_processor.min.js');
+        this.synth = new root.SpessaLib.WorkletSynthesizer(this.ctx);
+        this.gain = this.ctx.createGain(); this.synth.connect(this.gain); this.gain.connect(this.ctx.destination);
+        await this.synth.soundBankManager.addSoundBank(await loadBank(), 'main');
+        await this.synth.isReady;
+      })();
+      return this.ready;
+    }
+    async midiOutputs() {
+      try { if (!this.midiAccess) this.midiAccess = await navigator.requestMIDIAccess({ sysex: false }); return [...this.midiAccess.outputs.values()].map(o => ({ id: o.id, name: o.name })); }
+      catch (e) { return []; }
+    }
+    setOutput(id) { this.allNotesOff(); if (id === 'synth') { this.out = 'synth'; this.midiOut = null; } else { this.midiOut = this.midiAccess && this.midiAccess.outputs.get(id); this.out = this.midiOut ? 'midi' : 'synth'; } this.programCache = new Map(); }
+    setVolume(v) { this.volume = v; if (this.gain) this.gain.gain.value = v; }
+    now() { return this.ctx.currentTime; }
+
+    // ---- low level send (time in AudioContext seconds) ----
+    send(bytes, time) {
+      if (this.out === 'midi' && this.midiOut) {
+        const ts = performance.now() + Math.max(0, (time - this.ctx.currentTime) * 1000);
+        try { this.midiOut.send(bytes, ts); } catch (e) { }
+        return;
+      }
+      const s = this.synth; const st = bytes[0] & 0xf0, ch = bytes[0] & 15; const o = { time: Math.max(time, this.ctx.currentTime) };
+      if (st === 0x90 && bytes[2] > 0) s.noteOn(ch, bytes[1], bytes[2], o);
+      else if (st === 0x80 || st === 0x90) s.noteOff(ch, bytes[1], o);
+      else s.sendMessage(bytes, 0, o);
+    }
+    // apply a clip's sound setup to a channel (GM approximation for the synth, raw for MIDI out)
+    setupChannel(ch, sound, setupEvents, time) {
+      if (this.out === 'midi') {
+        for (const e of setupEvents) if (e.kind === 'ch') this.send([(e.status & 0xf0) | ch, ...e.data], time);
+        return;
+      }
+      const drum = sound && sound.msb === 120;
+      if (this.synth.midiChannels[ch]) this.synth.midiChannels[ch].setDrums(!!drum);
+      if (drum) this.drumCh.add(ch); else this.drumCh.delete(ch);
+      this.send([0xc0 | ch, sound && sound.pc !== null ? sound.pc : 0], time);
+      for (const e of setupEvents) {
+        if (e.kind !== 'ch' || (e.status & 0xf0) !== 0xb0) continue; const c = e.data[0];
+        if ([7, 10, 11, 91, 93, 64, 1].includes(c)) this.send([0xb0 | ch, c, e.data[1]], time);
+      }
+    }
+    noteMsg(e, ch, transpose) {
+      const hi = e.status & 0xf0;
+      if (hi === 0x90 || hi === 0x80) { const n = e.data[0] + (this.drumCh.has(ch) || this.out === 'midi' && transpose === null ? 0 : (transpose || 0)); if (n < 0 || n > 127) return null; return [hi | ch, n, e.data[1]]; }
+      if (hi === 0xb0) { const c = e.data[0]; if (this.out === 'synth' && [0, 32, 98, 99, 100, 101, 6, 38].includes(c)) return null; return [0xb0 | ch, c, e.data[1]]; }
+      if (hi === 0xc0) return this.out === 'midi' ? [0xc0 | ch, e.data[0]] : null;
+      return [hi | ch, ...e.data];
+    }
+    track(ch, msg, time) { // remember held notes for clean stops
+      const hi = msg[0] & 0xf0; if (!this.held.has(ch)) this.held.set(ch, new Set()); const h = this.held.get(ch);
+      if (hi === 0x90 && msg[2] > 0) h.add(msg[1]); else if (hi === 0x80 || hi === 0x90) h.delete(msg[1]);
+    }
+    allNotesOff(time) {
+      if (!this.ctx) return; const t = time || this.ctx.currentTime;
+      for (const [ch, set] of this.held) { for (const n of set) this.send([0x80 | ch, n, 0], t); set.clear(); }
+      for (let ch = 0; ch < 16; ch++) { this.send([0xb0 | ch, 123, 0], t); this.send([0xb0 | ch, 64, 0], t); }
+    }
+
+    // ---- style playback ----
+    loadStyle(style, channels) {
+      this.stop(); this.style = style; this.channels = channels; this.tempo = style.tempo; this.lastVar = 'Var1';
+      this.programCache = new Map();
+    }
+    element(id) { return this.style && this.style.elements.find(e => e.id === id && e.length > 0); }
+    secPerTick(div) { return 60 / this.tempo / div; }
+    audible(t) { return this.solos.size ? this.solos.has(t) : !this.mutes.has(t); }
+    buildEvents(el) { // flatten clips into [{tick, track, e}] relative to element start
+      const out = [];
+      for (const tr of el.tracks) { if (tr.name === 'Chords') continue; const scale = el.division / tr.division;
+        for (const e of tr.info.music) { const tk = Math.round((e.t - tr.info.setupEnd) * scale); if (tk >= 0 && e.kind === 'ch') out.push({ tk, tr: tr.name, e }); } }
+      out.sort((a, b) => a.tk - b.tk || (((a.e.status & 0xf0) === 0x80 || a.e.data[1] === 0) ? -1 : 1)); return out;
+    }
+    async start(id) {
+      if (!this.style) return; await this.ctx.resume();
+      const el = this.element(id) || this.element(this.lastVar) || this.style.elements.find(e => e.length);
+      if (!el) return; if (this.playing) { this.queue(el.id); return; }
+      this.pending = null;
+      this.playing = true; this.begin(el, this.ctx.currentTime + 0.08);
+      this.timer = setInterval(() => this.pump(), TICK_MS); this.emit();
+    }
+    begin(el, time) {
+      this.cur = el; this.events = this.buildEvents(el); this.idx = 0; this.t0 = time; this.tick0 = 0;
+      if (isVar(el.id)) this.lastVar = el.id;
+      for (const tr of el.tracks) { if (tr.name === 'Chords') continue; const ch = (this.channels[tr.name] || 1) - 1; this.setupChannel(ch, tr.sound, tr.info.setup, time); }
+      this.barTicks = el.division * 4 * el.ts.num / (2 ** el.ts.den); this.emit();
+    }
+    tickToTime(tk) { return this.t0 + (tk - this.tick0) * this.secPerTick(this.cur.division); }
+    setTempo(bpm) { // re-anchor so position is continuous
+      if (this.playing && this.cur) { const now = this.ctx.currentTime; const tk = this.tick0 + (now - this.t0) / this.secPerTick(this.cur.division); this.tempo = bpm; this.t0 = now; this.tick0 = tk; }
+      else this.tempo = bpm;
+    }
+    curTick() { return Math.max(0, this.tick0 + (this.ctx.currentTime - this.t0) / this.secPerTick(this.cur.division)); }
+    queue(id) { // Korg-like: Var during Intro/Fill/Break only sets the target; otherwise switch at next bar
+      const el = this.element(id); if (!el || !this.playing) return;
+      if (isVar(id) && isOneShot(this.cur.id) && !/^End/.test(this.cur.id)) { this.lastVar = id; this.emit(); return; }
+      const tk = this.curTick() + 1; this.pending = el; this.pendingTk = Math.min(this.cur.length, Math.ceil(tk / this.barTicks) * this.barTicks);
+      if (isVar(id)) this.lastVar = id; this.emit();
+    }
+    pump() {
+      if (!this.playing) return; const horizon = this.ctx.currentTime + LOOK;
+      for (let guard = 0; guard < 100000; guard++) {
+        const el = this.cur; const limit = this.pending ? this.pendingTk : el.length;
+        if (this.idx < this.events.length && this.events[this.idx].tk < limit) {
+          const ev = this.events[this.idx]; const t = this.tickToTime(ev.tk); if (t > horizon) return;
+          this.idx++; if (!this.audible(ev.tr)) continue;
+          const ch = (this.channels[ev.tr] || 1) - 1; const tp = (ev.tr === 'Drum' || ev.tr === 'Perc') ? 0 : this.transpose;
+          const msg = this.noteMsg(ev.e, ch, tp); if (msg) { this.send(msg, t); this.track(ch, msg); }
+          continue;
+        }
+        const tB = this.tickToTime(limit); if (tB > horizon) return;
+        this.allNotesOff(tB);
+        if (this.pending) { const p = this.pending; this.pending = null; this.begin(p, tB); continue; }
+        let next = null;
+        if (isVar(el.id)) next = el;
+        else if (/^End/.test(el.id)) { this.playing = false; clearInterval(this.timer); this.emit(); return; }
+        else next = this.element(this.lastVar) || this.style.elements.find(x => isVar(x.id) && x.length) || null;
+        if (!next || !next.length) { this.playing = false; clearInterval(this.timer); this.emit(); return; }
+        this.begin(next, tB);
+      }
+    }
+    stop() {
+      clearInterval(this.timer); this.timer = null; const was = this.playing; this.playing = false; this.pending = null;
+      if (this.ctx) this.allNotesOff(); if (was) this.emit();
+    }
+    position() {
+      if (!this.playing || !this.cur) return null;
+      const tk = this.curTick();
+      return { id: this.cur.id, bar: Math.floor(tk / this.barTicks) + 1, bars: Math.round(this.cur.length / this.barTicks), beat: Math.floor((tk % this.barTicks) / (this.cur.division * 4 / (2 ** this.cur.ts.den))) + 1, pending: this.pending && this.pending.id };
+    }
+    emit() { if (this.onState) this.onState(); }
+
+    // ---- one-shot clip (pads) ----
+    async playClip(smf, sound, ch) {
+      await this.ctx.resume(); const t0 = this.ctx.currentTime + 0.05; const div = smf.division; const sp = 60 / this.tempo / div;
+      const setup = smf.tracks[0] || []; const setupEnd = setup.length ? setup[setup.length - 1].t : 0;
+      this.setupChannel(ch, sound, setup, t0);
+      const evs = []; for (let i = 1; i < smf.tracks.length; i++) for (const e of smf.tracks[i]) if (e.kind === 'ch') evs.push(e);
+      evs.sort((a, b) => a.t - b.t);
+      for (const e of evs) { const tk = e.t - setupEnd; if (tk < 0) continue; const m = this.noteMsg(e, ch, 0); if (m) { this.send(m, t0 + tk * sp); this.track(ch, m); } }
+    }
+
+    // ---- live keyboard (keyboard sets) ----
+    async setKeyboardSet(ks) {
+      await this.ctx.resume(); this.ks = ks; const t = this.ctx.currentTime;
+      ks.tracks.forEach((tr, i) => { const ch = 10 + i; this.setupChannel(ch, tr.sound, tr.sound ? [{ kind: 'ch', status: 0xb0, data: [7, tr.sound.vol ?? 100] }, ...(tr.sound.pan != null ? [{ kind: 'ch', status: 0xb0, data: [10, tr.sound.pan] }] : [])] : [], t);
+        if (this.out === 'midi' && tr.sound) { if (tr.sound.msb != null) this.send([0xb0 | ch, 0, tr.sound.msb], t); if (tr.sound.lsb != null) this.send([0xb0 | ch, 32, tr.sound.lsb], t); if (tr.sound.pc != null) this.send([0xc0 | ch, tr.sound.pc], t); } });
+    }
+    kbNote(note, vel) {
+      if (!this.ks || !this.ctx) return; const t = this.ctx.currentTime; const split = this.ks.splitPoint ?? 60;
+      this.ks.tracks.forEach((tr, i) => {
+        if (tr.mute) return; const lower = /lower/i.test(tr.name); if (lower !== (note < split)) return;
+        const ch = 10 + i; const msg = vel > 0 ? [0x90 | ch, note, vel] : [0x80 | ch, note, 0]; this.send(msg, t); this.track(ch, msg);
+      });
+    }
+  }
+  root.PAPlayer = Player;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// KORF container (.PCG .PCM .MTP .KMP …): chunk list + directory of named resources + PCM samples.
+(function (root) {
+  'use strict';
+  const td = new TextDecoder('utf-8');
+  const u16 = (b, p) => (b[p] << 8) | b[p + 1];
+  const u32 = (b, p) => ((b[p] << 24) >>> 0) + (b[p + 1] << 16) + (b[p + 2] << 8) + b[p + 3];
+  const hex = (b, p, n) => Array.from(b.subarray(p, p + n), x => x.toString(16).padStart(2, '0')).join('');
+  function isKorf(b) { return b.length > 32 && b[0] === 1 && b[1] === 0 && td.decode(b.subarray(23, 27)) === 'KORF'; }
+  function chunks(b) { const out = []; let p = 8; while (p + 8 <= b.length) { const id = hex(b, p, 4), size = u32(b, p + 4); out.push({ id, off: p + 8, size }); if (size > b.length - p) break; p += 8 + size; } return out; }
+  const TYPE = { 3: 'Pad', 4: 'Sound', 5: 'Multisample', 6: 'Sample', 0x19: 'Pad preset' };
+  function directory(b, ch) {
+    const out = []; let p = ch.off; const end = ch.off + ch.size;
+    while (p + 4 <= end) {
+      const len = u16(b, p); if (!len) break; const nf = u16(b, p + 2); let q = p + 4; const e = { fields: {} };
+      for (let i = 0; i < nf && q + 4 <= p + 2 + len; i++) { const id = u16(b, q), l = u16(b, q + 2); e.fields[id] = b.subarray(q + 4, q + 4 + l); q += 4 + l; }
+      const f = e.fields;
+      e.name = f[2] ? td.decode(f[2]).replace(/\0.*$/s, '').trim() : '';
+      if (f[0]) { e.typeCode = f[0][0]; e.type = TYPE[f[0][0]] || ('0x' + f[0][0].toString(16)); e.sub = f[0][1]; e.slot = f[0][2]; }
+      if (f[1]) { e.ver = f[1][0]; e.rev = f[1][1]; }
+      if (f[4]) e.hash = hex(f[4], 0, f[4].length);
+      if (f[5] && f[5].length >= 6) { const d = f[5]; e.date = `${d[0] * 100 + d[1]}-${String(d[2]).padStart(2, '0')}-${String(d[3]).padStart(2, '0')} ${String(d[4]).padStart(2, '0')}:${String(d[5]).padStart(2, '0')}`; }
+      if (f[6]) { e.history = td.decode(f[6]).replace(/\0.*$/s, ''); e.createdWith = e.history.split('//').map(s => s.trim()).filter(Boolean).pop() || ''; }
+      out.push(e); p += 2 + len;
+    }
+    return out;
+  }
+  function parseKorf(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    if (!isKorf(b)) throw new Error('Не е KORF файл');
+    const ch = chunks(b); const dirCh = ch.find(c => c.id === '05010018');
+    const entries = dirCh ? directory(b, dirCh) : [];
+    const samples = [];
+    for (const c of ch.filter(c => c.id === '12020010')) {
+      const o = c.off; if (c.size < 82) continue;
+      const s = { hash: hex(b, o + 8, 8), channels: b[o + 16], fmt: b[o + 17], rate: u16(b, o + 20), frames: u32(b, o + 22),
+        loopStart: u32(b, o + 58), loopEnd: u32(b, o + 62), loopFlag: b[o + 74], dataOff: o + 82, dataLen: u32(b, o + 78) };
+      s.compressed = (s.fmt & 0x80) !== 0; s.bits = s.compressed ? 8 : 16;
+      if (s.dataOff + s.dataLen > b.length) s.dataLen = Math.max(0, b.length - s.dataOff);
+      s.duration = s.rate ? s.frames / s.rate : 0;
+      const e = entries.find(x => x.hash === s.hash); if (e) { s.name = e.name; s.slot = e.slot; s.entry = e; }
+      samples.push(s);
+    }
+    return { entries, samples, chunks: ch };
+  }
+  // Decode a sample to Float32Array per channel. 16-bit: exact LE PCM. Compressed: 8-bit deltas, integrated with a DC blocker (experimental).
+  function decodeSample(bytes, s) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); const C = Math.max(1, s.channels || 1); const out = [];
+    for (let c = 0; c < C; c++) out.push(new Float32Array(s.frames));
+    if (!s.compressed) {
+      const dv = new DataView(b.buffer, b.byteOffset + s.dataOff, s.dataLen); const n = Math.min(s.frames, Math.floor(s.dataLen / (2 * C)));
+      for (let i = 0; i < n; i++) for (let c = 0; c < C; c++) out[c][i] = dv.getInt16((i * C + c) * 2, true) / 32768;
+    } else {
+      const n = Math.min(s.frames, Math.floor(s.dataLen / C)); const R = 1 - 30 / (s.rate || 44100); let peak = 1e-9;
+      for (let c = 0; c < C; c++) { let acc = 0, prevAcc = 0, y = 0; const o = out[c];
+        for (let i = 0; i < n; i++) { let d = b[s.dataOff + i * C + c]; if (d > 127) d -= 256; acc += d; y = acc - prevAcc + R * y; prevAcc = acc; o[i] = y; const a = Math.abs(y); if (a > peak) peak = a; } }
+      const g = 0.9 / peak; for (const o of out) for (let i = 0; i < o.length; i++) o[i] *= g;
+    }
+    return out;
+  }
+  function wavBytes(chs, rate, loop) {
+    const C = chs.length, n = chs[0].length; const dataLen = n * C * 2; const smpl = loop && loop.end > loop.start ? 60 + 8 : 0;
+    const buf = new ArrayBuffer(44 + dataLen + smpl); const v = new DataView(buf); let p = 0;
+    const str = (s) => { for (const ch of s) v.setUint8(p++, ch.charCodeAt(0)); }; const w32 = (x) => { v.setUint32(p, x, true); p += 4; }; const w16 = (x) => { v.setUint16(p, x, true); p += 2; };
+    str('RIFF'); w32(36 + dataLen + smpl); str('WAVE'); str('fmt '); w32(16); w16(1); w16(C); w32(rate); w32(rate * C * 2); w16(C * 2); w16(16); str('data'); w32(dataLen);
+    for (let i = 0; i < n; i++) for (let c = 0; c < C; c++) { const x = Math.max(-1, Math.min(1, chs[c][i])); v.setInt16(p, x < 0 ? x * 32768 : x * 32767, true); p += 2; }
+    if (smpl) { str('smpl'); w32(60); w32(0); w32(0); w32(Math.round(1e9 / rate)); w32(60); w32(0); w32(0); w32(0); w32(1); w32(0); w32(0); w32(0); w32(loop.start); w32(Math.max(loop.start, loop.end - 1)); w32(0); w32(0); }
+    return new Uint8Array(buf);
+  }
+  const api = { isKorf, parseKorf, decodeSample, wavBytes };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PAKorf = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// Factory Sound and Drum Kit names (CC00.CC32.PC) from the KORG Pa5X User Manual v1.1, appendix 'Sounds' / 'Drum Kits'.
+(function(root){ root.PAFactory = {"121.17.2":"Grand & FM 1","121.20.0":"Austrian Grand","121.7.2":"Grand & FM 2","121.7.1":"Japanese Grand","121.6.0":"Grand & Vibes","121.13.0":"German Grand","121.4.1":"Midi Grand & Pad","121.16.0":"Italian Grand","121.6.2":"Upright Layer","121.13.1":"Japanese Upright","121.13.7":"Clavinet AC","121.15.0":"Upright Piano","121.14.7":"Clavinet AD","121.6.1":"Live Grand","121.15.7":"Clavinet BC","121.8.0":"Rock Baby Grand","121.16.7":"Clavinet BD","121.14.2":"Electric Grand 1","121.7.7":"VintageClavi1DNC","121.19.0":"Cinematic Grand","121.9.7":"Clavi AC Detuned","121.23.0":"Austr Grand Dry","121.10.7":"Clavi AD Detuned","121.11.1":"Japan Grand Dry","121.11.7":"Clavi BC Detuned","121.3.0":"German Grand Dry","121.12.7":"Clavi BD Detuned","121.17.0":"Italian Grand Dry","121.8.7":"VintageClavi2DNC","121.18.1":"Japan Upr Dry","121.9.3":"Japan Honky-Tonk","121.14.0":"Pop Upright","121.2.3":"Honky-Tonk Piano1","121.16.2":"M1 Piano 1","121.11.3":"Honky-Tonk Piano2","121.5.1":"Bright Baby Grand","121.3.3":"Ragtime Piano","121.12.2":"Electric Grand 3","121.10.3":"Saloon Piano 1","121.10.6":"Hybrid Grand","121.9.6":"Grand Harpsichord","121.7.0":"Grand & Strings","121.7.6":"Harpsichord 1","121.9.0":"Grand & Pad","121.8.6":"Harpsichord 2","121.9.2":"Grand & Layer 1","121.15.2":"Electric Grand 2","121.13.2":"Grand & Layer 2","121.2.2":"M1 Piano 2","121.8.2":"Grand &Tine","121.21.0":"Austrian Classic","121.22.0":"Austrian Jazz","121.28.4":"Tine EP Dyno","121.24.0":"Austr Solo Grand","121.29.4":"Tine EP Amp/Phas","121.25.0":"Austrian Grand RX","121.52.4":"MK V Bright","121.18.0":"Italian JazzGrand","121.31.4":"Tine EP Wet","121.8.1":"Japanese Classic","121.30.4":"Tine EP Distorted","121.9.1":"Japanese Jazz","121.32.4":"Tine EP Bell","121.10.1":"Japan Grand Solo","121.9.4":"Tine EP Thin","121.12.1":"Japanese Grand RX","121.25.4":"Tine EP Damper","121.5.3":"Prepared Grand 1","121.18.4":"Tine EP","121.4.0":"German Clas Grand","121.11.4":"Tine EP Club","121.5.0":"German Jazz Grand","121.20.4":"Tine Suitcase 1","121.11.0":"German Grand Solo","121.21.4":"Tine Suitcase 2","121.12.0":"German Pop Grand","121.8.4":"Tine Hybrid","121.10.0":"German Warm Grand","121.1.94":"Tine EP & Pad","121.14.1":"Japan Upr Bright","121.38.4":"Wurly Amp","121.15.1":"Japan Upr Dark 1","121.39.4":"Wurly Tremolo 1","121.16.1":"Japanese Upr Det","121.16.4":"Wurly Tremolo 2","121.17.1":"Japan Upr Dark 2","121.41.4":"Wurly Clean 1","121.19.1":"Japan Upright RX","121.37.4":"Wurly Clean 2","121.6.3":"Prepared Grand 2","121.54.4":"MK II Stage Dry","121.7.3":"Prepared Grand 3","121.55.4":"MK II SuitcaseDry","121.8.3":"Prepared Grand 4","121.43.4":"Tine EP Dry","121.60.4":"Wurly Line Dry","121.46.4":"MK I Stage","121.61.4":"Wurly Mics Dry","121.47.4":"MK I Suitcase","121.48.4":"Wurly Dry 1","121.53.4":"MK I Dyno","121.44.4":"Wurly Dry 2","121.49.4":"MK II Stage","121.17.4":"Wurly Classic 1","121.56.4":"Wurly Line Out","121.12.4":"Wurly Classic 2","121.51.4":"MK V Stage","121.40.4":"Wurly Amp/Comp","121.50.4":"MK II Suitcase","121.31.5":"FM Piano Dark","121.45.4":"Tine EP Classic 1","121.32.5":"FM Hybrid","121.9.5":"Tine EP Classic 2","121.33.5":"FM Piano Soft","121.34.4":"TineEP88 Suitcase","121.34.5":"FM Piano&Pad","121.27.4":"Tine EP Phaser","121.35.5":"Synth Piano 1","121.18.5":"FM Tine 1","121.9.114":"Steel Drum Y-","121.19.5":"FM Tine 2","121.1.114":"Steel Drum","121.17.5":"FM Tine 3","121.2.15":"Cymbalon DNC","121.14.5":"FM Tine 4","121.1.15":"Santur","121.36.4":"Wurly Logic","121.2.108":"Kalimba 1","121.20.5":"FM Piano 1 RM","121.1.108":"Kalimba 2","121.21.5":"FM Piano 2 RM","121.1.8":"Celesta","121.22.5":"FM Piano 3","121.1.10":"Orgel","121.23.5":"FM Piano 4","121.3.14":"Bells","121.24.5":"FM Piano 5","121.4.14":"Tubular Bells","121.25.5":"FM Piano 6","121.2.98":"Synth Bells","121.26.5":"FM Piano 7","121.10.12":"Synth Marimba 1","121.27.5":"FM Piano 8","121.9.12":"Synth Marimba 2","121.28.5":"FM Piano 9","121.8.12":"Synth Marimba 3","121.29.5":"FM Piano 10","121.2.114":"Synth Mallets 1","121.30.5":"FM Piano 11","121.4.114":"Synth Mallets 2","121.11.5":"DW8000 EP","121.5.12":"Synth Mallets 3","121.57.4":"Wurly Mics","121.58.4":"Wurly Mic R","121.11.22":"Harmonica 1 DN1","121.59.4":"Wurly Mic L","121.12.22":"Harmonica 1 DN2","121.62.4":"MK II Line RX","121.13.22":"Harmonica 2 DN1","121.63.4":"MK II Mic RX","121.14.22":"Harmonica 3 DN1","121.35.4":"E. Piano Noise","121.11.23":"Bandoneon DNC","121.42.4":"Wurly Noise","121.31.21":"Italian Acc 16’","121.32.21":"Italian Acc 8’","121.2.11":"Vibraphone 1","121.33.21":"Italian Acc 4’","121.7.12":"Marimba","121.34.21":"ItalianAcc16’Bass","121.2.12":"Marimba Key Off","121.10.23":"Tango Accordion 1","121.6.12":"Balaphon","121.12.23":"Bandoneon Sync","121.2.13":"Xylophone Y-","121.13.23":"Bandoneon Short","121.1.13":"Xylophone","121.29.21":"Classic Musette","121.2.9":"Glockenspiel","121.18.21":"French Musette","121.2.10":"Music Box","121.16.21":"2 Voices Musette","121.1.9":"Sistro","121.17.21":"3 Voices Musette","121.8.21":"Master Acc 1","121.39.16":"Lower Organ 1","121.1.23":"Tango Accordion 2","121.15.16":"Lower Organ 2","121.7.21":"Acc 1 16’ + 4’","121.30.16":"Theatre Organ 1","121.6.21":"Acc 1 16’ + 8’","121.22.16":"Theatre Organ 2","121.12.21":"Cassotto 16’","121.23.16":"Theatre Organ 5","121.24.21":"Accordion 1","121.12.17":"Jazz Organ 2","121.7.23":"Acc 2 16’ + 4’","121.11.16":"VOX Legend","121.2.23":"Acc 2 16’ + 8’","121.40.16":"60’s Organ","121.8.23":"Acc 2 16’+8’+4’","121.6.20":"Pianola","121.19.21":"Acc Clarinet","121.11.19":"Tutti A","121.21.21":"Acc Piccolo","121.12.19":"Tutti B","121.5.23":"Acc Bass","121.13.19":"Sesquialtera","121.9.23":"Acc & Acc Bass","121.14.19":"Plenum A","121.4.23":"Acc 16’+8’ & Bass","121.15.19":"Plenum B","121.15.22":"Melodica","121.16.19":"Plenum C","121.35.21":"Cinematic Acc","121.17.19":"Plenum D","121.25.21":"Steirische Acc 1","121.18.19":"Plenum E","121.26.21":"Steirische Acc 2","121.19.19":"Pipe Cornet","121.20.19":"Viola + Cornet","121.127.16":"DRAWBARS","121.21.19":"Principal 8’","121.13.18":"Jimmy Organ","121.22.19":"Pipe Flute 8’","121.9.17":"Percussion Org 1","121.23.19":"Gamba 8’","121.11.17":"Percussion Org 2","121.24.19":"Trumpet Pipes","121.14.18":"BX3 Rock 1","121.25.19":"Pipe Octave","121.15.18":"BX3 Rock 2","121.26.19":"Pipe Super Oct.","121.16.18":"BX3 Rock 3","121.27.19":"Pipe Fifth","121.17.18":"BX3 Rock 4","121.28.19":"Principal + Flute","121.6.16":"BX3 Full","121.29.19":"Nazard A","121.20.16":"BX3 Jazz 1","121.30.19":"Nazard B","121.9.18":"BX3 Jazz 2","121.31.19":"Flute8’ + Flute4’","121.37.16":"BX3 Gospel","121.32.19":"Flute8’ + Flute2’","121.38.16":"Gospel Organ","121.33.19":"Gamba + Flute","121.8.16":"Jazz Organ 1","121.34.19":"Celeste","121.4.17":"Lower Perc Organ","121.35.19":"Terziana","121.36.19":"Larigot","121.18.30":"33X B Dst Mute","121.14.17":"Pluck Organ","121.35.27":"Production E Gtr","121.37.19":"Plenum Vacui","121.41.27":"Tele M DI DNC","121.38.19":"Synth Drone","121.40.27":"Tele M Cln DNC","121.7.20":"Harmonic Organ","121.25.28":"Tele M DI Mute","121.24.28":"Tele M Cln Mute","121.29.24":"Classic Gtr 1 DNC","121.15.30":"Power Chords","121.20.24":"Classic Gtr 2 DNC","121.8.26":"Jazz Guitar DNC","121.18.24":"Classic Gtr 3 DNC","121.23.27":"Jazz Guitar Clean","121.6.24":"Spanish Guitar","121.9.26":"Jazz Guitar Octav","121.28.24":"7 Str. Guitar DNC","121.50.25":"Dobro DNC","121.47.25":"Steel Guitar1 DNC","121.30.28":"Wah Guitar","121.48.25":"Steel Guitar2 DNC","121.33.27":"Strat UpDown DNC","121.49.25":"Steel Guitar3 DNC","121.31.28":"Strat Mutes Y-","121.51.25":"Steel Guitar4 DNC","121.32.28":"Mute OD Guitar","121.36.25":"Steel Guitar5 DNC","121.33.28":"Palm Open E Gtr","121.39.27":"Strat N DI DNC","121.3.31":"Gtr Harmonic Pad","121.38.27":"Strat N Cln DNC","121.16.30":"Distorted Gtr1DNC","121.23.28":"Strat N DI Mute","121.14.30":"Distorted Gtr2DNC","121.22.28":"Strat N Cln Mute","121.3.29":"Crunch Gtr DNC","121.3.27":"Chorus Guitar 1","121.8.30":"Stereo Dist.Gtr","121.45.27":"Strat B DI DNC","121.10.26":"Synth Guitar","121.5.29":"Strat B Ovd DNC","121.34.25":"Folk Guitar DNC","121.28.28":"Strat B DI Mute","121.19.25":"Steel Guitar6 DNC","121.6.29":"Strat B Ovd Mute","121.33.25":"12 Str Guitar DNC","121.18.27":"Chorus Guitar 2","121.45.25":"Viola Caipira DNC","121.43.27":"LesP M DI DNC","121.42.27":"LesP M Cln DNC","121.13.49":"StringEnsembleDNC","121.27.28":"LesP M DI Mute","121.20.49":"Soft Strings","121.26.28":"LesP M Cln Mute","121.29.48":"Movie Strings 1","121.14.27":"Single Coil Gtr","121.25.48":"Movie Strings 2","121.44.27":"33X B DI DNC","121.19.49":"Studio Strings","121.17.30":"33X B Dst DNC","121.17.49":"Ballad StringsDNC","121.29.28":"33X B DI Mute","121.18.49":"Ballad Strings","121.14.49":"Spiccato Strings","121.3.43":"Double Bass 1 DN2","121.15.49":"Staccato Strings","121.4.43":"Double Bass 2 DN1","121.16.49":"Marcato Strings","121.2.43":"Double Bass 3","121.2.44":"Tremolo Strings","121.2.46":"Harp","121.4.45":"Pizzicato Strings","121.25.52":"Full Choir","121.2.45":"PizzicatoStrings2","121.13.53":"Hmm Choir","121.18.48":"Strings&Glockensp","121.9.53":"Lyrical Choir","121.31.48":"String Quartet 1","121.3.52":"Ooh Voices Slow","121.26.48":"String Quartet 2","121.9.52":"Ooh - Ah Voices","121.27.48":"String Quartet 3","121.23.52":"Treble Voices","121.30.48":"Strings & Vocal","121.6.52":"Ooh Voices","121.15.48":"Strings & Horns","121.10.53":"Movie Choir","121.14.48":"OrchestraTutti 1","121.24.52":"Firemen Choir","121.24.48":"Full Orchestra","121.7.54":"MouthClosed Choir","121.16.48":"Orchestra & Oboe1","121.7.53":"Soprano Vox 1","121.20.48":"Orchestra & Flute","121.4.53":"Soprano Vox 2 DNC","121.28.48":"Movie Orchestra","121.8.53":"Soprano Vox 3","121.11.53":"Movie Ensemble","121.12.53":"Soprano Vox Pad","121.15.40":"Violin 1 DN2","121.27.52":"Scat Voices 1","121.16.40":"Violin 2 DN1","121.14.52":"Scat Voices 2","121.17.40":"Violin 3","121.21.52":"Scat Voices 3","121.18.40":"Violin 4","121.26.52":"Scat Voices&Bass1","121.14.40":"Violin 5 DN1","121.17.52":"Scat Voices&Bass2","121.13.40":"Violin 6 DN2","121.28.52":"Choir&Scat Voices","121.12.40":"Violin 7 DN1","121.5.50":"Synth Strings 1","121.10.40":"Violin 8 DN2","121.6.50":"Synth Strings 2","121.11.40":"Violin 9 DN2","121.6.54":"Synth Voices Pad1","121.4.41":"Viola 1 DN2","121.9.91":"Synth Voices Pad2","121.5.41":"Viola 2 DN1","121.14.53":"Pad Choir","121.3.41":"Viola 3 DN1","121.3.54":"Vocalscape","121.1.41":"Viola 4","121.7.91":"Fresh Breath","121.3.42":"Cello 1 DN2","121.3.91":"Heaven","121.4.42":"Cello 2 DN1","121.3.53":"Airways","121.2.42":"Cello 3","121.8.54":"Synth Vox Lead","121.6.58":"Alpine Tuba","121.38.56":"Trumpet 1 DN2","121.1.58":"Oberkr Tuba","121.39.56":"Trumpet 2 DN1","121.8.58":"Sousaphone","121.40.56":"Trumpet 3 DN2","121.7.58":"Euphonium","121.33.56":"Jazz Trumpet DN1","121.34.56":"Jazz Trumpet DN2","121.40.61":"Swing Horns DNC","121.41.56":"MexicoTrumpet1DN2","121.41.61":"Ballade Brass","121.42.56":"MexicoTrumpet2DN2","121.38.61":"Horns Swell1 DNC","121.11.59":"Mute Trumpet1 DN1","121.39.61":"Horns Swell2 DNC","121.10.59":"Mute Trumpet2 DN2","121.32.61":"Big Band Brass 1","121.9.59":"Mute Trumpet3 DN2","121.4.61":"Big Band Brass 2","121.5.59":"Mute Trumpet 4","121.27.61":"Tight Brass 1","121.6.59":"Mute Trumpet5 DN1","121.29.61":"Tight Brass 2","121.7.59":"Mute Trumpet6 DN1","121.5.60":"Trumpets & Horns","121.12.59":"Wah Trumpet 1 DN1","121.34.61":"Trumpets & Tromb","121.2.59":"Wah Trumpet 2","121.2.61":"Tight Brass 3","121.19.56":"Concert Trumpet","121.30.61":"Brass of Power","121.32.56":"Jazz Cornet DN1","121.20.61":"Movie Brass","121.36.56":"Jazz Cornet DN2","121.15.61":"Expressive Brass","121.8.59":"Mute Cornet DN1","121.3.61":"Glenn & Friends","121.37.56":"Flugelhorn 1 DN2","121.2.60":"French Section","121.12.56":"Flugelhorn 2","121.10.60":"French Horns","121.26.57":"Trombone 1 DN1","121.8.60":"Soft Horns","121.27.57":"Trombone 2 DN2","121.10.61":"Trombones DNC","121.28.57":"Trombone 3 DN2","121.42.61":"Trumpets DNC","121.20.57":"Jazz Trombone DN1","121.43.61":"Trumpets Har Mute","121.21.57":"Jazz Trombone DN2","121.44.61":"Trumpets Cup Mute","121.22.57":"Soft Trombone DN1","121.3.59":"Mute Ensemble 1","121.23.57":"Soft Trombone DN2","121.4.59":"Mute Ensemble 2","121.24.57":"HardTrombone DN1","121.6.73":"Flute & Muted","121.25.57":"HardTrombone DN2","121.5.62":"Synth Brass","121.11.60":"French Horn 1","121.4.62":"Electrik Brass","121.9.60":"French Horn 2","121.45.61":"Horns Swell3 DNC","121.2.58":"Tuba 1","121.7.62":"Pulse Brass","121.17.73":"Latin Flute DN1","121.7.64":"Soprano Sax 1 DN2","121.18.73":"Latin Flute DN2","121.6.64":"Soprano Sax 2 DN1","121.3.72":"Piccolo","121.26.65":"Alto Sax 1 DN2","121.5.68":"Oboe 1","121.27.65":"Alto Sax 2 DN2","121.3.68":"Oboe 2","121.28.65":"Alto Sax 3 DN2","121.1.68":"Oboe 3","121.22.65":"Alto Sax 4 DN1","121.2.70":"Bassoon 1 DNC","121.23.65":"Alto Sax 5 DN1","121.1.70":"Bassoon 2","121.24.65":"Alto Sax 6 DN1","121.3.74":"Recorder 1","121.20.65":"Jazz Sax DN1","121.1.79":"Ocarina","121.21.65":"Jazz Sax DN2","121.5.75":"Pan Flute DN1","121.23.66":"Tenor Sax 1 DN2","121.2.77":"Shakuhachi 1","121.16.66":"Tenor Sax 2 DN1","121.3.77":"Shakuhachi 2","121.17.66":"Tenor Sax 3 DN2","121.1.76":"Blown Bottle","121.19.66":"Tenor Sax 4 DN1","121.6.78":"Whistle 1 DN1","121.20.66":"Tenor Sax 5 DN2","121.7.78":"Whistle 2","121.21.66":"Soft Tenor DN1","121.17.71":"Clar & Sax Ens 1","121.22.66":"Soft Tenor DN2","121.18.71":"Clar & Sax Ens 2","121.18.66":"Tenor Growl DN1","121.10.71":"Reeds & Saxes","121.7.67":"Baritone Sax1 DN2","121.1.72":"Small Orchestra","121.6.67":"Baritone Sax2 DN1","121.23.71":"Xaphoon","121.29.65":"Sax Quartet","121.11.65":"Sax Ensemble 1","121.11.92":"Solaris Pad","121.19.65":"Sax Ens. Legato","121.10.92":"Synth Bells Pad","121.25.65":"Sax Ens. Leg+Sfz","121.8.92":"Daylife Pad","121.9.92":"SynthFretless&Pad","121.24.71":"Clarinet 1 DN2","121.7.92":"Nature Pad","121.21.71":"Clarinet 2 DN1","121.4.94":"Blend Pad","121.25.71":"Folk Clarinet DN2","121.5.94":"Blend & Sub Pad","121.22.71":"Jazz Clarinet DN1","121.3.92":"Bubbles Pad","121.26.71":"Klezmer Clar1 DN2","121.4.92":"Flutters Pad","121.27.71":"Klezmer Clar2 DN1","121.5.92":"Little Beetle Pad","121.15.73":"Concert Flute DN1","121.6.92":"Staples Pad","121.16.73":"Concert Flute DN2","121.2.94":"Dune Pad","121.3.94":"Vangelis Pad","121.11.96":"Rhythmsphere","121.10.95":"Swam Noise Pad","121.5.88":"Far Muted Atmos.","121.9.97":"Jungle Pad","121.14.91":"Far Memories Pad","121.13.99":"Pat Fretless","121.15.91":"Atmoschoir Pad","121.7.101":"Wave Obsession","121.1.103":"Space Trail Pad","121.10.102":"Side Chain Loft","121.3.88":"Jurassic Pad","121.11.102":"Stories Pad","121.2.99":"Pisco Pad","121.11.88":"Bright Hoover Pad","121.18.89":"Big Side Attack","121.21.89":"Symphonic Pad","121.8.97":"Tension Scene","121.20.90":"Big & Brite Pad","121.4.93":"Dronas Pad","121.21.90":"SolOr Pad Y-","121.5.102":"Moon Cycles","121.22.90":"Fast Phat Slow Y-","121.4.99":"Movie Stack 1","121.23.90":"Octave Pad","121.5.99":"Movie Stack 2","121.5.93":"Intermodulations","121.6.99":"Movie Stack 3","121.6.101":"Sun Sweep","121.8.99":"Eastern Depths","121.2.103":"Sci-Fi Pad","121.10.96":"S&H Pad DNC","121.3.103":"Vintage Space Pad","121.4.96":"Wave-Sequence","121.6.88":"Pacific Sea Pad","121.5.96":"Aerosonic Pad","121.9.88":"Waterland Pad","121.6.96":"My Sequencer","121.6.102":"Wave Echoes Pad","121.7.96":"Step Sequencer","121.11.99":"Layers Enjoy Pad","121.4.63":"Big Panner","121.10.88":"Meditation Stack","121.13.91":"Choir Sequence","121.12.99":"Hypnotic Stack","121.4.91":"Pop Synth Pad","121.19.89":"80’s Mellow Pad","121.1.97":"Air Clouds Pad","121.20.89":"80’s Super Pad","121.2.101":"Digi Ice Pad","121.15.89":"Warm Pad","121.5.95":"Cinema Pad","121.15.90":"Square Pad","121.7.95":"Vintage Sweep","121.6.89":"Dark Pad","121.2.95":"Meditative Pad","121.8.89":"Analog Pad 1","121.4.90":"Super Sweep","121.14.89":"Symphonic Ens.","121.5.90":"Wave Sweep","121.17.89":"Warm Buzz Pad","121.16.89":"Next Analog","121.14.90":"Matrix 12 Pad","121.1.93":"Cosmic Pad","121.4.89":"The Pad","121.6.98":"Bell Pad","121.4.88":"Evolving Pad","121.2.91":"Fresh Air 1 Pad","121.11.91":"Fresh Air 2 Pad","121.36.81":"Big Noise Lead","121.5.91":"Future Pad","121.37.81":"Wide Pulse","121.2.93":"80’s Pop Synth","121.38.81":"Narrow Pulse","121.1.92":"Blender Pad","121.39.81":"Reverse Saw","121.4.127":"Deep Noise Pad","121.42.81":"Trance Unison","121.16.91":"Mixed Echoes Pad","121.19.80":"Wobbly Razor","121.7.88":"Nighthawk Pad","121.20.80":"Syn Clarinet Lead","121.8.88":"Mellow Perc Pad","121.21.80":"Square Pulse","121.13.96":"Hans Pad","121.22.80":"Distort Square","121.12.96":"Running Pad","121.23.80":"Square Tube 1","121.5.101":"LFO Sound BPM","121.24.80":"Square Tube 2","121.7.102":"Deep Snap Pad","121.25.80":"Mid Square Pulse","121.8.102":"Echo Noise Pad","121.26.80":"Square Tooth","121.9.102":"Formant Bounce","121.27.80":"Double Square","121.2.92":"Triangular Layer","121.21.87":"Disco Synth Bass","121.22.87":"Vintage MG","121.54.81":"Saw Synth RD","121.23.87":"Formant Fade","121.48.81":"MB Triangle RM","121.40.81":"PWM Lead 1","121.49.81":"MB Saw RM","121.41.81":"PWM Lead 2","121.50.81":"2 Saws Mono RM","121.43.81":"Rude Saw EDM","121.51.81":"Arp2600 PWM 1&2","121.44.81":"Future Saw Pulse","121.52.81":"PWM 1&2 + Saw","121.45.81":"Rude Octaver Y-","121.53.81":"Massive Unison","121.46.81":"Linked Saw Lead","121.28.80":"MB Square RM","121.3.85":"EDM Scat","121.13.98":"Plug Perk Hall","121.4.85":"Formant Snap","121.47.81":"Double Synth","121.5.85":"Dist Ghost","121.29.81":"Next Glide EDM","121.6.85":"Rude Talk","121.30.81":"Stack Attack","121.7.85":"Voice Lead EDM","121.31.81":"ModuLead","121.8.85":"Ultra Voice EDM","121.32.81":"X-Mod Saw EDM","121.8.98":"Rom Pluck","121.33.81":"Dark Stack EDM","121.9.98":"Strum Pluck","121.34.81":"Distonic Lead EDM","121.10.98":"Triangle Pluck","121.35.81":"Spring Lead EDM","121.11.98":"Triangle Noise","121.16.84":"Folk EDM","121.12.98":"Triangle Electro","121.13.87":"Next Dance DNC","121.15.84":"Caos Synth","121.16.87":"Trance Filter","121.6.63":"Vocal Brass","121.17.87":"Vintage Monster","121.11.84":"Justified","121.6.62":"JP8","121.6.97":"Rave","121.25.81":"Dance Basic","121.3.87":"Rich Lead","121.22.81":"Spire Synth","121.28.81":"16-8-4 & Sub32","121.24.81":"EDM Synth","121.17.81":"Mono Saw Detune","121.14.84":"Dubstep Synth","121.18.81":"Mono Saw 2 Octave","121.20.87":"Noised Lead DNC","121.19.81":"Mono Saw 3 Octave","121.10.84":"Deep Mod DNC","121.5.81":"Power Saw","121.8.84":"Lab Synth DNC","121.12.87":"Bass Phat Saw","121.21.81":"Thin Pul Seq DNC","121.6.81":"Octo Lead","121.16.90":"Synth Whooo","121.4.80":"Dance Lead","121.17.90":"Analog Synth 1","121.5.80":"Wave Lead","121.18.90":"Analog Synth 2","121.14.80":"Simple Square","121.19.90":"Poly6 + JP8","121.14.81":"Reverse Pulse","121.13.81":"Summit Pulse","121.6.87":"HipHop Lead","121.14.87":"Bros Buzz Y+","121.8.81":"Phat Saw Lead","121.15.87":"Fat Synth","121.12.90":"Big Sweep Stab","121.9.84":"Parallel Trance","121.8.90":"Noisy Stab","121.3.114":"Dance Syn Perc","121.11.87":"A Leadload","121.5.114":"Shape Sound","121.10.87":"OB Lead","121.20.81":"Fast Glide Saw","121.8.87":"Big & Raw","121.16.80":"Fing Glide Square","121.12.81":"Synth Pianoid","121.3.80":"Old Portamento","121.15.81":"Polysix","121.18.87":"Monster Synth","121.16.81":"Polysix & Sub","121.13.84":"Side Distortion","121.19.87":"Fat Synth Oct Sub","121.12.84":"Revolution","121.4.84":"Metallic Rez","121.17.80":"Square Solo","121.10.91":"Dance ReMix","121.26.81":"Triangle Solo","121.12.80":"Port Whine","121.27.81":"Saw Solo","121.15.80":"Sub Harmonic","121.18.80":"Square & Pulse","121.23.81":"Leadspace","121.4.109":"Bagpipes","121.1.82":"Landscape","121.52.25":"Mandolin UpDw Y-","121.40.25":"Mandolin DNC","121.3.109":"Highland Bagpipes","121.43.25":"Mandolin UpDw","121.2.109":"Uillean Pipes","121.41.25":"Mandolin Orch.1","121.3.111":"Zurna 1","121.42.25":"Mandolin Orch.2","121.1.111":"Zurna 2","121.27.24":"Cavaquinho 1","121.1.112":"Gamelan Bells","121.23.24":"Cavaquinho 2","121.3.112":"Garbage Mall","121.24.24":"Cavaquinho 3","121.3.105":"Jaw Harp","121.46.25":"Bandolim","121.7.107":"Baglama 1","121.2.106":"Berimbau DNC","121.8.107":"Baglama 2","121.1.106":"Berimbau Rel.DNC","121.9.107":"Baglama 3","121.25.24":"Ukulele 1","121.4.111":"Turk Fill Legato","121.9.104":"Zither","121.5.111":"Double Z Legato","121.8.104":"Sitar 1","121.6.111":"Trpt Wave Legato","121.2.104":"Sitar 2","121.7.111":"Syn Zurna Legato","121.4.104":"Sitar 3","121.1.110":"Fiddle","121.29.33":"JBass Fing DN1","121.6.105":"Banjo Thumb DNC","121.30.33":"JBass Fing DN2","121.7.105":"Banjo Fing/ThuDNC","121.18.34":"JBass Pick DN1","121.1.105":"Banjo Key Off","121.19.34":"JBass Pick DN2","121.4.105":"Banjo","121.8.36":"JBass Slap","121.5.107":"Kanoun 1","121.27.33":"SRBass Fing DN1","121.2.107":"Kanoun 2","121.28.33":"SRBass Fing DN2","121.6.107":"Kanoun Tremolo 1","121.16.34":"SRBass Pick DN1","121.3.107":"Kanoun Tremolo 2","121.17.34":"SRBass Pick DN2","121.4.107":"Kanoun Mix","121.9.36":"SRBass Slap","121.5.105":"Oud 1","121.33.33":"PBass 1 Fing DN1","121.2.105":"Oud 2","121.34.33":"PBass 1 Fing DN2","121.5.104":"Bouzouki","121.14.34":"FSBass Pick DN1","121.2.72":"Nay","121.15.34":"FSBass Pick DN2","121.1.75":"Kawala","121.25.33":"PBass 2 Fing DN1","121.2.71":"G Clarinet","121.11.35":"FretlessBass1 DN1","121.11.71":"Klarnet 1","121.10.35":"FretlessBass2 DN1","121.12.71":"Klarnet 2","121.3.35":"Fretless Bass 3","121.2.111":"Hichiriki","121.1.35":"Fretless Bass 4","121.26.33":"PBass 2 Fing DN2","121.12.35":"SynBass Soft","121.35.33":"HBass Fing&Pick1","121.22.39":"Trap Bass","121.36.33":"HBass Fing&Pick2","121.23.38":"Quadra Bass 1 Y-","121.20.34":"HBass Pick&Fing1","121.24.38":"Quadra Bass 1 AT","121.21.34":"HBass Pick&Fing2","121.25.38":"Quadra Bass 1-/+Y","121.9.35":"Woofer Pusher","121.21.39":"SynBass PickDark1","121.13.32":"Acoustic Bass 1","121.11.38":"SynBass PickDark2","121.14.32":"Acoustic Bass 2","121.20.38":"SynBass Legato","121.3.32":"Acoustic Bass 3","121.18.39":"SynBass Saw","121.9.32":"Acoustic Bass 4","121.19.38":"SynBass Perc 1","121.2.32":"Bass & Ride","121.17.39":"SynBass Perc 2","121.16.33":"Finger Bass DN1","121.8.38":"SynBass Resonance","121.7.33":"Finger Bass 2","121.13.38":"SynBass Jungle 1","121.4.33":"Finger Bass 3","121.5.39":"SynBass Jungle 2","121.1.37":"Thumb Bass 1","121.6.17":"SynBass Techno 1","121.2.36":"Thumb Bass 2","121.13.17":"SynBass Techno 2","121.12.34":"Vintage PickBass1","121.14.39":"SynBass Deep","121.23.33":"Vintage PickBass2","121.32.33":"JBass Fing&Slap","121.18.33":"Vintage PickBass3","121.31.33":"SRBass Fing&Slap","121.2.34":"Pick Bass","121.7.36":"DarkSlap Bass DN1","121.13.34":"Jazz Pick Bass","121.3.34":"Stein Bass","121.25.87":"SynBass Drone 1","121.8.33":"ChorusFinger Bass","121.24.87":"SynBass Drone 2","121.20.39":"SynBass Fifth","121.21.38":"SynBass Drone 3","121.19.39":"Pulse Bass","121.23.39":"SynBass & Kick 1","121.8.39":"SynBass Attack","121.24.39":"SynBass & Kick 2","121.22.38":"SynBass Wah 1","121.6.126":"Stadium","121.18.38":"SynBass Wah 2","121.3.119":"Incipit Noises","121.5.38":"SynBass Wah 3","121.4.119":"White Incipit","121.16.39":"SynBass Wah 4","121.5.119":"Sci-Fi Incipit","121.17.38":"SynBass Wah 5","121.6.119":"Sci-fi Shifter 1","121.25.39":"SynBass Dark","121.7.119":"Sci-fi Shifter 2","121.26.38":"SynBass Pick","121.10.97":"Atmos Lead","121.27.38":"SynBass Glide","121.11.97":"Atom Seq 1","121.12.97":"Atom Seq 2","121.12.122":"Digi Boiling 2","121.13.97":"Atom Seq 3","121.13.122":"Cave Window","121.14.97":"Atom Seq 4","121.15.125":"Brain Core","121.15.97":"Atom Seq 5","121.14.125":"Lava Gruncy","121.16.97":"Atom Seq 6","121.12.126":"Flying Saucer","121.17.97":"Atmos Melody 1","121.13.126":"Darka","121.18.97":"Atmos Melody 2","121.5.127":"Cinematic Impact1","121.19.97":"Atmos Melody 3","121.6.127":"Cinematic Impact2","121.20.97":"Atmos Melody 4","121.7.127":"Cinematic Impact3","121.21.97":"Atmos Melody 5","121.8.127":"Cinematic Impact4","121.22.97":"Atmos Melody 6","121.9.127":"Cinematic Impact5","121.23.97":"Atmos Melody 7","121.10.127":"Cinematic Impact6","121.24.97":"Atmos Melody 8","121.11.127":"Cinematic Impact7","121.25.97":"Atmos Melody 9","121.12.127":"Cinematic Bang 1","121.26.97":"Atmos Melody 10","121.13.127":"Cinematic Bang 2","121.27.97":"Atmos Melody 11","121.14.127":"Cinematic Bang 3","121.28.97":"Atmos Melody 12","121.15.127":"Cinematic Bang 4","121.29.97":"Atmos Melody 13","121.16.127":"Cinematic Bang 5","121.30.97":"Atmos Melody 14","121.17.127":"Cinematic Bang 6","121.31.97":"Atmos Melody 15","121.18.127":"Cinematic Bang 7","121.32.97":"Atmos Melody 16","121.19.127":"Cinematic Bang 8","121.33.97":"Atmos Melody 17","121.13.125":"Motor World","121.34.97":"Atmos Melody 18","121.6.122":"Giungle Set","121.4.103":"Atoms Impact 1","121.7.122":"Water Set","121.5.103":"Atoms Impact 2","121.8.122":"Weather Set","121.6.103":"Atoms Sci-fi","121.6.124":"Clock Set","121.7.103":"Sci-fi Shifter 3","121.7.124":"Reverse Atk Set","121.6.114":"Bang Industry 1","121.10.125":"Video-Game Set","121.7.114":"Bang Industry 2","121.11.125":"Cartoon Set","121.8.114":"Bang Metal","121.12.125":"Invader Set","121.9.122":"Noise Impact 1","121.16.125":"Siren Set","121.10.122":"Noise Impact 2","121.8.126":"Life Set","121.11.122":"Digi Boiling 1","121.9.126":"Horror Set","121.10.126":"Quiz Show Set","121.10.4":"Dyno Tine EP 1","121.11.126":"Talk Show Set","121.19.4":"Tine E. Piano 2","121.17.125":"SFX Catalog 1","121.22.4":"Dyno Tine EP 2","121.18.125":"SFX Catalog 2","121.23.4":"Bell E. Piano 1","121.19.125":"SFX Catalog 3","121.24.4":"Bell E. Piano 2","121.20.125":"SFX Catalog 4","121.26.4":"EP+Damper","121.21.125":"SFX Catalog 5","121.4.4":"Vintage EP","121.22.125":"SFX Cinematic","121.6.5":"Stereo Dig. EP","121.23.125":"SFX Industry","121.16.5":"FM Stack EP","121.24.125":"SFX Life","121.8.5":"Hybrid EP","121.25.125":"SFX Melody&Athmos","121.10.5":"Phantom Tine","121.26.125":"SFX TV & Show","121.13.4":"Soft Wurly","121.14.4":"Hard Wurly","121.2.1":"Piano Pad 1","121.15.4":"Velo Wurly","121.3.1":"Piano Pad 2","121.13.5":"White Pad EP","121.3.2":"90’s Piano","121.15.5":"FM Pad EP","121.4.2":"2000’s Piano","121.12.5":"Sweeping EP","121.5.2":"Chorus Piano","121.7.5":"Classic Dig. EP","121.10.2":"E. Grand Phaser","121.5.5":"Syn Piano X","121.4.3":"Saloon Piano 2","121.11.2":"Road Piano","121.6.6":"Harpsichord 3","121.5.6":"Harpsi 16’","121.3.11":"Vibraphone 2","121.4.6":"Harpsi Korg","121.3.12":"Monkey Skuls","121.3.7":"Clav Snap","121.4.98":"Digi Bell","121.4.7":"Sticky Clav","121.3.98":"Krystal Bell","121.5.7":"Clav","121.2.7":"Clav Wah","121.1.22":"Sweet Harmonica","121.6.7":"Synth Clav","121.2.21":"Akordeon","121.20.21":"Acc. Clarinet NT","121.5.4":"Pro Dyno EP","121.22.21":"Acc. Piccolo NT","121.6.4":"Pro Stage EP","121.15.21":"Detune Accordion","121.7.4":"Studio EP","121.11.21":"Sweet Musette","121.33.4":"Suit Case88 EP2","121.3.21":"Musette 1","121.4.21":"Musette 2","121.6.18":"Super BX Perc.","121.9.21":"Cassotto","121.9.16":"Gospel Organ 2","121.30.21":"Cassotto 16’ DNC","121.13.16":"Gospel Organ V.","121.13.21":"Cassotto Or.Tune","121.21.16":"BX3 Gospel V.","121.14.21":"Cassotto NorTune","121.14.16":"Drawbars Organ","121.5.21":"Musette Clar.","121.16.16":"Organ Mid V.","121.10.21":"Arabic Accordion","121.17.16":"Organ Hi V.","121.23.21":"Master Acc 2","121.18.16":"Drawbars Fast V.","121.28.21":"Steirische Acc 4","121.19.16":"Drawbars Slow V.","121.2.22":"Harmonica","121.33.16":"Organ Low+1’V.","121.3.22":"Harmonica AT 1","121.34.16":"Organ HiMix1 V.","121.4.22":"Harmonica AT 2","121.35.16":"Organ HiMix2 V.","121.5.22":"Harmonica 1 DNC","121.36.16":"Organ 16+51/3 V.","121.6.22":"Jazz Harm. DNC","121.4.16":"Organ Low 2 V.","121.7.22":"Sweet Harm. DNC","121.3.17":"Old Wheels","121.8.22":"Melodica DNC","121.7.16":"Dark Organ 1","121.9.22":"Harmonica 2 DNC","121.5.16":"Dark Organ 2","121.10.22":"Harmonica 3 DNC","121.8.17":"Rotary Organ","121.3.23":"Accordion16,8,4’","121.5.17":"M1 Organ","121.27.21":"Steirische Acc 3","121.7.18":"Dirty JazzOrgan","121.6.23":"Acc.Voice Change","121.12.16":"Arabian Organ","121.24.16":"Theatre Organ 3","121.4.18":"Classic Click","121.25.16":"Theatre Organ 4","121.10.17":"Perc. Organ 3","121.26.16":"Tibia","121.8.18":"Perc.Short Deca","121.27.16":"Tibia 16+8+4’","121.11.18":"Rock Organ 2","121.28.16":"Tibia & Vox","121.10.18":"Jimmy Organ V.","121.29.16":"Post Horn Trem.","121.10.16":"BX3 Rock 1 V.","121.31.16":"Tibia & Kinura","121.1.18":"BX3 Rock 2 V.","121.32.16":"Tibia Vox Glock","121.5.18":"BX3 Rock 3 V.","121.6.19":"Pipe Tutti 1","121.12.18":"BX3 Rock 4 V.","121.8.19":"Pipe Tutti 2","121.3.18":"Dirty B","121.9.19":"Pipe Tutti 3","121.2.18":"Killer B","121.10.19":"Pipe Tutti 4","121.7.17":"BX3 Short Decay","121.4.19":"Church Pipes","121.5.19":"Full Pipes","121.7.30":"Solo Dist.Guitar","121.3.20":"Flauto Pipes","121.12.30":"Dist. Steel Gtr","121.3.19":"Pipe Mixture","121.3.30":"Joystick Gtr Y-","121.4.20":"Pipe Flute 1","121.5.24":"Ac.Guitar KeyOff","121.5.20":"Pipe Flute 2","121.8.24":"Nylon Gtr Pro1","121.2.20":"Small Pipe","121.11.24":"Nylon Gtr Pro2","121.7.19":"Positive Organ","121.12.24":"Nylon Gtr RX1","121.11.32":"Organ Pedal","121.13.24":"Nylon Gtr RX2","121.14.24":"Nylon Slide Pro","121.4.24":"Nylon Bossa","121.16.24":"RealNylon Gtr ST","121.10.24":"Nylon Vel. Harm.","121.17.24":"Real Nylon Gtr","121.15.24":"Nylon Guitar","121.19.24":"Natural Nylon","121.9.24":"Brazilian Guitar","121.21.24":"Concert Gtr Pro","121.31.25":"Real Steel Gtr","121.4.25":"Steel Guitar 1","121.9.25":"Steel Folk Gtr","121.20.25":"Steel Guitar 2","121.7.24":"Guitar & Strings","121.5.25":"Steel 12 Strings","121.7.25":"Finger Key Off","121.17.25":"12 Strings Pro","121.3.26":"Club Jazz Gtr 2","121.13.25":"Steel Slide Pro1","121.23.25":"Pop Steel Slide","121.14.25":"Steel Slide Pro2","121.8.25":"Finger Tips","121.15.25":"Steel Guitar RX1","121.11.27":"Country Nu","121.16.25":"Steel Guitar RX2","121.12.25":"Reso Guitar","121.18.25":"12 Strings RX","121.26.27":"Tel. Midddle","121.22.24":"Concert 12 Str","121.6.28":"Clean Mute Gtr","121.21.25":"Pop Steel Gtr 1","121.8.28":"Clean Funk","121.22.25":"Pop Steel Gtr 2","121.6.25":"Hackbrett","121.24.25":"Pop SteelGtr RX1","121.27.27":"Tel. Bridge","121.25.25":"Pop SteelGtr RX2","121.8.27":"Guitarish","121.28.25":"RealSteel Gtr ST","121.17.27":"Stra. Gtr Slide","121.29.25":"RealFolk GtrST 1","121.5.28":"Stra. Chime","121.30.25":"RealFolk GtrST 2","121.10.27":"L&R E.Guitar 2","121.32.25":"Real Folk Gtr","121.7.28":"Rhythm E.Guitar","121.35.25":"Steel Gtr RX","121.19.28":"Muted Guitar","121.37.25":"Classic12Str Pro","121.2.31":"E.Gtr Harmonics","121.38.25":"Classic12Str DNC","121.39.25":"Classic12Strings","121.4.28":"R&R Guitar","121.44.25":"Steel Gtr DNC","121.5.27":"Processed E.Gtr","121.4.26":"Pedal Steel","121.10.28":"Clean Funk RX1","121.6.26":"JazzGtr SlidePro","121.36.27":"Clean Funk RX2","121.7.26":"Jazz Gtr 2 DNC","121.21.28":"5th Mute Gtr","121.2.26":"Club Jazz Gtr 1","121.37.27":"E.Gtr Amp DNC","121.5.26":"Soft Jazz Guitar","121.11.28":"Clean Funk RX3","121.22.27":"Clean Jazz 2","121.12.28":"Funk Stein RX1","121.6.27":"Single Coil","121.13.28":"Funk Stein RX2","121.7.27":"New Stra.Guitar","121.2.29":"Soft Overdrive","121.9.27":"L&R E.Guitar 1","121.4.29":"Lead Guitar DNC","121.3.120":"Vox Wah Chick","121.9.30":"Dist. Guitar RX1","121.12.27":"Funky Wah RX","121.10.30":"Dist. Guitar RX2","121.20.27":"Clean Guitar 1","121.11.30":"Dist. Guitar","121.25.27":"Clean Guitar 2","121.13.30":"Dist. Gtr 3 DNC","121.13.27":"Clean Gtr Pro 1","121.6.30":"Wet Dist. Guitar","121.15.27":"Clean Gtr Pro 2","121.9.28":"Disto Mute","121.14.28":"Clean Guitar RX1","121.5.30":"Mute Monster","121.15.28":"Clean Guitar RX2","121.4.30":"Power Chords 2","121.16.28":"Clean Guitar RX3","121.17.28":"Clean Guitar RX4","121.8.40":"Violin Expr. 1","121.18.28":"Clean Guitar RX5","121.2.40":"Violin Expr. 2","121.20.28":"Clean Guitar RX6","121.4.40":"Violin Expr. 3","121.16.27":"Stra. Vel. Pro","121.3.40":"Slow Violin","121.19.27":"Vintage S. 1","121.5.40":"Violin Expr. DNC","121.4.27":"Vintage S. 2","121.6.40":"Conc.Violin DNC","121.21.27":"Solid Guitar","121.7.40":"Real Violin DNC","121.24.27":"‘54 E. Guitar","121.9.40":"Violin DNC","121.30.27":"Real El. Guitar1","121.2.41":"Violin & Viola","121.31.27":"Real El. Guitar2","121.1.42":"Cello","121.28.27":"Real El. Gtr ST1","121.1.43":"Class.Contrabs","121.29.27":"Real El. Gtr ST2","121.21.48":"Strings Ens. 1","121.34.27":"Chorus Gtr DNC","121.3.49":"Strings Ens. 2","121.32.27":"Stra. Gtr DNC","121.7.49":"Movie Str.1 DNC","121.8.49":"Movie Str.2 DNC","121.11.52":"Grand Choir","121.23.48":"ConcertStrings 2","121.15.52":"Femal Scat","121.9.49":"Real Strings 1","121.16.52":"Male Scat","121.10.49":"Real Strings 2","121.22.52":"Cycle Scat 2","121.5.49":"Movie Strings 3","121.18.52":"Scat V.& Bass 2","121.6.49":"Movie Strings 4","121.19.52":"Scat Voices","121.5.48":"i3 Strings","121.20.52":"Scat Voices DNC","121.2.49":"Full Strings","121.5.53":"Soprano Vox 4 DNC","121.4.49":"Spiccato Strings2","121.6.53":"SopranoChoirDNC","121.11.49":"ConcertStrings 1","121.17.48":"Orchestra & Oboe2","121.12.49":"StrappatoStrings","121.2.89":"Master Pad","121.10.48":"Symphonic Bows","121.5.52":"Take Voices 2","121.11.48":"Ensemble & Solo","121.7.52":"Aah Choir","121.1.44":"Tremolo Strings 2","121.12.52":"Choir Light","121.1.45":"Pizz. Ensemble","121.10.52":"Slow Choir","121.22.48":"Strings Ens. 3","121.2.85":"Cyber Choir","121.3.48":"Stereo Strings","121.1.85":"Ether Voices","121.3.45":"Double Strings","121.4.50":"Odissey","121.4.48":"Legato Strings","121.1.49":"Sweeper Strings","121.6.48":"N Strings","121.2.50":"Analog Strings","121.7.48":"Arco Strings","121.1.51":"Synth Strings 3","121.8.48":"Octave Strings","121.3.50":"Analog Velve","121.13.48":"Arabic Strings","121.9.48":"Strings Quartet","121.3.56":"Mono Trumpet","121.12.48":"Chamber Strings","121.8.56":"Warm Flugel","121.19.48":"OrchestraTutti 2","121.5.57":"Pitch Trombone","121.13.52":"Strings Choir","121.4.57":"Soft Trombone","121.5.54":"Dream Voice","121.12.57":"Trombone 1","121.4.54":"Classic Vox","121.9.56":"BeBop Cornet","121.2.53":"Doolally","121.7.56":"Flugel Horn","121.2.52":"Ooh Voices 2","121.3.58":"Dynabone","121.4.52":"Take Voices 1","121.4.58":"Ob.Tuba&E.Bass 1","121.8.52":"Wuuh Choir","121.5.58":"Ob.Tuba&E.Bass 2","121.2.54":"Vocalesque","121.6.56":"Dual Trumpets","121.10.56":"Trumpet Pro 1","121.15.57":"Jazz Trb. 1 DNC","121.11.56":"Trumpet Pro 2","121.16.57":"Soft Trb. DNC","121.2.56":"Trumpet Overb.","121.17.57":"Trb. Expr. DNC","121.13.56":"Flugel Horn Pro","121.18.57":"Jazz Trb. 3 DNC","121.14.56":"Trumpet","121.15.56":"Trumpet Expr.1","121.8.61":"Attack Brass","121.4.56":"Trumpet Expr.2","121.33.61":"Big BandShake Y+","121.18.56":"TrumpetShake Y+","121.35.61":"Trumpet Ens1 Y+","121.16.56":"Trumpet Pro 3","121.36.61":"Trumpet Ens2 Y+","121.5.56":"Trumpet Pitch","121.14.61":"Dyna Brass 1","121.17.56":"Alp Trumpet","121.22.61":"Dyna Brass 2","121.20.56":"Concert Trp. Pro","121.24.61":"Double Brass","121.21.56":"Cornet Expr.","121.21.61":"Power Brass","121.22.56":"Cornet Pro 1","121.17.61":"Film Brass","121.23.56":"Cornet Pro 2","121.6.61":"Glenn & Boys","121.31.56":"Cornet Legato","121.18.61":"Brass Slow","121.24.56":"JazzTrumpet1 DNC","121.19.61":"Fanfare","121.30.56":"JazzTrumpet4 DNC","121.5.63":"Synth Brass 2","121.35.56":"JazzTrumpet5 DNC","121.3.63":"Brass Pad","121.25.56":"JazzCornet 1 DNC","121.8.55":"Netherland Hit","121.26.56":"Trumpet Expr.DNC","121.4.55":"Brass Impact","121.27.56":"JazzTrumpet2 DNC","121.3.60":"Classic Horns","121.28.56":"JazzTrumpet3 DNC","121.4.60":"Horns & Ensemble","121.29.56":"JazzCornet 2 DNC","121.16.61":"Brass & Sax","121.3.57":"Hard Trombone","121.7.61":"Trpts & Brass","121.19.57":"HardTrombone DNC","121.7.60":"Soft Horns 2","121.6.57":"Trombone Expr. 1","121.6.60":"Soft Horns 3","121.7.57":"Trombone Expr. 2","121.9.61":"Trumpet Ens.","121.8.57":"Trombone Vel. 1","121.11.61":"Trombones","121.9.57":"Trombone Vel. 2","121.5.61":"Sax & Brass","121.10.57":"Trombone Vel. 3","121.12.61":"Tight Brass 4","121.11.57":"Trombone Pro Vel","121.13.61":"Fat Brass","121.13.57":"Trombone DNC","121.25.61":"Brass Hit","121.14.57":"Jazz Trb. 2 DNC","121.26.61":"Brass Fall","121.23.61":"Sforzato Brass","121.7.66":"Tenor Sax Expr.1","121.28.61":"Tight Brass Pro","121.8.66":"Tenor Sax Expr.2","121.31.61":"Brass Section","121.9.66":"Jazz Tenor Sax 1","121.37.61":"MorphAttackBrass","121.10.66":"Jazz Tenor Sax 2","121.11.66":"Reed of Power","121.5.66":"Folk Sax","121.12.66":"Tenor Sax 8 DNC","121.2.67":"Breathy Baritone","121.13.66":"Tenor Sax 2 DNC","121.1.65":"Breathy Alto 1","121.14.66":"Tenor Sax 7 DNC","121.3.66":"Breathy Tenor","121.15.66":"Tenor Sax 6 DNC","121.3.65":"Breathy Alto 2","121.1.67":"Baritone Growl","121.4.65":"Alto Sax Growl","121.3.67":"Baritone Sax Pro","121.2.66":"Soft Tenor","121.4.67":"Baritone Sax","121.4.66":"Tenor Growl","121.5.67":"Baritone Sax DNC","121.1.64":"Sweet Soprano 3","121.2.121":"Sax Breath & Key","121.2.64":"Soprano Pro","121.3.64":"Sweet Soprano 1","121.7.71":"Folk Clarinet","121.4.64":"Sweet Soprano 2","121.9.73":"Flute","121.5.64":"Soprano Sax DNC","121.7.73":"Wooden Flute","121.2.65":"Sax Ensemble 2","121.8.73":"Bambu Flute","121.5.65":"Sweet Alto Sax 1","121.1.69":"English Horn","121.6.65":"Sweet Alto Sax 2","121.1.74":"Recorder 2","121.7.65":"Soft Alto Sax","121.2.74":"Recorder 3","121.8.65":"Alto Sax Pro","121.2.68":"Classic Oboe","121.9.65":"Alto Sax Expr.","121.4.68":"Oboe 4","121.10.65":"Classic Alto Sax","121.1.71":"Jazz Clarinet","121.12.65":"Alto Sax 8 DNC","121.3.71":"Section Winds 1","121.13.65":"Jazz Sax 1 DNC","121.4.71":"Section Winds 2","121.14.65":"Jazz Sax 2 DNC","121.5.71":"Clarinet Ens.","121.15.65":"Real Sax Ens.","121.6.71":"Woodwinds","121.16.65":"Jazz Sax 3 DNC","121.8.71":"Clarinet Pro 1","121.17.65":"Alto Sax 7 DNC","121.9.71":"Clarinet Pro 2","121.18.65":"SoftLatinSax DNC","121.13.71":"Clarinet 3 DNC","121.1.66":"Tenor Sax Noise1","121.14.71":"RealClarinet DNC","121.6.66":"Tenor Sax Noise2","121.15.71":"JazzClarinet DNC","121.16.71":"SoloClarinet DNC","121.1.100":"Lonely Spin","121.19.71":"Clarinet 4 DNC","121.2.100":"Synth Ghostly","121.20.71":"Clarinet 5 DNC","121.11.90":"Farluce","121.1.73":"Jazz Flute Expr.","121.7.98":"Bell Choir","121.2.73":"Flute Switch","121.7.97":"Elastick Pad","121.3.73":"Flute Dyn. 5th","121.2.96":"Caribbean","121.4.73":"Flute Frullato","121.3.101":"VCF Modulation","121.5.73":"Orchestra Flute","121.1.83":"Chiff Touch Pad","121.10.73":"Jazz Flute","121.1.88":"Virtual Traveler","121.11.73":"Flute DNC","121.3.97":"Tinklin Pad","121.12.73":"Orch. Flute DNC","121.12.89":"OB Pad","121.13.73":"Jazz Flute 1 DNC","121.3.95":"Dark Element","121.14.73":"Jazz Flute 2 DNC","121.5.89":"Money Pad","121.2.75":"Pan Flute 1 DNC","121.9.89":"Analog Pad 2","121.3.75":"Pan Flute 2 DNC","121.10.89":"Analog Pad 3","121.4.75":"Pan Flute Y-","121.13.89":"Dark Anna","121.1.77":"Old Shakuhachi","121.6.90":"Cross Sweep","121.1.78":"Whistle Sine","121.6.91":"Tsunami Wave","121.2.78":"Breathy Whistle","121.8.91":"Ravelian Pad","121.3.78":"Whistle 5","121.12.91":"Pop Synth Pad 2","121.4.78":"Whistle 4","121.3.93":"Techno Stab DNC","121.5.78":"Whistle 3 DNC","121.9.95":"Double Sweep","121.1.96":"Motion Ocean","121.2.90":"Sky Watcher","121.3.96":"Wave Cycle","121.11.89":"Vintage Pad","121.4.97":"Pods In Pad","121.8.95":"You Decide","121.5.98":"Moving Bell","121.13.90":"Korgmatose","121.1.99":"Bengione","121.6.95":"Reoccuring Astra","121.3.99":"Dreaming Coil","121.1.95":"Astral Dream","121.7.99":"Movie Stack 4","121.2.97":"Reso Down","121.9.99":"Rhythmical Synth","121.1.86":"Crimson 5ths","121.10.99":"Wide Attack","121.7.89":"Freedom Pad","121.4.101":"Organ Stab DNC","121.5.97":"Noble Pad","121.4.95":"Mellow Pad","121.1.101":"Motion Raver","121.2.84":"Synchro City","121.9.96":"Cycle Seq. 2","121.6.55":"Wild Arp","121.7.81":"Seq Lead","121.10.25":"Mandolin Key Off","121.8.80":"Old & Analog","121.1.109":"War Pipes","121.7.55":"Flip Blip","121.7.104":"Classic Sitar","121.1.90":"Reso Sweep","121.5.55":"Hit in India","121.3.90":"Synth Sweeper","121.6.104":"Tambra","121.3.84":"Sync Kron","121.3.104":"Indian Stars","121.10.90":"Tecno Phonic","121.2.112":"Bali Gamelan","121.3.102":"Band Passed","121.26.24":"Ukulele Gtr","121.9.87":"Cat Lead","121.11.25":"Mandolin Trem.","121.4.102":"Pan Reso","121.26.25":"Mandolin Ens. 1","121.11.80":"Square Rez","121.27.25":"Mandolin Ens. 2","121.11.81":"Rezbo","121.14.38":"Auto Pilot 1","121.1.32":"Ac. Bass Buzz","121.7.87":"Square Bass","121.6.36":"Slap Bass 1","121.5.84":"Brian Sync","121.6.37":"Slap Bass 2","121.6.84":"Arp Twins","121.7.37":"Slap Bass 3","121.7.84":"LoFi Ethnic","121.3.37":"DynaSlapBass RX","121.6.80":"Sine Wave","121.4.37":"Chorus Slap Bass","121.7.80":"Analog Lead","121.5.32":"DarkWoody A.Bass","121.9.80":"Gliding Square","121.11.33":"More Mid Bass","121.10.80":"Sine Switch","121.6.35":"Woofer Pusher 2","121.13.80":"2VCO Planet Lead","121.4.35":"Dark R&B Bass1","121.9.81":"Glide Lead","121.2.37":"Dyna Bass","121.10.81":"Fire Wave","121.9.34":"Ticktacing Bass","121.2.87":"Electro Lead","121.5.33":"Stick Bass","121.4.87":"Thin Analog Lead","121.5.35":"Dark R&B Bass2","121.5.87":"Express. Lead","121.13.39":"Auto Pilot 2","121.2.88":"Arp Angeles","121.16.38":"Dr. Octave","121.3.89":"Power Synth","121.11.39":"Monofilter Bass","121.7.90":"Digital PolySix","121.9.39":"Synth Bass 80ish","121.9.90":"Mega Synth","121.12.39":"Reso Bass","121.8.96":"Cycle Seq. 1","121.10.39":"Autofilter Bass","121.6.39":"Nasty Bass","121.2.35":"Fretless Bass 5","121.6.38":"30303 Square","121.7.35":"Fretless Bass 6","121.7.38":"Bass Square","121.8.35":"MM Fretless DNC","121.7.39":"Phat Bass","121.1.36":"Super Bass 2","121.12.38":"Blind As A Bat","121.3.36":"FunkSlapBass RX","121.7.32":"Acous. Bass RX","121.4.36":"SlapFingerBassRX","121.8.32":"Acoustic Bass 5","121.5.36":"SlapPickedBassRX","121.12.32":"Real Ac. Bass","121.5.37":"The Other Slap","121.4.32":"Acous. Bass Pro","121.10.38":"Digi Bass 2","121.6.32":"Bass & Ride 2","121.9.38":"Digi Bass 1","121.10.32":"Organ Bass","121.15.38":"Hybrid Bass","121.2.33":"Finger E.Bass 7","121.4.39":"Euro Bass","121.3.33":"Finger E.Bass 4","121.15.39":"Synth Bass 2","121.6.33":"Finger E.Bass 5","121.9.33":"Bright Finger B.","121.0.0":"AcousticPiano GM","121.10.33":"FingerE.Bass1 RX","121.1.0":"Ac. Piano Wide","121.12.33":"Finger Slap","121.2.0":"Ac. Piano Dark","121.13.33":"FingerE.Bass2 RX","121.0.1":"Bright Piano GM","121.15.33":"Finger E.Bass 6","121.1.1":"Bright PianoWide","121.17.33":"Vintage P.Round","121.0.2":"E.Grand Piano GM","121.19.33":"5StringsBass RX","121.1.2":"E. Grand Wide","121.20.33":"Dark E.Bass 1","121.0.3":"Honky-Tonk GM","121.24.33":"Dark E.Bass 2","121.1.3":"Honky Wide","121.21.33":"FingerE.Bass3 RX","121.0.4":"E. Piano 1 GM","121.22.33":"Dark E.Bass DNC","121.1.4":"Detuned EP 1","121.4.34":"Bass & Guitar","121.2.4":"EP 1 Veloc. Mix","121.14.33":"FingerB.& Guitar","121.3.4":"60’s E. Piano","121.6.34":"Bass&Gtr Double","121.0.5":"E. Piano 2 GM","121.5.34":"Bass Mute","121.1.5":"Detuned EP 2","121.1.34":"Picked E. Bass 2","121.2.5":"EP 2 Veloc. Mix","121.11.34":"Picked E. Bass 3","121.3.5":"EP Legend","121.7.34":"Picked E. Bass 4","121.4.5":"EP Phase","121.8.34":"Picked E. Bass 5","121.0.6":"Harpsichord GM","121.10.34":"Picked E.Bass RX","121.1.6":"Harpsi OctaveMix","121.2.6":"Harpsi Wide","0.0.6":"Harpsichord XG","121.3.6":"Harpsi Key Off","0.1.6":"Harpsichord KP","121.0.7":"Clav GM","0.25.6":"Harpsichord HP","121.1.7":"Pulse Clav","0.35.6":"Harpsi Octave","0.0.0":"AcousticPiano XG","0.0.7":"Clav XG","0.1.0":"AcousticPiano KP","0.1.7":"Clav KP","0.18.0":"Mellow Gr. Piano","0.27.7":"Clav. Wah Dyn.","0.40.0":"Piano Strings","0.64.7":"Pulse Clav X","0.41.0":"Piano Dream","0.65.7":"Pierce Clav","0.0.1":"Bright Piano XG","0.1.1":"Bright Piano KP","121.0.8":"Celesta GM","0.0.2":"E.Grand Piano XG","121.0.9":"Glockenspiel GM","0.1.2":"E.Grand Piano KP","121.0.10":"Music Box GM","0.32.2":"E. Grand Detuned","121.0.11":"Vibraphone GM","0.40.2":"Layered E.Grand1","121.1.11":"Vibraphone Wide","0.41.2":"Layered E.Grand2","121.0.12":"Marimba GM","0.0.3":"Honky-Tonk XG","121.1.12":"Marimba Wide","0.1.3":"Honky-Tonk KP","121.0.13":"Xylophone GM","0.0.4":"E. Piano 1 XG","121.0.14":"Tubular Bell GM","0.1.4":"E. Piano 1 KP","121.1.14":"Church Bell","0.18.4":"Mellow EP1","121.2.14":"Carillon","0.32.4":"Chorus EP 1","121.0.15":"Dulcimer GM","0.40.4":"Hard El. Piano","0.0.8":"Celesta XG","0.45.4":"Vel. X-Fade EP 1","0.0.9":"Glockenspiel XG","0.64.4":"60’s El. Piano 1","0.0.10":"Music Box XG","0.0.5":"E. Piano 2 XG","0.64.10":"Orgel Bell","0.1.5":"E. Piano 2 KP","0.0.11":"Vibraphone XG","0.32.5":"Chorus EP 2","0.1.11":"Vibraphone KP","0.33.5":"FM EP Hard","0.45.11":"Hard Vibraphone","0.34.5":"FM Legend EP","0.0.12":"Marimba XG","0.40.5":"FM Phase EP","0.1.12":"Marimba KP","0.41.5":"Dx & Analog","0.64.12":"Sin Marimba","0.42.5":"FM Koto EP","0.97.12":"Balimba","0.45.5":"Vel. X-Fade EP 2","0.98.12":"Log Drum X","0.0.13":"Xylophone XG","0.40.16":"Organ 16+2’2/3","0.0.14":"Tubular Bell XG","0.64.16":"Organ Bass Dance","0.96.14":"Church Bells","0.65.16":"70’s DB Org. 2","0.97.14":"Carillonx","0.66.16":"Cheezy Organ","0.0.15":"Dulcimer XG","0.67.16":"Drawbar Org Perc","0.35.15":"Dulcimer Octave","0.0.17":"Perc.Organ XG","0.96.15":"Cimbalom","0.24.17":"70’s Perc. Organ","0.97.15":"Santur 2","0.32.17":"ChorusPerc.Organ","0.33.17":"Lite Organ","121.0.16":"Drawbar Org GM","0.37.17":"Percussive Org X","121.1.16":"Det. Drawbar Org","0.0.18":"Rock Organ XG","121.2.16":"It. 60’s Organ","0.64.18":"Rotary Organ V.","121.3.16":"Drawbar Org. 2","0.65.18":"Slow Rotary","121.0.17":"Perc.Organ GM","0.66.18":"Fast Rotary","121.1.17":"Det. Perc. Organ","0.0.19":"Church Organ XG","121.2.17":"Perc.Organ 2","0.32.19":"Church Organ 3","121.0.18":"Rock Organ GM","0.35.19":"Church Organ 2","121.0.19":"Church Organ GM","0.40.19":"Notre Dame","121.1.19":"Church Oct. Mix","0.64.19":"Organ Flute","121.2.19":"Detuned Church","0.65.19":"Trem. Org. Flute","121.0.20":"Reed Organ GM","0.0.20":"Reed Organ XG","121.1.20":"Puff Organ","0.40.20":"Puff Organx","121.0.21":"Accordion GM","0.0.21":"Accordion XG","121.1.21":"Accordion 2","0.32.21":"Accord. It.","121.0.22":"Harmonica GM","0.0.22":"Harmonica XG","121.0.23":"Tango Accord.GM","0.32.22":"Soft Harmonica","0.0.16":"Drawbar Org XG","0.0.23":"Tango Accord.XG","0.32.16":"Detuned Drawbar","0.64.23":"Tango Accord.2","0.33.16":"60’s Draw.Org. 1","0.34.16":"60’s Organ X","121.0.24":"Nylon Guitar GM","0.35.16":"70’s DB Org. 1","121.1.24":"Ukulele 2","0.36.16":"Drawbar Org. 3","121.2.24":"Nylon Key Off","0.37.16":"Drawbar 5th","121.3.24":"Nylon Guitar 2","0.38.16":"Even Bar Org.","121.0.25":"Steel Guitar GM","121.1.25":"12 Strings Gtr","0.32.27":"Chorus El.Gtr","121.2.25":"Mandolin","0.0.28":"Muted Guitar XG","121.3.25":"Steel Gtr & Body","0.40.28":"Funk Cut Guitar","121.0.26":"Jazz Guitar GM","0.41.28":"Muted Steel Gtr","121.1.26":"Pedal Steel Gtr","0.43.28":"Funk Guitar","121.0.27":"Clean Guitar GM","0.45.28":"Jazz Boy","121.1.27":"Det.Clean El.Gtr","0.0.29":"Overdrive Gtr XG","121.2.27":"Mid Tone Gtr","0.43.29":"Guitar Nip","121.0.28":"Muted Guitar GM","0.0.30":"DistortionGtr XG","121.1.28":"Funky Cut El.Gtr","0.40.30":"Feedback DistGt1","121.2.28":"Mute Vel. El.Gtr","0.41.30":"Feedback DistGt2","121.3.28":"Jazz Man","0.0.31":"Gtr Harmonic XG","121.0.29":"Overdrive Gtr GM","0.65.31":"Gtr Feedback","121.1.29":"Guitar Pinch","0.66.31":"Gtr Harmonic","121.0.30":"DistortionGtr GM","121.1.30":"Feedback DistGtr","121.0.32":"Acoustic Bass GM","121.2.30":"Dist. Rhythm Gtr","121.0.33":"Finger Bass GM","121.0.31":"Gtr Harmonic GM","121.1.33":"Finger Slap Bass","121.1.31":"Guitar Feedback","121.0.34":"Picked E.Bass GM","0.0.24":"Nylon Guitar XG","121.0.35":"Fretless Bass GM","0.16.24":"Nylon Guitar 2X","121.0.36":"Slap Bass 1 GM","0.25.24":"Nylon Guitar 3X","121.0.37":"Slap Bass 2 GM","0.43.24":"Nylon & Harm. V.","121.0.38":"Synth Bass 1 GM","0.96.24":"Ukulele X","121.1.38":"Synth Bass Warm","0.0.25":"Steel Guitar XG","121.2.38":"Synth Bass Reso","0.16.25":"Steel Guitar X","121.3.38":"Clavi Bass","0.35.25":"12 Strings Gtr X","121.4.38":"Hammer","0.40.25":"Nylon plus Steel","121.0.39":"Synth Bass 2 GM","0.41.25":"SteelGtrWithBody","121.1.39":"SynthBass Attack","0.96.25":"Mandolin X","121.2.39":"SynthBass Rubber","0.0.26":"Jazz Guitar XG","121.3.39":"Attack Pulse","0.18.26":"Mellow Guitar","0.0.32":"Acoustic Bass XG","0.32.26":"Jazz Man Amp","0.40.32":"Jazz Rhythm","0.0.27":"Clean Guitar XG","0.45.32":"Ac. Bass V.","0.0.33":"Finger Bass XG","0.19.39":"Synth Bass Dark","0.18.33":"Finger Dark","0.32.39":"Smooth Syn. Bass","0.27.33":"Flange Bass","0.40.39":"Modular Syn Bass","0.40.33":"FngBass&DstGuit.","0.41.39":"DX Bass","0.43.33":"FingerSlapBass V","0.64.39":"X Wire Bass","0.45.33":"Finger Bass X","0.65.33":"Modulated Bass","121.0.40":"Violin GM","0.0.34":"Picked E.Bass XG","121.1.40":"Slow Att. Violin","0.28.34":"Muted Pick Bass","121.0.41":"Viola GM","0.0.35":"Fretless Bass XG","121.0.42":"Cello GM","0.32.35":"Fretless Bass B","121.0.43":"Contrabass GM","0.33.35":"Fretless Det.","121.0.44":"Tremolo Str. GM","0.34.35":"Fretless Soft","121.0.45":"Pizzicato Str.GM","0.96.35":"Synth Fretless","121.0.46":"Harp GM","0.97.35":"Smooth Fretless","121.1.46":"Yang Chin","0.0.36":"Slap Bass 1 XG","121.0.47":"Timpani GM","0.27.36":"Resonant Slap","0.0.40":"Violin XG","0.32.36":"Punch Thumb Bass","0.8.40":"Slow Atk Violin","0.0.37":"Slap Bass 2 XG","0.0.41":"Viola XG","0.43.37":"Velo. Sw. Slap","0.0.42":"Cello XG","0.0.38":"Synth Bass 1 XG","0.0.43":"Contrabass XG","0.18.38":"Syn. Bass Dark","0.0.44":"Tremolo Str. XG","0.20.38":"Fast Reso. Bass","0.8.44":"Slw Tremolo Str.","0.24.38":"Acid Bass","0.40.44":"Suspense Strings","0.35.38":"Clav. Bass","0.0.45":"Pizzicato Str.XG","0.40.38":"Techno Bass","0.0.46":"Harp XG","0.64.38":"Orbiter Bass","0.40.46":"Yang Chin X","0.65.38":"Xquare Bass","0.0.47":"Timpani XG","0.66.38":"Rubber Bass","0.96.38":"Hammer Bass","121.0.48":"Strings Ens.1 GM","0.0.39":"Synth Bass 2 XG","121.1.48":"Strings & Brass","0.6.39":"Mellow Syn Bass","121.2.48":"60’s Strings","0.12.39":"Sequenced Bass","121.0.49":"Strings Ens.2 GM","0.18.39":"Click Synth Bass","121.0.50":"Synth Strings1GM","121.1.50":"Synth Strings 3","0.3.52":"Stereo Choir","121.0.51":"Synth Strings2GM","0.16.52":"Choir Aahs 3","121.0.52":"Choir Aahs GM","0.32.52":"Mellow Choir","121.1.52":"Choir Aahs 2","0.40.52":"Choir Strings","121.0.53":"Voice Oohs GM","0.0.53":"Voice Oohs XG","121.1.53":"Humming","0.0.54":"Synth Voice XG","121.0.54":"Synth Voice GM","0.40.54":"Synth Voix","121.1.54":"Analog Voice","0.41.54":"Choral","121.0.55":"Orchestra Hit GM","0.64.54":"Analog Voix","121.1.55":"Bass Hit Plus","0.0.55":"Orchestra Hit XG","121.2.55":"6th Hit","0.35.55":"Orchestra Hitx","121.3.55":"Euro Hit","0.64.55":"Impact","0.0.48":"Strings Ens.1 XG","0.3.48":"Stereo Stringx","121.0.56":"Trumpet GM","0.8.48":"Slw Atk Strings","121.1.56":"Dark Trumpet","0.24.48":"Arco Stringx","121.0.57":"Trombone GM","0.35.48":"60’s Strings X","121.1.57":"Trombone 2","0.40.48":"Orchestra","121.2.57":"Bright Trombone","0.41.48":"Orchestra 2","121.0.58":"Tuba GM","0.42.48":"TremoloOrchestra","121.0.59":"Muted Trumpet GM","0.45.48":"Velocity Strings","121.1.59":"Mute Trumpet 7","0.0.49":"Strings Ens.2 XG","121.0.60":"French Horn GM","0.3.49":"StereoSlwStrings","121.1.60":"FrenchHorn Warm","0.8.49":"SlwLegatoStrings","121.0.61":"Brass Section GM","0.40.49":"Warm Strings","121.1.61":"Brass Section 2","0.41.49":"Kingdom","121.0.62":"Synth Brass 1 GM","0.64.49":"70’s Strings","121.1.62":"Synth Brass 3","0.65.49":"Strings 3","121.2.62":"Analog Brass 1","0.0.50":"Synth Strings1XG","121.3.62":"Jump Brass","0.27.50":"Reso Strings","121.0.63":"Synth Brass 2 GM","0.64.50":"Synth Strings 4","121.1.63":"Synth Brass 4","0.65.50":"Synth Strings 5","121.2.63":"Analog Brass 2","0.0.51":"Synth Strings2XG","0.0.56":"Trumpet XG","0.0.52":"Choir Aahs XG","0.16.56":"Trumpet 2","0.17.56":"Brite Trumpet","121.0.68":"Oboe GM","0.0.57":"Trombone XG","121.0.69":"English Horn GM","0.18.57":"Warm Trombone","121.0.70":"Bassoon GM","0.0.58":"Tuba XG","121.0.71":"Clarinet GM","0.16.58":"Tuba 2","0.0.64":"Soprano Sax XG","0.0.59":"Muted Trumpet XG","0.0.65":"Alto Sax XG","0.0.60":"French Horn XG","0.40.65":"Sax Section","0.6.60":"French Horn Solo","0.43.65":"HyperAltoSax","0.32.60":"Warm French Horn","0.0.66":"Tenor Sax XG","0.37.60":"Horn Orchestra","0.40.66":"BreathyTenorSax","0.0.61":"Brass Section XG","0.41.66":"Soft Tenor Sax","0.35.61":"Tpt&Tbn Section","0.64.66":"Classic Tenor Sax","0.40.61":"Brass Section 3","0.0.67":"Baritone Sax XG","0.41.61":"Hit Brass","0.0.68":"Oboe XG","0.42.61":"Mellow Brass","0.0.69":"English Horn XG","0.0.62":"Synth Brass 1 XG","0.0.70":"Bassoon XG","0.12.62":"Quack Brass","0.0.71":"Clarinet XG","0.20.62":"Res. Synth Brass","0.24.62":"Poly Brass","121.0.72":"Piccolo GM","0.27.62":"Synth Brass 4 X","121.0.73":"Flute GM","0.32.62":"Jump Brass X","121.0.74":"Recorder GM","0.45.62":"AnaVel Brass 1","121.0.75":"Pan Flute GM","0.64.62":"AnaLog Brass 1","121.0.76":"Blown Bottle GM","0.0.63":"Synth Brass 2 XG","121.0.77":"Shakuhachi GM","0.18.63":"Soft Brass","121.0.78":"Whistle GM","0.40.63":"Synth Brass X","121.0.79":"Ocarina GM","0.41.63":"Choir Brass","0.0.72":"Piccolo XG","0.45.63":"AnaVel Brass 2","0.0.73":"Flute XG","0.64.63":"AnaLog Brass 2","0.0.74":"Recorder XG","0.0.75":"Pan Flute XG","121.0.64":"Soprano Sax GM","0.0.76":"Blown Bottle XG","121.0.65":"Alto Sax GM","0.0.77":"Shakuhachi XG","121.0.66":"Tenor Sax GM","0.0.78":"Whistle XG","121.0.67":"Baritone Sax GM","0.0.79":"Ocarina XG","0.65.80":"Solo Sine","121.0.80":"Lead Square GM","0.66.80":"Sine Lead","121.1.80":"Lead Square 2","0.0.81":"Lead Saw XG","121.2.80":"Lead Sine","0.6.81":"Sawtooth Lead","121.0.81":"Lead Saw GM","0.8.81":"Thick Sawtooth","121.1.81":"Lead Saw 2","0.18.81":"Dynamic Sawtooth","121.2.81":"Lead Saw & Pulse","0.19.81":"Digital Saw","121.3.81":"Lead Double Saw","0.20.81":"Big Lead","121.4.81":"Lead Seq. Analog","0.24.81":"Heavy Synth","121.0.82":"Calliope GM","0.25.81":"Wasp Synth","121.0.83":"Chiff GM","0.40.81":"Pulse Saw","121.0.84":"Charang GM","0.41.81":"Dr. Lead","121.1.84":"Wire Lead","0.45.81":"Velocity Lead","121.0.85":"Voice Lead GM","0.96.81":"Sequenced Analog","121.0.86":"Fifths Lead GM","0.0.82":"Calliope XG","121.0.87":"Bass & Lead GM","0.65.82":"Pure Lead","121.1.87":"Lead Soft Wrl","0.0.83":"Chiff XG","121.0.88":"New Age Pad GM","0.64.83":"Rubby","121.0.89":"Warm Pad GM","0.0.84":"Charang XG","121.1.89":"Sine Pad","0.64.84":"Distorted Lead","121.0.90":"Polysynth GM","0.65.84":"Wire Lead X","121.0.91":"Choir Pad GM","0.0.85":"Voice Lead XG","121.1.91":"Itopia Pad","0.24.85":"Synth Aahs","121.0.92":"Bowed Glass GM","0.64.85":"Vox Lead","121.0.93":"Metallic Pad GM","0.0.86":"Fifths Lead XG","121.0.94":"Halo Pad GM","0.35.86":"Big Five","121.0.95":"Sweep Pad GM","0.0.87":"Bass & Lead XG","0.0.80":"Lead Square XG","0.16.87":"Big & Low","0.6.80":"Square Lead","0.64.87":"Fat & Perky","0.8.80":"LM Square","0.65.87":"Soft Whirl","0.18.80":"Hollow","0.0.88":"New Age Pad XG","0.19.80":"Shroud","0.64.88":"Fantasy","0.64.80":"Mellow","0.0.89":"Warm Pad XG","0.16.89":"Thick Pad","121.0.102":"Echo Drops GM","0.17.89":"Soft Pad","121.1.102":"Echo Bell","0.18.89":"Sine Pad X","121.2.102":"Echo Pan","0.64.89":"Horn Pad","121.0.103":"Star Theme GM","0.65.89":"Rotary Strings","0.0.96":"Ice Rain XG","0.0.90":"Polysynth XG","0.45.96":"Clav. Pad","0.64.90":"Poly Pad 800","0.64.96":"Harmo. Rain","0.65.90":"Click Pad","0.65.96":"African Wind","0.66.90":"Analog Pad","0.66.96":"Carib","0.67.90":"Square Pad X","0.0.97":"Soundtrack XG","0.0.91":"Choir Pad XG","0.27.97":"Prologue","0.64.91":"Heaven Mod","0.64.97":"Ancestral Clouds","0.66.91":"Itopia","0.0.98":"Crystal XG","0.67.91":"C.C. Pad","0.12.98":"Synth Drum Comp.","0.0.92":"Bowed Glass XG","0.14.98":"Popcorn","0.64.92":"Glacier","0.18.98":"Tiny Bells","0.0.93":"Metallic Pad XG","0.35.98":"Round Glocken.","0.64.93":"Tine Pad","0.40.98":"Glocken. Chimes","0.65.93":"Pan Pad","0.41.98":"Clear Bells","0.0.94":"Halo Pad XG","0.42.98":"Chorus Bells","0.0.95":"Sweep Pad XG","0.64.98":"Synth Mallet X","0.20.95":"Shwimmer","0.65.98":"Soft Crystal","0.27.95":"Converge","0.66.98":"LoudGlockenspiel","0.64.95":"Polar Pad","0.67.98":"Xmas Bell","0.66.95":"Celestial","0.68.98":"Vibe Bells","0.69.98":"Digital Bells","121.0.96":"Ice Rain GM","0.70.98":"Air Bells","121.0.97":"Soundtrack GM","0.71.98":"Bell Harp","121.0.98":"Crystal GM","0.72.98":"Gamelimba","121.1.98":"Synth Mallets 4","0.0.99":"Atmosphere XG","121.0.99":"Atmosphere GM","0.18.99":"Warm Atmosph.","121.0.100":"Brightness GM","0.19.99":"Hollow Release","121.0.101":"Goblins GM","0.40.99":"Nylon El. Piano","0.64.99":"Nylon Harp","121.0.108":"Kalimba GM","0.65.99":"Harp Vox","121.0.109":"Bag Pipes GM","0.66.99":"Atmosphere Pad","121.0.110":"Fiddle GM","0.67.99":"Planet","121.0.111":"Shanai GM","0.0.100":"Brightness XG","0.0.104":"Sitar XG","0.64.100":"Fantasy Bells","0.32.104":"Detuned Sitar","0.96.100":"Smokey","0.35.104":"Octave Sitar","0.0.101":"Goblins XG","0.97.104":"Tamboura","0.64.101":"Goblin Synth","0.0.105":"Banjo XG","0.65.101":"Creeper","0.28.105":"Muted Banjo","0.66.101":"Ring Pad","0.96.105":"Rabab","0.67.101":"Ritual","0.97.105":"Gopichant","0.68.101":"To Heaven","0.98.105":"Oud 3","0.70.101":"Night","0.0.106":"Shamisen XG","0.71.101":"Glisten","0.0.107":"Koto XG","0.96.101":"Bell Choir X","0.96.107":"Taisho-Kin","0.0.102":"Echo Drops XG","0.97.107":"Kanoun X","0.8.102":"Echoes","0.0.108":"Kalimba XG","0.14.102":"Echo Pan X","0.0.109":"Bag Pipes XG","0.64.102":"Echo Bell X","0.0.110":"Fiddle XG","0.65.102":"Big Pan","0.0.111":"Shanai XG","0.66.102":"Synth Piano 2","0.67.102":"Creation","121.0.112":"Tinkle Bell GM","0.68.102":"Star Dust","121.0.113":"Agogo GM","0.69.102":"Pan Reso X","121.0.114":"Steel Drums GM","0.0.103":"Star Theme XG","121.0.115":"Woodblock GM","0.64.103":"Starz","121.1.115":"Castanets","121.0.116":"Taiko Drum GM","121.0.104":"Sitar GM","121.1.116":"Concert BassDrum","121.1.104":"Sitar 4","121.0.117":"Melodic Tom GM","121.0.105":"Banjo GM","121.1.117":"Melodic Tom 2","121.0.106":"Shamisen GM","121.0.118":"Synth Drum GM","121.0.107":"Koto GM","121.1.118":"Rhythm Box Tom","121.1.107":"Taisho Koto","121.2.118":"Electric Drum","121.0.119":"ReverseCymbalGM","121.4.122":"Stream","0.0.112":"Tinkle Bell XG","121.5.122":"Bubble","0.96.112":"Bonang","121.0.123":"Bird Tweet GM","0.97.112":"Altair","121.1.123":"Dog","0.98.112":"Gamelal Gongs","121.2.123":"Horse Gallop","0.99.112":"St.GamelanGongs","121.3.123":"Bird Tweet 2","0.100.112":"Rama Cymbal","121.0.124":"Telephone GM","0.101.112":"Asian Bells","121.1.124":"Telephone 2","0.0.113":"Agogo XG","121.2.124":"Door Creaking","0.0.114":"Steel Drums XG","121.3.124":"Door","0.97.114":"Glass Percussion","121.4.124":"Scratch","0.98.114":"Thai Bells","121.5.124":"Wind Chime","0.0.115":"Woodblock XG","121.0.125":"Helicopter GM","0.96.115":"Castanex","121.1.125":"Car Engine","0.0.116":"Taiko Drum XG","121.2.125":"Car Stop","0.96.116":"Gran Cassa","121.3.125":"Car Pass","0.0.117":"Melodic Tom XG","121.4.125":"Car Crash","0.64.117":"Melodic Tom 3","121.5.125":"Siren","0.65.117":"Real Tom","121.6.125":"Train","0.66.117":"Rock Tom","121.7.125":"Jetplane","0.0.118":"Synth Drum XG","121.8.125":"Starship","0.64.118":"Analog Tom","121.9.125":"Burst Noise","0.65.118":"Electric Perc.","121.0.126":"Applause GM","0.0.119":"ReverseCymbalXG","121.1.126":"Laughing","121.2.126":"Screaming","121.0.120":"Gtr FretNoise GM","121.3.126":"Punch","121.1.120":"Guitar Cut Noise","121.4.126":"Heart Beat","121.2.120":"Ac. Bass String","121.5.126":"Footsteps","121.0.121":"Breath Noise GM","121.0.127":"Gun Shot GM","121.1.121":"Flute Key Click","121.1.127":"Machine Gun","121.0.122":"Seashore GM","121.2.127":"Laser Gun","121.1.122":"Rain","121.3.127":"Explosion","121.2.122":"Thunder","0.0.120":"Gtr FretNoise XG","121.3.122":"Wind","0.0.121":"Breath Noise XG","0.0.122":"Seashore XG","0.0.125":"Helicopter XG","0.0.123":"Bird Tweet XG","0.0.126":"Applause XG","0.0.124":"Telephone XG","0.0.127":"Gun Shot XG","120.0.83":"Jazz Kit 2 Amb","120.0.100":"Pop Kit 1 RR","120.0.36":"Jazz Kit 3 Amb","120.0.101":"Pop Kit 2 RR","120.0.37":"Jazz Kit 4 Amb","120.0.52":"Pop Kit 1 Amb","120.0.33":"Jazz Kit 1","120.0.54":"Vintage Kit 1 Amb","120.0.34":"Jazz Kit 2","120.0.55":"Rock Kit 1 Amb","120.0.5":"Standard Kit 1","120.0.105":"Jazz Kit 1 RR","120.0.1":"Standard Kit 2","120.0.62":"Jazz Kit 1 Amb","120.0.2":"Standard Kit 3","120.0.53":"Funk Kit 1 Amb","120.0.6":"Standard Kit 4","120.0.106":"Fusion Kit RR","120.0.93":"Standard Kit Amb","120.0.84":"Brush Kit 1 Amb","120.0.42":"Brush Kit 1","120.0.102":"Pop Kit Pro 1 RR","120.0.43":"Brush Kit 2","120.0.103":"Pop Kit Pro 2 RR","120.0.44":"Brush Kit 3","120.0.70":"Pop Kit 2 Amb","120.0.35":"Jazz Kit 3","120.0.94":"Vintage Kit 2 Amb","120.0.46":"Brush Kit 3 Amb","120.0.22":"Rock Kit 2 Amb","120.0.59":"Synth Kit 1","120.0.85":"Jazz Kit Pro 1 RR","120.0.58":"Synth Kit 2","120.0.86":"Jazz Kit Pro 2 RR","120.0.61":"Synth Kit 3","120.0.104":"Gospel Kit Pro RR","120.0.60":"SFX Kit 1","120.0.87":"Fusion Kit Pro RR","120.0.57":"SFX Kit 2","120.0.45":"Brush Kit 2 Amb","120.0.78":"Drum & FX Kit 1","120.0.71":"Pop Kit 3 Amb","120.0.79":"Drum & FX Kit 2","120.0.88":"Pop Kit 4 Amb","121.4.118":"Slices A FX","120.0.89":"Pop Std. Kit 1","121.5.118":"Slices B FX","120.0.90":"Pop Std. Kit 2","120.0.114":"Percussion Kit 2","120.0.4":"Pop Std. Kit 3","120.0.107":"Analog Kit 1","120.0.123":"Analog Kit 2","120.0.51":"Arabian Kit 1","120.0.108":"Elektronic Kit","120.0.117":"Arabian Kit 2","120.0.112":"FX Kit","121.1.47":"Timpani","120.0.113":"Dub&Moomba Kit","121.2.117":"Reverse Tom","120.0.99":"Slice Kit 1","121.2.119":"Reverse Cymbal","120.0.109":"Slice Kit 2","120.0.69":"Standard Perc Kit","120.0.110":"Slice Kit 3","120.0.64":"Percussion Kit 1","120.0.111":"Slice Kit 4","120.0.65":"Latin Perc Kit 1","120.0.98":"Slice FX Kit","120.0.68":"Latin Perc Kit 2","120.0.75":"Electro Kit 1","120.0.115":"Brazil Perc Kit","120.0.76":"Electro Kit 2","120.0.119":"Oriental Perc Kit","120.0.122":"Electro Kit 3","120.0.66":"Trinity Perc Kit","120.0.30":"House Kit 1","120.0.67":"i30 Perc Kit","120.0.31":"House Kit 2","120.0.74":"Dance Kit","120.0.7":"Standard Kit 5","120.0.29":"Dance Kit Remix","120.0.50":"Bdrum&Sdrum Kit","120.0.63":"Trance Kit","120.0.120":"Room Kit 1","120.0.9":"HipHop Kit 1","120.0.12":"Room Kit 2","120.0.72":"HipHop Kit 2","120.0.121":"Power Kit 3","120.0.81":"Real Kit 1 Amb","120.0.17":"Power Kit 4","120.0.82":"Real Kit 2 Amb","120.0.13":"HipHop Kit 3","120.0.80":"Room Kit Amb","120.0.96":"Elektro Kit 1","120.0.39":"Cool Kit Amb","120.0.97":"Elektro Kit 2","120.0.23":"Gate Kit Amb","120.0.11":"Techno Kit 1","120.0.20":"Power Kit 1 Amb","120.0.73":"Techno Kit 2","120.0.21":"Power Kit 2 Amb","120.0.15":"Techno Kit 3","120.0.18":"Power Kit 1","120.0.14":"Techno Kit 4","120.0.19":"Power Kit 2","120.0.26":"House Kit 3","120.0.118":"Turkish Kit","120.0.27":"House Kit 4","120.0.77":"Groove Kit","120.0.28":"House Kit 5","120.0.3":"Ambient Kit","120.0.125":"Brush Kit 4","120.0.10":"Jungle Kit","120.0.41":"Brush Kit 5","120.0.95":"Studio Kit","120.0.49":"Orchestra Kit","120.0.38":"Lounge Kit Amb","121.4.12":"Log Drum","121.3.118":"Reverse Snare","120.0.48":"Orchestra Kit GM","121.1.119":"Dragon Gong","120.0.56":"SFX Kit GM","121.2.115":"Castanets Plus","127.0.0":"Standard Kit1 XG","121.3.115":"Woodblock","127.0.1":"Standard Kit2 XG","121.7.126":"Footstep Walk","127.0.8":"Room Kit XG","127.0.16":"Rock Kit XG","120.0.0":"Standard Kit GM","127.0.24":"Electro Kit XG","120.0.8":"Room Kit GM","127.0.25":"Analog Kit XG","120.0.16":"Power Kit GM","127.0.32":"Jazz Kit 1 XG","120.0.24":"Electro Kit GM","127.0.33":"Jazz Kit 2 XG","120.0.25":"Analog Kit GM","127.0.40":"Brush Kit XG","120.0.32":"Jazz Kit GM","127.0.48":"Classic Kit XG","120.0.40":"Brush Kit GM"}; })(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(() => {
+  const C = window.PACore;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const state = { files: [], root: '', styles: [], ksets: [], padPresets: [], userSounds: [], styleCache: new Map(), tab: 'styles', sel: null, collapsed: new Set() };
+
+  function status(t, err) { const s = $('#status'); s.textContent = t; s.className = err ? 'err' : ''; }
+  function toastHtml(h) { const el = $('#toast'); el.innerHTML = h; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 7000); }
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 3500); }
+  async function download(name, data, type) {
+    if (window.native) { const p = await window.native.saveFile(name, data); if (p) { toastHtml('Записано: ' + esc(p) + ' <button class="btn" id="showF" style="margin-left:8px">Покажи в папката</button>'); const b = document.getElementById('showF'); if (b) b.onclick = () => window.native.showInFolder(p); status('Записано: ' + p); } return; }
+    if (window.showSaveFilePicker) { // Chrome/Edge: real "Save as" dialog, Unicode names
+      try {
+        const ext = name.slice(name.lastIndexOf('.'));
+        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: ext === '.zip' ? 'ZIP архив' : 'MIDI файл', accept: { [type || 'application/octet-stream']: [ext] } }] });
+        const w = await h.createWritable(); await w.write(data); await w.close(); toast('Записано: ' + h.name); return;
+      } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(new Blob([data], { type: type || 'application/octet-stream' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  const safe = (s) => s.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'style';
+
+  // ---------- loading ----------
+  function relParts(f) { const p = (f.webkitRelativePath || f._rel || f.name).split('/'); return p; }
+  async function loadFiles(files, keepView) {
+    files = [...files]; if (!files.length) return;
+    // find set root: folder that contains STYLE / KEYBOARDSET
+    const KNOWN = ['STYLE', 'KEYBOARDSET', 'PAD', 'SOUND', 'MATRIXPRESET', 'SONGBOOK', 'PCM'];
+    let depth = 0; const sample = files.map(relParts);
+    for (let d = 0; d < 4; d++) { if (sample.some(p => p.length > d + 1 && KNOWN.includes(p[d].toUpperCase()))) { depth = d; break; } }
+    state.root = sample[0].slice(0, depth).join('/') || sample[0][0];
+    const idx = files.map(f => { const p = relParts(f).slice(depth); return { f, top: (p[0] || '').toUpperCase(), bank: p.length > 2 ? p[1] : '', name: p[p.length - 1], path: p.join('/') }; });
+    state.files = idx; state.styleCache.clear(); state.sel = null; if (!keepView && state.edits && state.edits.size) state.edits.clear();
+    const order = async (bankFiles, ext) => { // respect metadir.json order
+      const meta = idx.find(x => x.top === bankFiles[0].top && x.bank === bankFiles[0].bank && x.name.toLowerCase() === 'metadir.json');
+      let ord = []; if (meta) { try { ord = JSON.parse(await meta.f.text()).files.map(x => x.file); } catch (e) { } }
+      const pos = (n) => { const i = ord.indexOf(n); return i < 0 ? 1e6 : i; };
+      return bankFiles.filter(x => x.name.toLowerCase().endsWith(ext)).sort((a, b) => pos(a.name) - pos(b.name) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    };
+    const group = async (top, ext) => {
+      const byBank = new Map(); for (const x of idx.filter(x => x.top === top && x.name.toLowerCase().endsWith(ext))) { if (!byBank.has(x.bank)) byBank.set(x.bank, []); byBank.get(x.bank).push(x); }
+      const banks = []; for (const [bank, list] of [...byBank].sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))) banks.push({ bank: bank || '(корен)', items: await order(idx.filter(x => x.top === top && x.bank === bank), ext) });
+      return banks;
+    };
+    state.styles = await group('STYLE', '.stg');
+    state.ksets = await group('KEYBOARDSET', '.ksc');
+    state.padPresets = []; state.userSounds = [];
+    for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...C.korfNames(new Uint8Array(await x.f.arrayBuffer())).map(n => ({ n, file: x.name }))); } catch (e) { } }
+    for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { const ent = window.PAKorf.parseKorf(new Uint8Array(await x.f.arrayBuffer())).entries.filter(e => e.name).sort((a, b) => a.slot - b.slot); state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), file: x.name, entries: ent, names: ent.map(e => e.name) }); } catch (e) { } }
+    C.setSoundIndex(C.buildSoundIndex(state.userSounds.map(b => ({ name: b.file, entries: b.entries })))); state.styleCache.clear();
+    const ns = state.styles.reduce((s, b) => s + b.items.length, 0), nk = state.ksets.reduce((s, b) => s + b.items.length, 0);
+    $('#setname').textContent = state.root + `  ·  ${ns} стила · ${nk} Keyboard Sets`;
+    if (!ns && !nk) status('В избраната папка няма PA5X стилове (.stg) или Keyboard Sets (.ksc). Избери главната папка на сета.', true); else status('Сетът е зареден');
+    renderList(); if (!keepView) showWelcome();
+  }
+  window.PA5XApp = { loadFiles, state };
+  function nativeFiles(res) {
+    return res.files.map(rel => ({ name: rel.split('/').pop(), _rel: rel, arrayBuffer: () => window.native.readFile(rel), text: async () => new TextDecoder().decode(await window.native.readFile(rel)) }));
+  }
+  async function openNative(p, keepView) { status('Чета сета…'); const res = p ? await window.native.openPath(p) : await window.native.openFolder(); if (res) { state.rootPath = res.path; await loadFiles(nativeFiles(res), keepView); } else status('Готов'); }
+  $('#openBtn').onclick = () => window.native ? openNative() : $('#dirInput').click();
+  if (window.native) window.native.lastDir().then(d => { if (d) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Последен сет'; b.title = d; b.onclick = () => openNative(d); $('#openBtn').before(b); } });
+  $('#dirInput').onchange = (e) => loadFiles(e.target.files);
+  // drag & drop folder
+  async function entriesToFiles(entry, path, out) {
+    if (entry.isFile) { const f = await new Promise((res, rej) => entry.file(res, rej)); f._rel = path + entry.name; out.push(f); }
+    else if (entry.isDirectory) { const r = entry.createReader(); let batch; do { batch = await new Promise((res, rej) => r.readEntries(res, rej)); for (const e of batch) await entriesToFiles(e, path + entry.name + '/', out); } while (batch.length); }
+  }
+  document.addEventListener('dragover', e => { e.preventDefault(); const d = $('#drop'); d && d.classList.add('hover'); });
+  document.addEventListener('dragleave', () => { const d = $('#drop'); d && d.classList.remove('hover'); });
+  document.addEventListener('drop', async e => {
+    e.preventDefault();
+    if (window.native && e.dataTransfer.files.length) { const p = window.native.pathForFile(e.dataTransfer.files[0]); if (p) return openNative(p); }
+    status('Чета файловете…'); const out = [];
+    for (const it of e.dataTransfer.items) { const en = it.webkitGetAsEntry && it.webkitGetAsEntry(); if (en) await entriesToFiles(en, '', out); }
+    loadFiles(out);
+  });
+
+  // ---------- list ----------
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); state.tab = b.dataset.tab; renderList(); if (state.tab === 'pads') showPads(); if (state.tab === 'sounds') showSounds(); });
+  $('#q').oninput = renderList;
+  function renderList() {
+    const q = $('#q').value.trim().toLowerCase(); const L = $('#list'); let h = '';
+    const banks = state.tab === 'styles' ? state.styles : state.tab === 'ksets' ? state.ksets : [];
+    for (const [bi, b] of banks.entries()) {
+      const items = b.items.filter(x => !q || x.name.toLowerCase().includes(q)); if (q && !items.length) continue;
+      const key = state.tab + bi; const col = state.collapsed.has(key) && !q;
+      h += `<div class="bank" data-key="${key}"><span>${col ? '▸' : '▾'} ${esc(b.bank)}</span><span class="n">${items.length}</span></div>`;
+      if (!col) for (const x of items) h += `<div class="item${state.sel === x ? ' sel' : ''}" data-b="${bi}" data-i="${b.items.indexOf(x)}" title="${esc(x.path)}">${state.edits && state.edits.has(x) ? '<span class="mod">●</span> ' : ''}${esc(x.name.replace(/\.(stg|ksc)$/i, ''))}</div>`;
+    }
+    if (state.tab === 'pads') h = state.padPresets.length ? state.padPresets.map(p => `<div class="item">${esc(p.n)}</div>`).join('') : '<div class="item hint">Няма Pad пресети</div>';
+    if (state.tab === 'sounds') h = state.userSounds.map(b => `<div class="bank"><span>${esc(b.bank)}</span><span class="n">${b.names.length}</span></div>` + b.entries.map(e => `<div class="item" title="${esc(C.soundTitle(Object.assign({ pc: e.slot }, C.pcgBankFromFile(b.file) || {})))}">${String(e.slot + 1).padStart(3, '0')} ${esc(e.name)}</div>`).join('')).join('') || '<div class="item hint">Няма User звуци</div>';
+    if (!state.files.length) h = '';
+    L.innerHTML = h;
+    L.querySelectorAll('.bank[data-key]').forEach(el => el.onclick = () => { const k = el.dataset.key; state.collapsed.has(k) ? state.collapsed.delete(k) : state.collapsed.add(k); renderList(); });
+    L.querySelectorAll('.item[data-b]').forEach(el => el.onclick = () => { const x = banks[+el.dataset.b].items[+el.dataset.i]; state.sel = x; renderList(); state.tab === 'styles' ? showStyle(x, +el.dataset.b) : showKset(x); });
+  }
+
+  function showWelcome() {
+    const ns = state.styles.reduce((s, b) => s + b.items.length, 0);
+    $('#detail').innerHTML = `<h2>${esc(state.root)}</h2><div class="meta"><span>Стилове: <b>${ns}</b> в <b>${state.styles.length}</b> банки</span><span>Keyboard Sets: <b>${state.ksets.reduce((s, b) => s + b.items.length, 0)}</b></span><span>Pad пресети: <b>${state.padPresets.length}</b></span><span>User звуци: <b>${state.userSounds.reduce((s, b) => s + b.names.length, 0)}</b></span></div>
+      <div class="card"><h3>Какво може</h3><p>Избери стил отляво, за да видиш елементите, пистите, звуците, Keyboard Sets и Pads и да го експортираш като MIDI.</p>
+      <div class="row"><button class="btn" id="bankAll" ${ns ? '' : 'disabled'}>Експорт на всички стилове в MIDI (.zip)…</button></div></div>`;
+    const b = $('#bankAll'); if (b) b.onclick = () => exportMany(state.styles.flatMap(x => x.items.map(i => ({ ...i, bankName: x.bank }))), safe(state.root) + '_MIDI.zip');
+  }
+
+
+  // ===================== self-update =====================
+  if (window.native && window.native.appVersion) {
+    window.native.appVersion().then(v => { $('#ver').textContent = 'PA5X Set Tool v' + v; });
+    const box = (html) => { let b = $('#updbar'); if (!b) { b = document.createElement('div'); b.id = 'updbar'; b.className = 'updbar'; document.body.appendChild(b); } b.innerHTML = html; return b; };
+    window.native.onUpdate((ev, d) => {
+      if (ev === 'update-available') {
+        const b = box(`<h3>Има нова версия ${esc(d.version)}</h3><p>${esc(d.notes || '')}</p>${d.fullDownload ? '<p>Тази версия изисква ново пълно изтегляне.</p><div class="row"><button class="btn primary" id="updPage">Отвори страницата за изтегляне</button><button class="btn" id="updLater">По-късно</button></div>' : '<div class="row"><button class="btn primary" id="updGo">Обнови сега</button><button class="btn" id="updLater">По-късно</button></div>'}`);
+        b.querySelector('#updLater').onclick = () => b.remove();
+        const pg = b.querySelector('#updPage'); if (pg) pg.onclick = () => window.native.openUrl(d.page || 'https://github.com/Hogzzmeade/pa5x-set-tool');
+        const go = b.querySelector('#updGo'); if (go) go.onclick = async () => {
+          if (state.edits && state.edits.size && !confirm('Имаш незаписани промени в стилове. Програмата ще се рестартира и те ще се загубят. Продължаваш ли?')) return;
+          go.disabled = true; go.textContent = 'Изтеглям…'; const r = await window.native.installUpdate();
+          if (!r.ok) { go.disabled = false; go.textContent = 'Опитай пак'; toast('Обновлението не успя: ' + r.error); } else go.textContent = 'Рестартирам…';
+        };
+      } else if (ev === 'update-progress') { const go = $('#updGo'); if (go) go.textContent = `Изтеглям… ${d.done}/${d.total}`; }
+      else if (ev === 'update-none') toast('Имаш най-новата версия (' + d.version + ')');
+      else if (ev === 'update-error') toast('Не може да се провери за обновления: ' + d.message);
+    });
+    $('#chkUpd').onclick = (e) => { e.preventDefault(); toast('Проверявам…'); window.native.checkUpdate(); };
+  } else { const c = document.getElementById('chkUpd'); if (c) c.style.display = 'none'; }
+
+  if (window.PAFactory) C.setFactoryNames(new Map(Object.entries(window.PAFactory)));
+  // ===================== styles: load / edits =====================
+  state.edits = new Map(); // fileItem -> { tree, history: [Uint8Array], name }
+  async function getStyle(x) {
+    const ed = state.edits.get(x);
+    if (ed) { if (!ed.parsed) ed.parsed = C.parseStyle(C.serializeTree(ed.tree), x.name); return ed.parsed; }
+    if (state.styleCache.has(x)) return state.styleCache.get(x);
+    const s = C.parseStyle(new Uint8Array(await x.f.arrayBuffer()), x.name); state.styleCache.set(x, s); return s;
+  }
+  async function getTree(x) { const ed = state.edits.get(x); if (ed) return ed.tree; return C.parseTree(new Uint8Array(await x.f.arrayBuffer())); }
+  const allStyleItems = () => state.styles.flatMap((b, bi) => b.items.map((x, i) => ({ x, bi, i, bank: b.bank })));
+
+  // ===================== player =====================
+  const P = new window.PAPlayer(); window.PA5XApp && (window.PA5XApp.P = P); let playerReady = false; let curStyleItem = null; let curStyleBank = 0;
+  async function ensurePlayer() {
+    if (playerReady) return true;
+    if (!window.native) { toast('Прослушването работи в програмата за Windows'); return false; }
+    status('Зареждам звуците…');
+    try { await P.init(() => window.native.readAppFile('gm.sf3')); playerReady = true; status('Звуците са заредени'); P.onState = renderTransport; return true; }
+    catch (e) { status('Звукът не може да се стартира: ' + e.message, true); return false; }
+  }
+  const ROOTS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const rootIdx = (r) => { if (!r) return 0; const m = /^([A-G])(#|b)?/.exec(r); if (!m) return 0; let i = ROOTS.indexOf(m[1]); if (m[2] === '#') i++; if (m[2] === 'b') i--; return (i + 12) % 12; };
+  let origRoot = 0, origChordLabel = '';
+  const ELEMENT_BTNS = [['Intro1', 'INTRO 1'], ['Intro2', 'INTRO 2'], ['CountIn', 'INTRO 3'], ['Var1', 'VAR 1'], ['Var2', 'VAR 2'], ['Var3', 'VAR 3'], ['Var4', 'VAR 4'], ['Fill1', 'FILL 1'], ['Fill2', 'FILL 2'], ['Fill3', 'FILL 3'], ['Fill4', 'FILL 4'], ['Break', 'BREAK'], ['End1', 'END 1'], ['End2', 'END 2']];
+  async function loadIntoPlayer(x, s) {
+    curStyleItem = x; P.loadStyle(s, opts.channels);
+    const oc = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord; return null; })();
+    origRoot = oc ? rootIdx(oc.root) : 0; origChordLabel = oc ? oc.root + (/min/i.test(oc.chord) ? 'm' : '') : '';
+    P.transpose = 0; renderTransport();
+  }
+  function renderTransport() {
+    const bar = $('#transport'); if (!bar) return;
+    const s = P.style; if (!s) { bar.innerHTML = '<span class="hint">Избери стил, за да го прослушаш. Звук: вграден синтезатор или MIDI към PA5X.</span>'; return; }
+    const pos = P.playing ? P.position() : null; const cur = pos && pos.id;
+    const keyNow = ROOTS[(origRoot + P.transpose + 120) % 12];
+    if (!bar.dataset.built || bar.dataset.style !== s.fileName) {
+      bar.dataset.built = '1'; bar.dataset.style = s.fileName;
+      bar.innerHTML = `<div class="tp-name" title="${esc(s.name)}">${esc(s.name)}</div>
+        <button class="pbtn start" id="tpStart" title="Start/Stop (интервал)">▶</button>
+        <div class="els">${ELEMENT_BTNS.map(([id, l]) => { const e = s.elements.find(z => z.id === id && z.length); return `<button class="ebtn ${/^Var/.test(id) ? 'v' : /^Fill|^Break/.test(id) ? 'f' : 'i'}" data-el="${id}" ${e ? '' : 'disabled'}>${l}</button>`; }).join('')}</div>
+        <div class="tp-ctl"><label>Темпо<input type="number" id="tpTempo" min="30" max="300" step="1"></label>
+          <label>Тоналност<select id="tpKey">${ROOTS.map((r, i) => `<option value="${i}">${r}${/m$/.test(origChordLabel) ? 'm' : ''}</option>`).join('')}</select></label>
+          <label>Сила<input type="range" id="tpVol" min="0" max="1.5" step="0.05" value="${P.volume}"></label>
+          <label>Звук<select id="tpOut"><option value="synth">Вграден синтезатор</option></select></label></div>
+        <div class="tp-pos" id="tpPos"></div>`;
+      $('#tpStart').onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.stop(); else P.start(P.lastVar || 'Var1'); };
+      bar.querySelectorAll('.ebtn').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const id = b.dataset.el; if (P.playing) P.queue(id); else P.start(id); });
+      $('#tpTempo').onchange = e => { const v = Math.max(30, Math.min(300, +e.target.value || s.tempo)); P.setTempo(v); renderTransport(); };
+      $('#tpTempo').onkeydown = e => { if (e.key === 'Enter') e.target.blur(); };
+      $('#tpKey').onchange = e => { let d = (+e.target.value - origRoot + 12) % 12; if (d > 6) d -= 12; P.transpose = d; };
+      $('#tpVol').oninput = e => P.setVolume(+e.target.value);
+      $('#tpOut').onfocus = fillOutputs; $('#tpOut').onmousedown = fillOutputs;
+      $('#tpOut').onchange = async e => { if (!(await ensurePlayer())) return; P.setOutput(e.target.value); toast(e.target.value === 'synth' ? 'Звук: вграден синтезатор' : 'Звук: MIDI към ' + e.target.selectedOptions[0].textContent + '. Настрой MIDI IN каналите на PA5X да съвпадат с каналите на пистите.'); };
+    }
+    if (document.activeElement !== $('#tpTempo')) $('#tpTempo').value = Math.round(P.tempo); if (document.activeElement !== $('#tpKey')) $('#tpKey').value = (origRoot + P.transpose + 12) % 12;
+    $('#tpStart').textContent = P.playing ? '■' : '▶'; $('#tpStart').classList.toggle('on', P.playing);
+    bar.querySelectorAll('.ebtn').forEach(b => { b.classList.toggle('cur', b.dataset.el === cur); b.classList.toggle('next', !!pos && (b.dataset.el === pos.pending || (!pos.pending && b.dataset.el === P.lastVar && b.dataset.el !== cur))); });
+    $('#tpPos').textContent = pos ? `${C.ELEMENT_LABEL[pos.id] || pos.id} · такт ${pos.bar}/${pos.bars} · удар ${pos.beat}` : `${keyNow}${/m$/.test(origChordLabel) ? 'm' : ''} · ${Math.round(P.tempo)} BPM`;
+  }
+  async function fillOutputs() {
+    const sel = $('#tpOut'); if (sel.dataset.filled) return; sel.dataset.filled = '1';
+    const outs = await P.midiOutputs(); for (const o of outs) { const op = document.createElement('option'); op.value = o.id; op.textContent = 'MIDI: ' + o.name; sel.appendChild(op); }
+    if (!outs.length) { const op = document.createElement('option'); op.disabled = true; op.textContent = '(няма MIDI устройства)'; sel.appendChild(op); }
+  }
+  setInterval(() => { if (P.playing) renderTransport(); }, 150);
+  document.addEventListener('keydown', async e => {
+    if (e.target.matches('input,select,textarea')) return;
+    if (e.code === 'Space' && P.style) { e.preventDefault(); if (!(await ensurePlayer())) return; P.playing ? P.stop() : P.start(P.lastVar || 'Var1'); }
+  });
+
+  // ===================== style view =====================
+  const opts = { includeChords: false, keepKorgSysex: false, setupPerElement: true, channels: { ...C.DEFAULT_CHANNELS } };
+  async function showStyle(x, bi) {
+    let s; try { s = await getStyle(x); } catch (e) { $('#detail').innerHTML = `<h2>${esc(x.name)}</h2><p class="err">Файлът не може да се прочете: ${esc(e.message)}</p>`; return; }
+    curStyleBank = bi; if (!P.playing || curStyleItem !== x) { P.stop(); await loadIntoPlayer(x, s); }
+    const ed = state.edits.get(x);
+    const tracks = C.TRACK_ORDER.filter(t => t !== 'Chords' && s.elements.some(e => e.tracks.some(tr => tr.name === t)));
+    const firstSound = (t) => { for (const id of ['Var1', 'Var2', 'Var3', 'Var4']) { const el = s.elements.find(e => e.id === id); const tr = el && el.tracks.find(z => z.name === t); if (tr) return tr.sound; } for (const el of s.elements) { const tr = el.tracks.find(z => z.name === t); if (tr) return tr.sound; } };
+    const ts = [...new Set(s.elements.map(e => e.ts.label))].join(', ');
+    const orig = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord.root + ' ' + t.origChord.chord; return '—'; })();
+    const ms = (t) => `<button class="ms m${P.mutes.has(t) ? ' on' : ''}" data-m="${t}" title="Mute">M</button><button class="ms s${P.solos.has(t) ? ' on' : ''}" data-s="${t}" title="Solo">S</button>`;
+    let h = `<h2>${esc(s.name)}${ed ? ' <span class="mod">● променен</span>' : ''}</h2>
+      <div class="meta"><span>Темпо: <b>${s.tempo} BPM</b></span><span>Такт: <b>${esc(ts)}</b></span><span>Оригинален акорд: <b>${esc(orig)}</b></span><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
+      ${ed ? `<div class="card warnc"><h3>Незаписани промени (${ed.history.length})</h3><ul class="chg">${ed.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+        <div class="row"><button class="btn primary" id="saveAs">Запиши като нов стил…</button><button class="btn" id="saveOver">Презапиши оригинала (с резервно копие)</button><button class="btn" id="undo">Отмени последното</button><button class="btn" id="discard">Откажи всички</button></div></div>` : ''}
+      <div class="card"><h3>Елементи и писти</h3><div style="overflow:auto"><table class="et"><tr><th></th><th>Елемент</th><th class="c">Тактове</th><th class="c">Такт</th>${tracks.map(t => `<th class="c">${t}<div class="msw">${ms(t)}</div></th>`).join('')}</tr>
+      ${s.elements.map(e => `<tr><td>${e.length ? `<button class="playel" data-el="${e.id}" title="Свири от този елемент">▶</button>` : ''}</td><td>${esc(e.label)}</td><td class="c">${e.bars || '<span class="hint">празен</span>'}</td><td class="c">${e.ts.label}</td>${tracks.map(t => { const tr = e.tracks.find(z => z.name === t); const n = tr ? tr.info.notes : 0; return `<td class="c"><span class="cell${n ? '' : ' zero'}" title="${tr ? esc(C.soundLabel(tr.sound) + ' · ' + C.soundTitle(tr.sound)) : ''}">${n || '·'}</span></td>`; }).join('')}</tr>`).join('')}
+      <tr><td></td><td class="hint">Звук</td><td></td><td></td>${tracks.map(t => `<td class="c sndn" title="${esc(C.soundTitle(firstSound(t)))}">${esc(C.soundLabel(firstSound(t)))}</td>`).join('')}</tr>
+      </table></div><p class="hint">Числата са брой ноти. M = заглуши пистата, S = само тази писта. Интервал = Start/Stop.</p></div>
+      <div class="card"><h3>Копиране от друг стил</h3>${copyFormHtml(s)}</div>
+      <div class="card"><h3>Pads на стила (${s.pads.length})</h3>${s.pads.length ? s.pads.map((p, i) => `<button class="btn padb" data-p="${i}" title="${esc(C.soundLabel(p.sound) + ' · ' + C.soundTitle(p.sound))}">▶ Pad ${i + 1}: ${esc(p.name)}</button>`).join(' ') : '<span class="hint">Няма зададени Pads</span>'}</div>
+      <div class="card"><h3>Keyboard Sets на стила (${s.keyboardSets.length})</h3><div class="grid2">${s.keyboardSets.map((k, i) => ksCard(k, i + 1, i)).join('') || '<span class="hint">Няма</span>'}</div><div id="kbHost"></div></div>
+      <div class="card"><h3>Експорт към MIDI</h3>
+        <div class="row"><button class="btn primary" id="expAll">Целият стил → .mid</button><button class="btn" id="expEach">Всеки елемент отделно → .zip</button><button class="btn" id="expBank">Цялата банка „${esc(x.bank)}“ → .zip</button></div>
+        <div class="elsel" id="elsel">${s.elements.map(e => `<label><input type="checkbox" value="${e.id}" ${e.length ? 'checked' : ''}>${esc(e.label)}</label>`).join('')}</div>
+        <div class="row"><label class="opt"><input type="checkbox" id="oChords" ${opts.includeChords ? 'checked' : ''}> Писта с акордите (Chords)</label><label class="opt"><input type="checkbox" id="oSetup" ${opts.setupPerElement ? 'checked' : ''}> Звук/обем в началото на всеки елемент</label><label class="opt"><input type="checkbox" id="oSysex" ${opts.keepKorgSysex ? 'checked' : ''}> Запази KORG SysEx</label></div>
+        <div class="chmap">${C.TRACK_ORDER.map(t => `<label>${t}<select data-t="${t}">${Array.from({ length: 16 }, (_, i) => `<option ${opts.channels[t] === i + 1 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>`).join('')}</div>
+        <p class="hint">MIDI каналите важат и за експорта, и за свиренето към PA5X.</p></div>`;
+    $('#detail').innerHTML = h;
+    // playback hooks
+    document.querySelectorAll('.playel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.queue(b.dataset.el); else P.start(b.dataset.el); });
+    document.querySelectorAll('.ms').forEach(b => b.onclick = () => { const t = b.dataset.m || b.dataset.s; const set = b.dataset.m ? P.mutes : P.solos; set.has(t) ? set.delete(t) : set.add(t); b.classList.toggle('on', set.has(t)); });
+    document.querySelectorAll('.padb').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const p = s.pads[+b.dataset.p]; if (p.smf) P.playClip(p.smf, p.sound, [14, 15, 13, 12][+b.dataset.p % 4]); });
+    document.querySelectorAll('.kssel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const k = s.keyboardSets[+b.dataset.k]; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); document.querySelectorAll('.kssel').forEach(z => z.classList.toggle('on', z === b)); });
+    // export hooks
+    $('#oChords').onchange = e => opts.includeChords = e.target.checked; $('#oSetup').onchange = e => opts.setupPerElement = e.target.checked; $('#oSysex').onchange = e => opts.keepKorgSysex = e.target.checked;
+    document.querySelectorAll('.chmap select').forEach(sel => sel.onchange = () => opts.channels[sel.dataset.t] = +sel.value);
+    const chosen = () => [...document.querySelectorAll('#elsel input:checked')].map(i => i.value);
+    $('#expAll').onclick = () => { const els = chosen(); if (!els.length) return toast('Избери поне един елемент'); download(safe(s.name) + '.mid', C.exportStyleMidi(s, { ...opts, elements: els }), 'audio/midi'); };
+    $('#expEach').onclick = () => { const files = s.elements.filter(e => chosen().includes(e.id) && e.length).map((e, i) => ({ name: `${String(i + 1).padStart(2, '0')} ${safe(e.label)}.mid`, data: C.exportStyleMidi(s, { ...opts, elements: [e.id] }) })); download(safe(s.name) + '_elements.zip', C.makeZip(files), 'application/zip'); };
+    $('#expBank').onclick = () => exportMany(state.styles[bi].items.map(i => ({ ...i, bankName: '' })), safe(x.bank) + '_MIDI.zip');
+    bindCopyForm(x, bi, s);
+    if (ed) {
+      $('#undo').onclick = () => { ed.tree = C.parseTree(ed.history.pop()); ed.log.pop(); ed.parsed = null; if (!ed.history.length) state.edits.delete(x); refreshStyle(x, bi); };
+      $('#discard').onclick = () => { if (!confirm('Да се откажат ли всички незаписани промени в този стил?')) return; state.edits.delete(x); refreshStyle(x, bi); };
+      $('#saveAs').onclick = () => saveStyle(x, bi, false); $('#saveOver').onclick = () => saveStyle(x, bi, true);
+    }
+    renderTransport();
+  }
+  function refreshStyle(x, bi) { const keep = $('#detail').scrollTop; P.stop(); curStyleItem = null; renderList(); showStyle(x, bi).then(() => { $('#detail').scrollTop = keep; }); }
+
+  // ===================== copy form =====================
+  const copySel = { src: null, srcEl: 'Var1', what: '*', dstEl: 'Var1', dstTrack: '' };
+  function copyFormHtml(s) {
+    const items = allStyleItems();
+    const elOpts = (els, sel) => els.map(([id, l]) => `<option value="${id}" ${id === sel ? 'selected' : ''}>${l}</option>`).join('');
+    const known = Object.keys(C.SCENE_INFO).map(id => [id, C.ELEMENT_LABEL[id] || id]);
+    return `<div class="copyf">
+      <label>От стил<select id="cpSrc">${state.styles.map((b, bi) => `<optgroup label="${esc(b.bank)}">${b.items.map((it, i) => `<option value="${bi}:${i}">${esc(it.name.replace(/\.stg$/i, ''))}${state.edits.has(it) ? ' ●' : ''}</option>`).join('')}</optgroup>`).join('')}</select></label>
+      <label>Елемент<select id="cpSrcEl"></select></label>
+      <label>Какво<select id="cpWhat"></select></label>
+      <span class="arrow">→</span>
+      <label>В елемент<select id="cpDstEl">${elOpts(known, copySel.dstEl)}</select></label>
+      <label>В писта<select id="cpDstTr"></select></label>
+      <button class="btn primary" id="cpGo">Копирай</button>
+      <button class="btn" id="cpListen" title="Прослушай избрания елемент от изходния стил">▶ Прослушай източника</button>
+    </div><div id="cpInfo" class="hint"></div>`;
+  }
+  async function bindCopyForm(x, bi, s) {
+    const items = allStyleItems(); const me = items.find(z => z.x === x);
+    if (!copySel.src || !items.find(z => z.x === copySel.src)) copySel.src = x;
+    const srcIt = items.find(z => z.x === copySel.src); $('#cpSrc').value = srcIt.bi + ':' + srcIt.i;
+    const refresh = async () => {
+      const [b, i] = $('#cpSrc').value.split(':').map(Number); const sx = state.styles[b].items[i]; copySel.src = sx;
+      let ss; try { ss = await getStyle(sx); } catch (e) { $('#cpInfo').textContent = 'Изходният стил не може да се прочете'; return; }
+      const els = ss.elements.filter(e => e.length); if (!els.find(e => e.id === copySel.srcEl)) copySel.srcEl = els[0] ? els[0].id : '';
+      $('#cpSrcEl').innerHTML = els.map(e => `<option value="${e.id}" ${e.id === copySel.srcEl ? 'selected' : ''}>${esc(e.label)} (${e.bars} т., ${e.ts.label})</option>`).join('');
+      const el = ss.elements.find(e => e.id === copySel.srcEl);
+      const trs = el ? el.tracks.filter(t => t.name !== 'Chords' && t.info.notes) : [];
+      if (copySel.what !== '*' && !trs.find(t => t.name === copySel.what)) copySel.what = '*';
+      $('#cpWhat').innerHTML = `<option value="*">Целия елемент (всички писти)</option>` + trs.map(t => `<option value="${t.name}" ${t.name === copySel.what ? 'selected' : ''}>Писта ${t.name} (${t.info.notes} ноти)</option>`).join('');
+      const what = copySel.what;
+      if (what === '*') { $('#cpDstTr').innerHTML = '<option value="">—</option>'; $('#cpDstTr').disabled = true; }
+      else { const comp = C.compatibleTracks(what); if (!comp.includes(copySel.dstTrack)) copySel.dstTrack = what; $('#cpDstTr').disabled = false; $('#cpDstTr').innerHTML = comp.map(t => `<option ${t === copySel.dstTrack ? 'selected' : ''}>${t}</option>`).join(''); }
+      const dEl = s.elements.find(e => e.id === copySel.dstEl);
+      $('#cpInfo').textContent = !el ? '' : (what === '*' ? `${el.label} от „${ss.name}“ ще замени ${dEl ? C.ELEMENT_LABEL[copySel.dstEl] + ' (' + dEl.bars + ' т.)' : 'липсващия ' + C.ELEMENT_LABEL[copySel.dstEl] + ' (ще бъде създаден)'}.`
+        : `Пистата ${what} от ${el.label} ще отиде в ${copySel.dstTrack} на ${C.ELEMENT_LABEL[copySel.dstEl]}. Звукът и настройките на пистата се копират заедно с нея.`) + (el && dEl && el.ts.label !== dEl.ts.label ? ` Внимание: тактът е различен (${el.ts.label} → ${dEl.ts.label}).` : '');
+    };
+    $('#cpSrc').onchange = () => { refresh(); }; $('#cpSrcEl').onchange = e => { copySel.srcEl = e.target.value; refresh(); };
+    $('#cpWhat').onchange = e => { copySel.what = e.target.value; refresh(); }; $('#cpDstEl').onchange = e => { copySel.dstEl = e.target.value; refresh(); };
+    $('#cpDstTr').onchange = e => { copySel.dstTrack = e.target.value; refresh(); };
+    $('#cpListen').onclick = async () => { if (!(await ensurePlayer())) return; const ss = await getStyle(copySel.src); P.stop(); await loadIntoPlayer(copySel.src, ss); P.start(copySel.srcEl); toast('Свири източникът: ' + ss.name + '. Избери отново стила отляво, за да се върнеш.'); };
+    $('#cpGo').onclick = async () => {
+      try {
+        const srcTree = await getTree(copySel.src); const srcName = (await getStyle(copySel.src)).name;
+        let ed = state.edits.get(x); const tree = ed ? ed.tree : await getTree(x);
+        const before = C.serializeTree(tree); let res;
+        if (copySel.what === '*') res = C.copyElement(srcTree, copySel.srcEl, tree, copySel.dstEl);
+        else res = C.copyTrack(srcTree, copySel.srcEl, copySel.what, tree, copySel.dstEl, copySel.dstTrack || copySel.what);
+        C.parseStyle(C.serializeTree(tree), x.name); // validate
+        if (!ed) { ed = { tree, history: [], log: [] }; state.edits.set(x, ed); }
+        ed.history.push(before); ed.parsed = null;
+        ed.log.push(copySel.what === '*' ? `${C.ELEMENT_LABEL[copySel.srcEl]} от „${srcName}“ → ${C.ELEMENT_LABEL[copySel.dstEl]}` : `${copySel.what} (${C.ELEMENT_LABEL[copySel.srcEl]}, „${srcName}“) → ${copySel.dstTrack || copySel.what} в ${C.ELEMENT_LABEL[copySel.dstEl]}`);
+        if (res.warnings.length) toast(res.warnings.join(' · ')); else toast('Копирано. Прослушай и запиши, когато си готов.');
+        refreshStyle(x, bi);
+      } catch (e) { toast('Не може: ' + e.message); }
+    };
+    refresh();
+  }
+
+  // ===================== save =====================
+
+  function askText(title, def, hint) {
+    return new Promise(res => {
+      const m = document.createElement('div'); m.className = 'modal';
+      m.innerHTML = `<div class="mbox"><h3>${esc(title)}</h3><input id="askIn" value="${esc(def)}"><p class="hint">${esc(hint || '')}</p><div class="row" style="justify-content:flex-end"><button class="btn" id="askNo">Отказ</button><button class="btn primary" id="askOk">Запиши</button></div></div>`;
+      document.body.appendChild(m); const inp = m.querySelector('#askIn'); inp.focus(); inp.select();
+      const done = (v) => { m.remove(); res(v); };
+      m.querySelector('#askOk').onclick = () => done(inp.value.trim() || null); m.querySelector('#askNo').onclick = () => done(null);
+      inp.onkeydown = e => { if (e.key === 'Enter') done(inp.value.trim() || null); if (e.key === 'Escape') done(null); };
+    });
+  }
+
+  async function saveStyle(x, bi, overwrite) {
+    const ed = state.edits.get(x); if (!ed || !window.native) return;
+    try {
+      let res;
+      if (overwrite) {
+        if (!confirm('Оригиналният файл ще бъде заменен. Резервно копие ще се запише в папка „' + state.root + '_backup“ до сета. Продължаваш ли?')) return;
+        res = await window.native.writeStyle({ rel: x.f._rel, overwrite: true, data: C.serializeTree(ed.tree) });
+      } else {
+        const base = x.name.replace(/\.stg$/i, ''); const name = await askText('Име на новия стил', base + ' 2', 'Ще бъде записан в същата банка: ' + x.bank); if (!name) return;
+        const t2 = C.cloneNode(ed.tree); C.renameStyle(t2, name.trim());
+        res = await window.native.writeStyle({ rel: x.f._rel, newName: safe(name.trim()) + '.stg', data: C.serializeTree(t2) });
+      }
+      if (!res || !res.ok) { if (res && res.error) toast('Грешка: ' + res.error); return; }
+      state.edits.delete(x); state.styleCache.delete(x);
+      toast((overwrite ? 'Стилът е презаписан. Резервно копие: ' + res.backup : 'Записан нов стил: ' + res.path) + (res.metadir ? ' (добавен в списъка на банката)' : ''));
+      const sel = x.f._rel; await openNative(state.rootPath, true);
+      const it = allStyleItems().find(z => z.x.f._rel === (overwrite ? sel : res.rel)); if (it) { state.sel = it.x; renderList(); showStyle(it.x, it.bi); }
+    } catch (e) { toast('Грешка при запис: ' + e.message); }
+  }
+
+  // ===================== keyboard sets =====================
+  function ksCard(k, n, idx) {
+    return `<div class="ks"><div class="t">${n ? n + '. ' : ''}${esc(k.name || '(без име)')}</div>${k.tracks.map(t => `<div class="l"><span>${t.name}${t.mute ? ' <span class="hint">(mute)</span>' : ''}</span><span class="sndn" title="${esc(C.soundTitle(t.sound))}">${esc(C.soundLabel(t.sound))}${t.sound && t.sound.vol !== null ? ' <span class="hint">· vol ' + t.sound.vol + '</span>' : ''}</span></div>`).join('')}${k.splitPoint !== null && k.splitPoint !== undefined ? `<div class="l"><span>Split point</span><span>${noteName(k.splitPoint)}</span></div>` : ''}${idx !== undefined ? `<button class="btn kssel" data-k="${idx}">🎹 Свири с този Keyboard Set</button>` : ''}</div>`;
+  }
+  const noteName = (n) => ROOTS[n % 12] + (Math.floor(n / 12) - 1);
+  let kbCleanup = null;
+  function mountKeyboard(host, k) {
+    if (kbCleanup) kbCleanup();
+    const lo = 36, hi = 96; const whites = []; for (let n = lo; n <= hi; n++) if (![1, 3, 6, 8, 10].includes(n % 12)) whites.push(n);
+    const W = 100 / whites.length; let html = `<div class="kbwrap"><div class="kbinfo">🎹 ${esc(k.name || '')} · split ${noteName(k.splitPoint ?? 60)} · Клавиши на компютъра: Z–M и Q–U (октава ↓/↑ с „,“ и „.“)</div><div class="kb">`;
+    whites.forEach((n, i) => { html += `<div class="wk${n < (k.splitPoint ?? 60) ? ' lo' : ''}" data-n="${n}" style="left:${i * W}%;width:${W}%">${n % 12 === 0 ? '<span>' + noteName(n) + '</span>' : ''}</div>`; });
+    whites.forEach((n, i) => { if (n + 1 <= hi && [1, 3, 6, 8, 10].includes((n + 1) % 12)) html += `<div class="bk" data-n="${n + 1}" style="left:${(i + 1) * W - W * 0.32}%;width:${W * 0.64}%"></div>`; });
+    host.innerHTML = html + '</div></div>';
+    const down = new Set();
+    const on = (n, v = 100) => { if (down.has(n)) return; down.add(n); P.kbNote(n, v); const el = host.querySelector(`[data-n="${n}"]`); if (el) el.classList.add('down'); };
+    const off = (n) => { if (!down.has(n)) return; down.delete(n); P.kbNote(n, 0); const el = host.querySelector(`[data-n="${n}"]`); if (el) el.classList.remove('down'); };
+    let mouseN = null;
+    host.querySelector('.kb').onpointerdown = e => { const n = +e.target.closest('[data-n]')?.dataset.n; if (!n) return; mouseN = n; on(n, 90 + Math.round(Math.random() * 10)); e.target.setPointerCapture?.(e.pointerId); };
+    host.querySelector('.kb').onpointerover = e => { if (mouseN === null) return; const n = +e.target.closest('[data-n]')?.dataset.n; if (n && n !== mouseN) { off(mouseN); mouseN = n; on(n); } };
+    const up = () => { if (mouseN !== null) { off(mouseN); mouseN = null; } }; window.addEventListener('pointerup', up);
+    const MAP = 'zsxdcvgbhnjmq2w3er5t6y7u'; let oct = 60;
+    const kd = e => { if (e.target.matches('input,select,textarea') || e.repeat) return; if (e.key === ',') { oct = Math.max(36, oct - 12); return; } if (e.key === '.') { oct = Math.min(84, oct + 12); return; } const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) on(oct + i); };
+    const ku = e => { const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) off(oct + i); };
+    window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+    kbCleanup = () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); for (const n of [...down]) off(n); };
+  }
+  async function showKset(x) {
+    let k; try { k = C.parseKeyboardSetFile(new Uint8Array(await x.f.arrayBuffer()), x.name); } catch (e) { $('#detail').innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+    $('#detail').innerHTML = `<h2>${esc(k.name)}</h2><div class="meta"><span>Банка: <b>${esc(x.bank)}</b></span><span>Файл: <b>${esc(x.name)}</b></span></div>
+      <div class="card"><h3>Пистите</h3><table><tr><th>Писта</th><th>Звук</th><th>Банка / номер</th><th class="c">Volume</th><th class="c">Pan</th><th class="c">Обхват</th><th class="c">Mute</th></tr>
+      ${k.tracks.map(t => `<tr><td>${t.name}</td><td>${esc(C.soundLabel(t.sound))}</td><td class="snd hint">${esc(C.soundTitle(t.sound))}</td><td class="c">${t.sound?.vol ?? '—'}</td><td class="c">${t.sound?.pan ?? '—'}</td><td class="c">${t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—'}</td><td class="c">${t.mute ? 'да' : ''}</td></tr>`).join('')}</table>
+      ${k.splitPoint !== null ? `<p class="hint">Split point: ${noteName(k.splitPoint)}</p>` : ''}</div>
+      <div class="card"><h3>Прослушване</h3><button class="btn primary" id="ksPlay">🎹 Включи клавиатурата</button><div id="kbHost"></div></div>`;
+    $('#ksPlay').onclick = async () => { if (!(await ensurePlayer())) return; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); $('#ksPlay').style.display = 'none'; };
+  }
+
+  async function exportMany(items, zipName) {
+    const files = []; let bad = 0;
+    for (const [i, x] of items.entries()) {
+      status(`Експорт ${i + 1}/${items.length}: ${x.name}`); await new Promise(r => setTimeout(r));
+      try { const s = await getStyle(x); files.push({ name: (x.bankName ? safe(x.bankName) + '/' : '') + safe(x.name.replace(/\.stg$/i, '')) + '.mid', data: C.exportStyleMidi(s, opts) }); } catch (e) { bad++; }
+      if (state.styleCache.size > 40) state.styleCache.clear();
+    }
+    download(zipName, C.makeZip(files), 'application/zip'); status(`Готово: ${files.length} стила експортирани${bad ? `, ${bad} с грешка` : ''}`);
+  }
+
+  function showPads() {
+    $('#detail').innerHTML = `<h2>Pads</h2><div class="card"><h3>Pad пресети (MATRIXPRESET)</h3>${state.padPresets.map(p => `<span class="tag">${esc(p.n)}</span>`).join('') || '<span class="hint">Няма</span>'}
+      <p class="hint">Съдържанието на Pad пресетите е компресирано. Разчитането му предстои в следваща версия. Pads на всеки стил се виждат в страницата на стила.</p></div>`;
+  }
+  function showSounds() {
+    $('#detail').innerHTML = `<h2>User звуци</h2>${state.userSounds.map(b => { const bk = C.pcgBankFromFile(b.file); return `<div class="card"><h3>${esc(b.bank)} (${b.entries.length})${bk ? ` <span class="hint">· MSB ${bk.msb} · LSB ${bk.lsb}</span>` : ''}</h3><table><tr><th>Слот</th><th>Име</th><th>MSB.LSB.Prog</th><th>Дата</th></tr>${b.entries.map(e => `<tr><td>${e.slot + 1}</td><td>${esc(e.name)}</td><td class="snd">${bk ? `${bk.msb}.${bk.lsb}.${e.slot + 1}` : ''}</td><td class="hint">${esc(e.date || '')}</td></tr>`).join('')}</table></div>`; }).join('') || '<p class="hint">Няма</p>'}`;
+  }
+  // ===================== FILE VIEWER =====================
+  const K = window.PAKorf;
+  const fv = { files: [], sel: null, cache: new Map(), rowSel: null, q: '', audio: null, src: null };
+  const kindOf = (n) => { const e = (n.split('.').pop() || '').toLowerCase(); return { stg: 'Style', ksc: 'Keyboard Set', pcg: 'Sound (PCG)', pcm: 'PCM', mtp: 'Pads / Matrix', kmp: 'Multisample', pad: 'Pad' }[e] || e.toUpperCase(); };
+  const fmtKB = (n) => n >= 1048576 ? (n / 1048576).toFixed(2) + ' MB' : (n / 1024).toFixed(1) + ' KB';
+  function setMode(m) {
+    document.body.classList.toggle('fvmode', m === 'fv');
+    document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    if (m === 'fv') { if (P && P.playing) P.stop(); renderFvFiles(); }
+  }
+  async function fvLoad(f) {
+    if (fv.cache.has(f.path)) return fv.cache.get(f.path);
+    const bytes = new Uint8Array(await window.native.fvRead(f.path)); const ext = f.name.split('.').pop().toLowerCase(); let r;
+    try {
+      if (ext === 'stg') { const s = C.parseStyle(bytes, f.name); r = { type: 'stg', style: s, idx: await fvSetIndex(f) }; }
+      else if (ext === 'ksc') { r = { type: 'ksc', ks: C.parseKeyboardSetFile(bytes, f.name), idx: await fvSetIndex(f) }; }
+      else if (K.isKorf(bytes)) { const k = K.parseKorf(bytes); r = { type: k.samples.length ? 'pcm' : 'korf', korf: k }; if (k.samples.length) r.bytes = bytes; }
+      else r = { type: 'unknown', error: 'Неразпознат формат (възможно е от по-стар модел PA)' };
+    } catch (e) { r = { type: 'unknown', error: e.message }; }
+    if (r.type !== 'pcm') { /* keep only PCM bytes for preview */ }
+    fv.cache.set(f.path, r); if (fv.cache.size > 60) { const k0 = fv.cache.keys().next().value; if (k0 !== f.path) fv.cache.delete(k0); }
+    return r;
+  }
+  const fvIdxCache = new Map();
+  async function fvSetIndex(f) { // names of the user sounds of the set this file belongs to
+    try { const info = await window.native.fvSetSounds(f.path); if (!info || !info.root) return null;
+      if (fvIdxCache.has(info.root)) return fvIdxCache.get(info.root);
+      const files = []; for (const p of info.pcg) { try { files.push({ name: p.name, entries: K.parseKorf(new Uint8Array(await window.native.fvRead(p.path))).entries }); } catch (e) { } }
+      const idx = C.buildSoundIndex(files); idx.root = info.root; fvIdxCache.set(info.root, idx); return idx; } catch (e) { return null; }
+  }
+  const sndLbl = (s, idx) => C.soundLabel(s, idx || null);
+  function fvRows(f, r) {
+    if (r.type === 'pcm') return { cols: ['ID', 'Име на семпъл', 'Размер', 'Честота', 'Семпли', 'Продълж.', 'Тип', 'Канали', 'Цикъл'], rows: r.korf.samples.map((s, i) => ({ i, cells: [s.slot != null ? s.slot + 1 : i + 1, s.name || '—', s.dataLen.toLocaleString('bg') + ' б (' + fmtKB(s.dataLen) + ')', (s.rate / 1000).toFixed(1) + ' kHz / ' + s.bits + ' бита', s.frames.toLocaleString('bg'), s.duration >= 1 ? s.duration.toFixed(2) + ' s' : Math.round(s.duration * 1000) + ' ms', s.compressed ? 'Компресиран' : 'Нормален', s.channels > 1 ? 'стерео' : 'моно', s.loopStart > 0 && s.loopStart < s.loopEnd ? s.loopStart + '–' + s.loopEnd : '—'], warn: s.compressed })).sort((a, b) => a.cells[0] - b.cells[0]) };
+    if (r.type === 'korf') { const bk = C.pcgBankFromFile(f.name); return { cols: ['ID', 'Име', 'Тип', ...(bk ? ['MSB.LSB.Prog'] : []), 'Версия', 'Дата', 'Създаден с'], rows: r.korf.entries.map((e, i) => ({ i, cells: [e.slot != null ? e.slot + 1 : i + 1, e.name || '—', e.type || '', ...(bk ? [e.slot != null ? `${bk.msb}.${bk.lsb}.${e.slot + 1}` : ''] : []), e.ver != null ? `Ver ${e.ver} Rev ${e.rev}` : '', e.date || '', e.createdWith || ''] })).sort((a, b) => a.cells[0] - b.cells[0]) }; }
+    if (r.type === 'stg') { const s = r.style; return { head: `${s.name} · ${s.tempo} BPM · ${[...new Set(s.elements.map(e => e.ts.label))].join(', ')} · Keyboard Sets: ${s.keyboardSets.map(k => k.name || '—').join(', ') || 'няма'} · Pads: ${s.pads.map(p => p.name).join(', ') || 'няма'}`, sounds: C.TRACK_ORDER.filter(t => t !== 'Chords').map(t => { for (const e of s.elements) { const tr = e.tracks.find(z => z.name === t); if (tr) return t + ': ' + sndLbl(tr.sound, r.idx); } return null; }).filter(Boolean).join(' · '), cols: ['#', 'Елемент', 'Тактове', 'Такт', 'Писти', 'Ноти'], rows: s.elements.map((e, i) => ({ i, cells: [i + 1, e.label, e.bars || 'празен', e.ts.label, e.tracks.filter(t => t.name !== 'Chords').map(t => t.name).join(', '), e.tracks.reduce((a, t) => a + t.info.notes, 0)] })) }; }
+    if (r.type === 'ksc') return { head: `${r.ks.name} · split ${r.ks.splitPoint != null ? noteName(r.ks.splitPoint) : '—'}`, cols: ['Писта', 'Звук', 'Банка / номер', 'Volume', 'Pan', 'Обхват', 'Mute'], rows: r.ks.tracks.map((t, i) => ({ i, cells: [t.name, sndLbl(t.sound, r.idx), C.soundTitle(t.sound, r.idx || null), t.sound?.vol ?? '—', t.sound?.pan ?? '—', t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—', t.mute ? 'да' : ''] })) };
+    return { head: r.error || '', cols: [], rows: [] };
+  }
+  function renderFvFiles() {
+    const L = $('#fvFiles'); if (!L) return; const q = ($('#fvQ').value || '').toLowerCase();
+    if (!fv.files.length) { L.innerHTML = '<div class="hint" style="padding:12px">Няма заредени файлове.<br><br>Пусни тук файлове или цяла папка (STYLE, SOUND, PCM, KEYBOARDSET…) или използвай бутоните горе.</div>'; $('#fvCount').textContent = ''; return; }
+    let h = ''; let last = null;
+    for (const [i, f] of fv.files.entries()) {
+      if (q && !f.name.toLowerCase().includes(q) && !(fv.cache.get(f.path)?.names || '').includes(q)) continue;
+      if (f.dir !== last) { h += `<div class="fvgrp">${esc(f.dir)}</div>`; last = f.dir; }
+      h += `<div class="fvf${fv.sel === f ? ' sel' : ''}" data-i="${i}" title="${esc(f.path)}"><span>${esc(f.name)}</span><span class="sz">${fmtKB(f.size)}</span></div>`;
+    }
+    L.innerHTML = h; $('#fvCount').textContent = `${fv.files.length} файла · ${fmtKB(fv.files.reduce((a, f) => a + f.size, 0))}`;
+    L.querySelectorAll('.fvf').forEach(el => el.onclick = () => fvSelect(fv.files[+el.dataset.i]));
+  }
+  async function fvSelect(f) {
+    fvStop(); fv.sel = f; fv.rowSel = null; renderFvFiles(); $('#fvPath').textContent = f.path; $('#fvTable').innerHTML = '<div class="hint" style="padding:14px">Зареждам…</div>'; $('#fvPrev').innerHTML = '';
+    const r = await fvLoad(f); if (fv.sel !== f) return; renderFvTable(f, r);
+  }
+  function renderFvTable(f, r) {
+    const t = fvRows(f, r); const q = fv.q.toLowerCase();
+    const rows = t.rows.filter(x => !q || x.cells.some(c => String(c).toLowerCase().includes(q)));
+    $('#fvTable').innerHTML = `${t.head ? `<div class="fvhead">${esc(t.head)}${t.sounds ? `<div class="hint" style="margin-top:4px">Звуци: ${esc(t.sounds)}</div>` : ''}${r.idx === null && (r.type === 'stg' || r.type === 'ksc') ? '<div class="hint">Папката SOUND на сета не е намерена, затова User звуците са показани с номера.</div>' : ''}</div>` : ''}<table class="fvt"><tr>${t.cols.map(c => `<th>${c}</th>`).join('')}</tr>${rows.map(x => `<tr data-i="${x.i}" class="${fv.rowSel === x.i ? 'sel' : ''}">${x.cells.map((c, j) => `<td class="${x.warn && j === 6 ? 'warn' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+    $('#fvInfo').textContent = `${f.name} · ${kindOf(f.name)} · ${t.rows.length} ${r.type === 'pcm' ? 'семпъла' : 'записа'}`;
+    $('#fvWav').disabled = r.type !== 'pcm' || fv.rowSel == null; $('#fvWavAll').disabled = r.type !== 'pcm';
+    $('#fvTable').querySelectorAll('tr[data-i]').forEach(tr => { tr.onclick = () => { fv.rowSel = +tr.dataset.i; $('#fvTable').querySelectorAll('tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel'); $('#fvWav').disabled = r.type !== 'pcm'; if (r.type === 'pcm') fvPreview(r, r.korf.samples[fv.rowSel]); };
+      tr.ondblclick = () => { if (r.type === 'pcm') fvPlay(r, r.korf.samples[+tr.dataset.i]); }; });
+  }
+  function fvPreview(r, s) {
+    const box = $('#fvPrev'); const chs = K.decodeSample(r.bytes, s); s._dec = chs;
+    box.innerHTML = `<div class="pvbar"><button class="btn primary" id="pvPlay">▶ Прослушай</button><button class="btn" id="pvStop">■</button><span><b>${esc(s.name || '')}</b> · ${(s.rate / 1000).toFixed(1)} kHz · ${s.bits} бита · ${s.channels > 1 ? 'стерео' : 'моно'} · ${s.frames.toLocaleString('bg')} семпъла · ${s.duration.toFixed(3)} s${s.compressed ? ' · <span class="warnt">компресиран: декодирането е експериментално</span>' : ''}</span><button class="btn" id="pvWav">Експорт .WAV</button></div><canvas id="pvC"></canvas>`;
+    const cv = $('#pvC'); const W = cv.clientWidth || 900, H = 150; cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; const g = cv.getContext('2d'); g.scale(devicePixelRatio, devicePixelRatio);
+    g.fillStyle = '#121418'; g.fillRect(0, 0, W, H); const per = chs.length; const hh = H / per;
+    chs.forEach((d, c) => { const mid = hh * c + hh / 2; g.strokeStyle = '#2e333d'; g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke(); g.fillStyle = '#5cc28a'; const step = d.length / W;
+      for (let x = 0; x < W; x++) { let mn = 1, mx = -1; const a = Math.floor(x * step), b = Math.min(d.length, Math.floor((x + 1) * step) + 1); for (let i = a; i < b; i++) { const v = d[i]; if (v < mn) mn = v; if (v > mx) mx = v; } if (mx < mn) continue; g.fillRect(x, mid - mx * hh / 2, 1, Math.max(1, (mx - mn) * hh / 2)); } });
+    if (s.loopStart > 0 && s.loopStart < s.loopEnd) { const x = s.loopStart / s.frames * W; g.strokeStyle = '#f0a03c'; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.setLineDash([]); g.fillStyle = '#f0a03c'; g.font = '11px Segoe UI'; g.fillText('loop', x + 3, 12); }
+    $('#pvPlay').onclick = () => fvPlay(r, s); $('#pvStop').onclick = fvStop; $('#pvWav').onclick = () => fvExportWav(r, [s]);
+  }
+  function fvStop() { if (fv.src) { try { fv.src.stop(); } catch (e) { } fv.src = null; } }
+  function fvPlay(r, s) {
+    fvStop(); if (!fv.audio) fv.audio = new AudioContext(); const chs = s._dec || K.decodeSample(r.bytes, s);
+    const buf = fv.audio.createBuffer(chs.length, chs[0].length, s.rate || 44100); chs.forEach((d, c) => buf.copyToChannel(d, c));
+    const src = fv.audio.createBufferSource(); src.buffer = buf; src.connect(fv.audio.destination); fv.audio.resume(); src.start(); fv.src = src;
+  }
+  const wavName = (s, i) => `${String(s.slot != null ? s.slot + 1 : i + 1).padStart(3, '0')} ${safe(s.name || 'sample')}.wav`;
+  async function fvExportWav(r, list) {
+    const mk = (s) => K.wavBytes(s._dec || K.decodeSample(r.bytes, s), s.rate || 44100, s.loopStart > 0 && s.loopStart < s.loopEnd ? { start: s.loopStart, end: s.loopEnd } : null);
+    if (list.length === 1) return download(wavName(list[0], 0), mk(list[0]), 'audio/wav');
+    const files = list.map((s, i) => ({ name: wavName(s, i), data: mk(s) })); download(safe(fv.sel.name.replace(/\.\w+$/, '')) + '_WAV.zip', C.makeZip(files), 'application/zip');
+  }
+  // ---- reports ----
+  const REP_COLS = ['Файл', 'Папка', 'Вид', 'ID', 'Име', 'Тип', 'Версия', 'Дата', 'Създаден с', 'Честота', 'Бита', 'Канали', 'Семпли', 'Продълж. (ms)', 'Компресиран', 'Темпо', 'Такт', 'Подробности'];
+  function repRows(f, r) {
+    const base = [f.name, f.dir, kindOf(f.name)]; const out = [];
+    if (r.type === 'pcm') for (const [i, s] of r.korf.samples.entries()) { const e = s.entry || {}; out.push([...base, s.slot != null ? s.slot + 1 : i + 1, s.name || '', 'Sample', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', s.rate, s.bits, s.channels, s.frames, Math.round(s.duration * 1000), s.compressed ? 'да' : 'не', '', '', s.loopStart > 0 ? `loop ${s.loopStart}-${s.loopEnd}` : '']); }
+    else if (r.type === 'korf') for (const [i, e] of r.korf.entries.entries()) out.push([...base, e.slot != null ? e.slot + 1 : i + 1, e.name || '', e.type || '', e.ver != null ? `${e.ver}.${e.rev}` : '', e.date || '', e.createdWith || '', '', '', '', '', '', '', '', '', '']);
+    else if (r.type === 'stg') { const s = r.style; out.push([...base, '', s.name, 'Style', '', '', '', '', '', '', '', '', '', s.tempo, [...new Set(s.elements.map(e => e.ts.label))].join(' '), s.elements.filter(e => e.length).map(e => `${e.id}:${e.bars}т`).join(' ') + ' | KS: ' + s.keyboardSets.map(k => k.name).join(', ')]); }
+    else if (r.type === 'ksc') out.push([...base, '', r.ks.name, 'Keyboard Set', '', '', '', '', '', '', '', '', '', '', '', r.ks.tracks.map(t => `${t.name}=${sndLbl(t.sound, r.idx)} [${C.fmtSound(t.sound)}]${t.mute ? '(m)' : ''}`).join(' ')]);
+    else out.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '', '', r.error || '']);
+    return out;
+  }
+  async function fvReport(fmt, all) {
+    const list = all ? fv.files : (fv.sel ? [fv.sel] : []); if (!list.length) return toast('Няма избран файл');
+    const rows = [];
+    for (const [i, f] of list.entries()) { status(`Доклад: ${i + 1}/${list.length} ${f.name}`); await new Promise(r => setTimeout(r)); try { rows.push(...repRows(f, await fvLoad(f))); } catch (e) { rows.push([f.name, f.dir, kindOf(f.name), '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Грешка: ' + e.message]); } }
+    const title = all ? 'всички файлове' : list[0].name; const stamp = new Date().toLocaleString('bg');
+    let out;
+    if (fmt === 'csv') { const q = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }; out = '﻿' + [REP_COLS, ...rows].map(r => r.map(q).join(';')).join('\r\n'); }
+    else {
+      const lines = [`PA5X Set Tool — доклад: ${title}`, `Създаден: ${stamp}`, `Записи: ${rows.length}`, ''];
+      let cur = null;
+      for (const r of rows) {
+        if (r[0] !== cur) { cur = r[0]; lines.push('', `=== ${r[1]}/${r[0]} (${r[2]}) ===`); }
+        const parts = [r[3] !== '' ? String(r[3]).padStart(3) + '.' : '', r[4]];
+        if (r[9] !== '') parts.push(`${r[9]} Hz`, `${r[10]} бита`, r[11] > 1 ? 'стерео' : 'моно', `${r[12]} семпъла`, `${r[13]} ms`, r[14] === 'да' ? 'компресиран' : '');
+        else { if (r[5]) parts.push(r[5]); if (r[6]) parts.push('ver ' + r[6]); if (r[7]) parts.push(r[7]); if (r[8]) parts.push(r[8]); if (r[15] !== '') parts.push(r[15] + ' BPM', r[16]); }
+        if (r[17]) parts.push(r[17]);
+        lines.push('  ' + parts.filter(Boolean).join(' · '));
+      }
+      out = '﻿' + lines.join('\r\n');
+    }
+    status('Докладът е готов'); download(`Доклад ${safe(title.replace(/\.\w+$/, ''))}.${fmt}`, new TextEncoder().encode(out), fmt === 'csv' ? 'text/csv' : 'text/plain');
+  }
+  async function fvAddFiles(list, select) {
+    const known = new Set(fv.files.map(f => f.path)); const added = list.filter(f => !known.has(f.path));
+    fv.files.push(...added); fv.files.sort((a, b) => a.dir.localeCompare(b.dir) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    setMode('fv'); renderFvFiles(); if (added.length && (select || !fv.sel)) fvSelect(added[0]);
+    if (!added.length && list.length) { const f = fv.files.find(x => x.path === list[0].path); if (f) fvSelect(f); }
+  }
+  function initFileViewer() {
+    if (!window.native || !window.native.fvPick) { const b = document.querySelector('#modes'); if (b) b.style.display = 'none'; return; }
+    document.querySelectorAll('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.m));
+    $('#fvOpenF').onclick = async () => fvAddFiles(await window.native.fvPick('files'), true);
+    $('#fvOpenD').onclick = async () => fvAddFiles(await window.native.fvPick('folder'), true);
+    $('#fvClear').onclick = () => { fvStop(); fv.files = []; fv.sel = null; fv.cache.clear(); renderFvFiles(); $('#fvTable').innerHTML = ''; $('#fvPrev').innerHTML = ''; $('#fvInfo').textContent = ''; $('#fvPath').textContent = ''; };
+    $('#fvQ').oninput = renderFvFiles; $('#fvS').oninput = (e) => { fv.q = e.target.value; if (fv.sel) fvLoad(fv.sel).then(r => renderFvTable(fv.sel, r)); };
+    $('#fvRepTxt').onclick = () => fvReport('txt', $('#fvRepAll').checked); $('#fvRepCsv').onclick = () => fvReport('csv', $('#fvRepAll').checked);
+    $('#fvWav').onclick = async () => { const r = await fvLoad(fv.sel); if (r.type === 'pcm' && fv.rowSel != null) fvExportWav(r, [r.korf.samples[fv.rowSel]]); };
+    $('#fvWavAll').onclick = async () => { const r = await fvLoad(fv.sel); if (r.type === 'pcm') { status('Подготвям WAV файловете…'); await new Promise(x => setTimeout(x)); fvExportWav(r, r.korf.samples); } };
+    $('#fvAssoc').onclick = async () => { const r = await window.native.fvAssoc(true); toast(r.ok ? 'Готово: .STG .KSC .PCG .PCM .MTP .KMP се отварят с PA5X Set Tool (двоен клик). Ако Windows попита „С какво да се отвори“, избери PA5X Set Tool.' : 'Не успях: ' + (r.error || 'грешка в регистъра')); };
+    const pane = $('#fv');
+    pane.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); pane.classList.add('drag'); });
+    pane.addEventListener('dragleave', e => { if (e.target === pane) pane.classList.remove('drag'); });
+    pane.addEventListener('drop', async e => { e.preventDefault(); e.stopPropagation(); pane.classList.remove('drag'); const paths = [...e.dataTransfer.files].map(f => window.native.pathForFile(f)).filter(Boolean); if (paths.length) fvAddFiles(await window.native.fvAdd(paths), true); });
+    window.native.onFvOpen(list => fvAddFiles(list, true));
+    window.native.fvPending().then(list => { if (list.length) fvAddFiles(list, true); });
+    renderFvFiles();
+  }
+  initFileViewer();
+})();
+</script>
+</body>
+</html>
