@@ -5,6 +5,9 @@ const APP_DIR = __dirname; const BUNDLED = global.__PA_BUNDLED || __dirname;
 const appFile = (name) => { const p = path.join(APP_DIR, name); return fs.existsSync(p) ? p : path.join(BUNDLED, name); };
 const VERSION = JSON.parse(fs.readFileSync(path.join(APP_DIR, 'package.json'), 'utf8')).version;
 const UPDATE_URL = process.env.PA5X_UPDATE_URL || 'https://raw.githubusercontent.com/Hogzzmeade/pa5x-set-tool/main/updates/manifest.json';
+const MANIFEST_SOURCES = () => process.env.PA5X_UPDATE_URL ? [{ url: UPDATE_URL }] : [
+  { url: 'https://api.github.com/repos/Hogzzmeade/pa5x-set-tool/contents/updates/manifest.json', headers: { Accept: 'application/vnd.github.raw', 'User-Agent': 'PA5X-Set-Tool' } },
+  { url: UPDATE_URL }];
 const UPD_ROOT = () => path.join(app.getPath('userData'), 'update');
 const cfgFile = () => path.join(app.getPath('userData'), 'settings.json');
 const loadCfg = () => { try { return JSON.parse(fs.readFileSync(cfgFile(), 'utf8')); } catch (e) { return {}; } };
@@ -114,10 +117,12 @@ const { net } = require('electron'); const crypto = require('crypto');
 const cmpVer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
 let latest = null;
 function markGood() { try { const f = path.join(UPD_ROOT(), 'pending.json'); if (fs.existsSync(f)) fs.unlinkSync(f); } catch (e) { } }
-async function fetchBuf(url) { const r = await net.fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return Buffer.from(await r.arrayBuffer()); }
+async function fetchBuf(url, headers) { const r = await net.fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store', headers: headers || {} }); if (!r.ok) throw new Error('HTTP ' + r.status); return Buffer.from(await r.arrayBuffer()); }
 async function checkUpdate(manual) {
   try {
-    const man = JSON.parse((await fetchBuf(UPDATE_URL)).toString('utf8'));
+    let man = null, lastErr = null;
+    for (const src of MANIFEST_SOURCES()) { try { man = JSON.parse((await fetchBuf(src.url, src.headers)).toString('utf8')); if (man && man.version) break; } catch (e) { lastErr = e; man = null; } }
+    if (!man) throw lastErr || new Error('няма връзка');
     if (!man.version || !Array.isArray(man.files)) throw new Error('bad manifest');
     if (cmpVer(man.version, VERSION) > 0) {
       if (man.minShell && cmpVer(man.minShell, global.__PA_SHELL || VERSION) > 0) { latest = { ...man, fullDownload: true }; }
