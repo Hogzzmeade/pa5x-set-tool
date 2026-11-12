@@ -67,7 +67,8 @@
       if (this.sampler) this.sampler.setProgram(ch, sound);
       if (this.synth.midiChannels[ch]) this.synth.midiChannels[ch].setDrums(!!drum);
       if (drum) this.drumCh.add(ch); else this.drumCh.delete(ch);
-      this.send([0xc0 | ch, sound && sound.pc !== null ? sound.pc : 0], time);
+      const C = root.PACore; const gm = C && C.gmProgram ? C.gmProgram(sound, trackName) : (sound && sound.pc !== null ? sound.pc : 0);
+      this.send([0xc0 | ch, gm & 127], time);
       for (const e of setupEvents) {
         if (e.kind !== 'ch' || (e.status & 0xf0) !== 0xb0) continue; const c = e.data[0];
         if (c === 7 && ov != null) continue;

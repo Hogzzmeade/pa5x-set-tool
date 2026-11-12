@@ -244,6 +244,32 @@
   function soundLabel(s, idx) { const i = soundInfo(s, idx); if (!i) return '—'; return i.name || i.num; }
   function soundTitle(s, idx) { const i = soundInfo(s, idx); if (!i) return ''; return `${i.src} · MSB.LSB.Prog ${i.num}`; }
 
+  // ---------- GM substitute for a Korg sound (used when the set has no samples for it) ----------
+  // Factory sounds follow Korg's GM-compatible numbering (PC = GM instrument, LSB = variation).
+  // User sounds have arbitrary slots, so their GM instrument is guessed from the sound name.
+  const GM_RULES = [
+    [/slap/i, 36], [/fretles/i, 35], [/syn.*bas|bas.*syn|moog|acid/i, 38], [/pick.*bas/i, 34], [/bas|\bb\s*\d|\bbs\b/i, 33],
+    [/nylon|span|flamen|classic/i, 24], [/steel|folk g|acoust/i, 25], [/jazz/i, 26], [/mute|mut\b/i, 28], [/dist|power|over|rock|lead g|boss/i, 30], [/gtr|guit|gitar|gitara|wah|rthm/i, 27],
+    [/sitar/i, 104], [/kombus|combus|cumbus|saz|baglam|ba[gğ]lama|tambur|cura|divan|bouzou|buzuk|mandol|tar\b/i, 106], [/oud|\bud\b|ud\s/i, 105], [/banjo/i, 105],
+    [/kanun|kanoun|qanun|santur|cimbal|tsimb|cymbal|dulcim|tsimbal/i, 15], [/harp/i, 46],
+    [/viola/i, 41], [/cello/i, 42], [/violin|violina|keman|kemen|gadul|gudul|cig|fiddle/i, 40], [/pizz/i, 45], [/str|string|ensem/i, 48],
+    [/clar|klar/i, 71], [/sop.*sax/i, 64], [/ten.*sax/i, 66], [/bari/i, 67], [/sax/i, 65], [/trombon/i, 57], [/trump|trp|trumpet|trombe|truba|tromb/i, 56], [/tuba/i, 58], [/horn/i, 60], [/brass|brs/i, 61],
+    [/zurna|zurla|zurn|shanai|shenai|mizmar|duduk|mey\b/i, 111], [/gaida|gajda|gayda|bagpipe|tulum/i, 109], [/kaval|ney|nay|shakuh|frula|flojer/i, 77], [/pan\s?fl|pan\b/i, 75], [/flute|flaut|fl\b/i, 73], [/oboe/i, 68], [/ocarin/i, 79],
+    [/harmonica/i, 22], [/accord|acord|akord|harmonika|garmon|\bharm/i, 21], [/org/i, 16],
+    [/el\.?\s?pian|e\.?\s?p(ia)?no|rhodes|wurli|\bep\b/i, 4], [/clav/i, 7], [/piano|pno|grand/i, 0],
+    [/choir|vocal|voice|aah|ooh|vox|xor|\bhor\b|cantor/i, 52], [/hit|fabrika|stab/i, 55],
+    [/vibra|vibes/i, 11], [/marimb/i, 12], [/xylo/i, 13], [/bell|tubular/i, 14], [/glock/i, 9], [/celest/i, 8],
+    [/pad|warm|sweep/i, 89], [/square|sq\b/i, 80], [/syn|synt|sinth|sinty|lead|saw|kronos|keyb|moss/i, 81],
+  ];
+  function gmProgram(s, trackName) {
+    if (!s || s.pc == null) return 0;
+    if (s.msb === 120) return s.lsb >= 64 ? 0 : s.pc; // drum kits: user kits → standard GM kit
+    if (!(s.msb === 121 && s.lsb >= 64)) return s.pc & 127;
+    const i = soundInfo(s); const name = (i && i.name) || '';
+    for (const [re, p] of GM_RULES) if (re.test(name)) return p;
+    return trackName === 'Bass' ? 33 : 0;
+  }
+
   // ---------- editing (copy elements / tracks between styles) ----------
   const SCENE_INFO = { Intro1: [1, 4], Intro2: [2, 5], CountIn: [3, 11], Var1: [4, 0], Var2: [5, 1], Var3: [6, 2], Var4: [7, 3], Fill1: [8, 6], Fill2: [9, 7], Fill3: [10, 13], Fill4: [11, 14], Break: [12, 10], End1: [13, 8], End2: [14, 9] };
   const TRACK_NUM = { Bass: 1, Drum: 2, Perc: 3, Acc1: 4, Acc2: 5, Acc3: 6, Acc4: 7, Acc5: 8, Chords: 10 };
@@ -422,6 +448,6 @@
     const all = [...parts, ...cd, endRec]; const total = all.reduce((s, x) => s + x.length, 0); const out = new Uint8Array(total); let p = 0; for (const x of all) { out.set(x, p); p += x.length; } return out;
   }
 
-  const api = { getTrackProps, setTrackProps, setStyleTempo, clipNode, clipNotes, buildClipMidi, clipLeaf, setClipMidi, pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
+  const api = { gmProgram, getTrackProps, setTrackProps, setStyleTempo, clipNode, clipNotes, buildClipMidi, clipLeaf, setClipMidi, pcgBankFromFile, buildSoundIndex, setSoundIndex, setFactoryNames, soundInfo, soundLabel, soundTitle, copyElement, copyTrack, deleteTrack, renameStyle, cloneNode, compatibleTracks, SCENE_INFO, TRACK_GROUP, serializeTree, parseTree, parseSMF, writeSMF, parseStyle, parseKeyboardSetFile, korfNames, exportStyleMidi, makeZip, fmtSound, ELEMENT_LABEL, TRACK_ORDER, DEFAULT_CHANNELS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PACore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
