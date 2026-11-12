@@ -1,6 +1,7 @@
 # Сглобяване
 
-1. `index.html` = `app3.html` с вмъкнати `core.js` (`/*__CORE__*/`), `player.js` (`/*__PLAYER__*/`) и `korf.js` (`/*__KORF__*/`) и `factory.js` (`/*__FACTORY__*/`).
+1. `index.html` = `app3.html` с вмъкнати `core.js` (`/*__CORE__*/`), `player.js` (`/*__PLAYER__*/`), `korf.js` (`/*__KORF__*/`), `factory.js` (`/*__FACTORY__*/`) и `sampler.js` (`/*__SAMPLER__*/`):
+   `node tools/assemble.js . app/index.html`.
 2. `spessa.bundle.js`: `npm i spessasynth_lib esbuild` и
    `npx esbuild tools/spessa-entry.js --bundle --format=iife --minify --outfile=spessa.bundle.js`;
    `spessasynth_processor.min.js` се копира от `node_modules/spessasynth_lib/dist/`.

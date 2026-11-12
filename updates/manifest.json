@@ -1,12 +1,12 @@
 {
-  "version": "0.7.1",
-  "notes": "Properties: меню за елементите на стила — звук (избор от Factory и User), VOL, EXP, LOW/HIGH KEY, ReMap на оригиналния акорд, тип, тоналност, Chord Table, темпо, прослушване с A/B сравнение, прилагане към всички елементи, Update/Reset Style и доклад.",
-  "date": "2026-11-11",
+  "version": "0.8.0",
+  "notes": "Свирене със семплите от сета: user звуците и user drum kit-овете звучат със собствените семпли на сета (RAM.KMP + PCM); фабричните слоеве — с GM синтезатора. Ново в MINI Player: етикет СЕТ / СЕТ+GM / GM за всяка писта и избор на звук. Пълно декодиране на компресираните PCG звуци.",
+  "date": "2026-11-12",
   "files": [
     {
       "name": "app-main.js",
-      "size": 14807,
-      "sha256": "7e919642ebfd430b6e7be2c9757d7955f2e8448f5aedebd38a276e2203eb3b30"
+      "size": 16518,
+      "sha256": "d9e7b568c41edb4eb014b05c23023f8ec067c2456ca528169aae816ae8969f08"
     },
     {
       "name": "icon.png",
@@ -15,18 +15,18 @@
     },
     {
       "name": "index.html",
-      "size": 262793,
-      "sha256": "002d227cd0d189ea15d70cb7384066735c62a84ac4bb71eace23c261409b24d9"
+      "size": 285399,
+      "sha256": "15bacae89fd5df689ba2df80dd09c76e4b63e9e4ca519a86fbd3f3b2e0cd5d74"
     },
     {
       "name": "package.json",
       "size": 131,
-      "sha256": "34ed45772978c856cb80be2c5784743d987330eed07d85634ca7569336d5eeab"
+      "sha256": "16d451f002f13c2d34e11996f6cf69e07836f5db458681fcd2400fe6498ac8e8"
     },
     {
       "name": "preload.js",
-      "size": 1477,
-      "sha256": "d24cb20490dae640dd9adb7374b15c1dd83eaa9fa5b01e7037b110c4acd96ca9"
+      "size": 1609,
+      "sha256": "7e39d1e5963cef452cd6ca9d9fb6036f82ca725ceaf7bd634fe407e97e7d2d84"
     },
     {
       "name": "spessa.bundle.js",

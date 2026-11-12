@@ -37,6 +37,25 @@ function listFolder(dir) {
 }
 ipcMain.handle('open-path', async (_e, dir) => { try { if (fs.statSync(dir).isDirectory()) return listFolder(dir); } catch (e) { } return null; });
 ipcMain.handle('read-file', async (_e, rel) => { const p = insideRoot(rel.split('/').slice(1).join('/')); const b = await fs.promises.readFile(p); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); });
+// ---- sampler support: index of all PCM samples of the open set (headers only) + ranged reads ----
+ipcMain.handle('pcm-index', async () => {
+  if (!rootDir) return [];
+  const dirs = fs.readdirSync(rootDir, { withFileTypes: true }).filter(e => e.isDirectory() && /^PCM$/i.test(e.name)).map(e => e.name);
+  const out = []; const top = path.basename(rootDir); const hdr = Buffer.alloc(90);
+  for (const d of dirs) for (const name of fs.readdirSync(path.join(rootDir, d)).filter(n => /\.pcm$/i.test(n))) {
+    const full = path.join(rootDir, d, name); let fd; try { fd = fs.openSync(full, 'r'); const size = fs.fstatSync(fd).size; let p = 8;
+      while (p + 8 <= size) { fs.readSync(fd, hdr, 0, 8, p); const id = hdr.toString('hex', 0, 4); const sz = hdr.readUInt32BE(4); const o = p + 8;
+        if (id === '12020010' && sz >= 82) { fs.readSync(fd, hdr, 0, 82, o);
+          out.push({ h: hdr.toString('hex', 8, 16), rel: top + '/' + d + '/' + name, ch: hdr[16], fmt: hdr[17], rate: hdr.readUInt16BE(20), fr: hdr.readUInt32BE(22), ls: hdr.readUInt32BE(58), le: hdr.readUInt32BE(62), lf: hdr[74], dl: Math.min(hdr.readUInt32BE(78), size - o - 82), off: o + 82 }); }
+        if (sz > size - p) break; p += 8 + sz; }
+    } catch (e) { } finally { if (fd != null) try { fs.closeSync(fd); } catch (e) { } }
+  }
+  return out;
+});
+ipcMain.handle('read-range', async (_e, rel, off, len) => {
+  const p = insideRoot(String(rel).split('/').slice(1).join('/')); const fh = await fs.promises.open(p, 'r');
+  try { const b = Buffer.alloc(Math.max(0, Math.min(len, 64 * 1024 * 1024))); await fh.read(b, 0, b.length, off); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); } finally { await fh.close(); }
+});
 ipcMain.handle('save-file', async (_e, name, data) => {
   const cfg = loadCfg(); const ext = path.extname(name).slice(1) || '*';
   const r = await dialog.showSaveDialog(win, { title: 'Запиши', defaultPath: path.join(cfg.saveDir || app.getPath('documents'), name), filters: [{ name: ext === 'zip' ? 'ZIP архив' : ext === 'mid' ? 'MIDI файл' : 'Файл', extensions: [ext] }] });

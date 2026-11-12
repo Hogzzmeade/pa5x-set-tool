@@ -204,6 +204,8 @@
   .prfoot input{width:60px;background:#0f1013;color:#fff;border:1px solid #333;border-radius:4px;padding:2px 4px}
   .ctgrid{display:grid;grid-template-columns:1fr auto 1fr auto;gap:4px 14px;font-size:13px}
   .pslist{height:340px;overflow:auto;border:1px solid var(--line);border-radius:6px;margin-top:8px} .psi{display:flex;justify-content:space-between;padding:5px 10px;cursor:pointer;border-bottom:1px solid #22252b} .psi:hover{background:#262a32} .psi.sel{background:#2f2a20;color:#ffd9a3}
+.mpsrc{font-size:9px;font-weight:700;letter-spacing:.3px;padding:1px 3px;border-radius:3px;margin:2px auto 0;width:max-content;background:#3a3f47;color:#c8ccd2}
+.mpsrc.set{background:#1f6f43;color:#fff}.mpsrc.mixed{background:#7a6a1f;color:#fff}.mpsrc.midi{background:#2d5d8f;color:#fff}
 </style>
 </head>
 <body>
@@ -275,6 +277,9 @@
 /*__FACTORY__*/
 </script>
 <script>
+/*__SAMPLER__*/
+</script>
+<script>
 (() => {
   const C = window.PACore;
   const $ = (s) => document.querySelector(s);
@@ -326,6 +331,7 @@
     for (const x of idx.filter(x => x.top === 'MATRIXPRESET' && /pads?\.mtp$/i.test(x.name))) { try { state.padPresets.push(...window.PAKorf.padPresets(new Uint8Array(await x.f.arrayBuffer())).map(p => ({ ...p, n: p.name, file: x.name }))); } catch (e) { } }
     for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) { try { const ent = window.PAKorf.parseKorf(new Uint8Array(await x.f.arrayBuffer())).entries.filter(e => e.name).sort((a, b) => a.slot - b.slot); state.userSounds.push({ bank: x.name.replace(/\.pcg$/i, ''), file: x.name, entries: ent, names: ent.map(e => e.name) }); } catch (e) { } }
     C.setSoundIndex(C.buildSoundIndex(state.userSounds.map(b => ({ name: b.file, entries: b.entries })))); state.styleCache.clear();
+    state.samplerReady = loadSampler(idx);
     const ns = state.styles.reduce((s, b) => s + b.items.length, 0), nk = state.ksets.reduce((s, b) => s + b.items.length, 0);
     $('#setname').textContent = state.root + `  ·  ${ns} стила · ${nk} Keyboard Sets`;
     if (!ns && !nk) status('В избраната папка няма PA5X стилове (.stg) или Keyboard Sets (.ksc). Избери главната папка на сета.', true); else status('Сетът е зареден');
@@ -418,7 +424,32 @@
   const allStyleItems = () => state.styles.flatMap((b, bi) => b.items.map((x, i) => ({ x, bi, i, bank: b.bank })));
 
   // ===================== player =====================
-  const P = new window.PAPlayer(); window.PA5XApp && (window.PA5XApp.P = P); let playerReady = false; let curStyleItem = null; let curStyleBank = 0;
+  const P = new window.PAPlayer();
+
+  // ===================== set samples (sampler) =====================
+  async function loadSampler(idx) {
+    const sm = P.sampler; if (!sm || !window.native || !window.native.pcmIndex) return false;
+    try {
+      const kx = idx.find(x => x.top === 'MULTISMP' && /\.kmp$/i.test(x.name)); if (!kx) { sm.reset(); return false; }
+      const [kmp, index] = await Promise.all([kx.f.arrayBuffer().then(b => new Uint8Array(b)), window.native.pcmIndex()]);
+      const pcg = []; for (const x of idx.filter(x => x.top === 'SOUND' && /\.pcg$/i.test(x.name))) pcg.push({ name: x.name, bytes: new Uint8Array(await x.f.arrayBuffer()) });
+      const ok = sm.load({ kmp, pcg, index }, (rel, off, len) => window.native.readRange(rel, off, len));
+      if (ok) status('Сетът е зареден · семпли: ' + sm.info);
+      return ok;
+    } catch (e) { console.warn(e); sm.reset(); return false; }
+  }
+  async function prepareSounds(sounds) {
+    if (!P.sampler || P.out === 'midi') return; await state.samplerReady; if (!P.sampler.kmp || !P.sampler.enabled) return;
+    let shown = false; const t0 = performance.now();
+    await P.prepareSounds(sounds, (d, n) => { if (performance.now() - t0 > 250 || shown) { shown = true; status(`Зареждам семплите на сета… ${d}/${n}`); } });
+    if (shown) status('Семплите са заредени');
+  }
+  function setSoundMode(v) {
+    if (v === 'synth' || v === 'gm') { P.setOutput('synth'); if (P.sampler) P.sampler.enabled = v === 'synth'; if (P.style && P.sampler && P.sampler.enabled) prepareSounds(P.styleSounds(P.style)).then(() => P.refreshRouting()); else P.refreshRouting(); }
+    else P.setOutput(v);
+    document.querySelectorAll('#tpOut,#mpOut').forEach(x => { if (x.value !== v) x.value = v; });
+  }
+  const SRC_LABEL = { set: ['СЕТ', 'Свири със семплите от сета'], mixed: ['СЕТ+GM', 'Семпли от сета; фабричните слоеве — с GM синтезатора'], factory: ['GM', 'Фабричен звук (в паметта на клавира) — свири GM заместител'], gm: ['GM', 'GM синтезатор'], midi: ['MIDI', 'Към клавира по MIDI'] }; window.PA5XApp && (window.PA5XApp.P = P); let playerReady = false; let curStyleItem = null; let curStyleBank = 0;
   async function ensurePlayer() {
     if (playerReady) return true;
     if (!window.native) { toast('Прослушването работи в програмата за Windows'); return false; }
@@ -431,7 +462,7 @@
   let origRoot = 0, origChordLabel = '';
   const ELEMENT_BTNS = [['Intro1', 'INTRO 1'], ['Intro2', 'INTRO 2'], ['CountIn', 'INTRO 3'], ['Var1', 'VAR 1'], ['Var2', 'VAR 2'], ['Var3', 'VAR 3'], ['Var4', 'VAR 4'], ['Fill1', 'FILL 1'], ['Fill2', 'FILL 2'], ['Fill3', 'FILL 3'], ['Fill4', 'FILL 4'], ['Break', 'BREAK'], ['End1', 'END 1'], ['End2', 'END 2']];
   async function loadIntoPlayer(x, s) {
-    curStyleItem = x; P.loadStyle(s, opts.channels);
+    curStyleItem = x; P.loadStyle(s, opts.channels); await prepareSounds(P.styleSounds(s));
     const oc = (() => { for (const el of s.elements) for (const t of el.tracks) if (t.origChord.root) return t.origChord; return null; })();
     origRoot = oc ? rootIdx(oc.root) : 0; origChordLabel = oc ? oc.root + (/min/i.test(oc.chord) ? 'm' : '') : '';
     P.transpose = 0; renderTransport();
@@ -449,7 +480,7 @@
         <div class="tp-ctl"><label>Темпо<input type="number" id="tpTempo" min="30" max="300" step="1"></label>
           <label>Тоналност<select id="tpKey">${ROOTS.map((r, i) => `<option value="${i}">${r}${/m$/.test(origChordLabel) ? 'm' : ''}</option>`).join('')}</select></label>
           <label>Сила<input type="range" id="tpVol" min="0" max="1.5" step="0.05" value="${P.volume}"></label>
-          <label>Звук<select id="tpOut"><option value="synth">Вграден синтезатор</option></select></label></div>
+          <label>Звук<select id="tpOut"><option value="synth">Семпли от сета + GM</option><option value="gm">Само GM синтезатор</option></select></label></div>
         <div class="tp-pos" id="tpPos"></div>`;
       $('#tpStart').onclick = async () => { if (!(await ensurePlayer())) return; if (P.playing) P.stop(); else P.start(P.lastVar || 'Var1'); };
       bar.querySelectorAll('.ebtn').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const id = b.dataset.el; if (P.playing) P.queue(id); else P.start(id); });
@@ -458,7 +489,7 @@
       $('#tpKey').onchange = e => { let d = (+e.target.value - origRoot + 12) % 12; if (d > 6) d -= 12; P.transpose = d; };
       $('#tpVol').oninput = e => P.setVolume(+e.target.value);
       $('#tpOut').onfocus = fillOutputs; $('#tpOut').onmousedown = fillOutputs;
-      $('#tpOut').onchange = async e => { if (!(await ensurePlayer())) return; P.setOutput(e.target.value); toast(e.target.value === 'synth' ? 'Звук: вграден синтезатор' : 'Звук: MIDI към ' + e.target.selectedOptions[0].textContent + '. Настрой MIDI IN каналите на PA5X да съвпадат с каналите на пистите.'); };
+      $('#tpOut').onchange = async e => { if (!(await ensurePlayer())) return; setSoundMode(e.target.value); toast(e.target.value === 'synth' ? 'Звук: семплите на сета (фабричните звуци с GM синтезатора)' : e.target.value === 'gm' ? 'Звук: само GM синтезатор' : 'Звук: MIDI към ' + e.target.selectedOptions[0].textContent + '. Настрой MIDI IN каналите на PA5X да съвпадат с каналите на пистите.'); };
     }
     if (document.activeElement !== $('#tpTempo')) $('#tpTempo').value = Math.round(P.tempo); if (document.activeElement !== $('#tpKey')) $('#tpKey').value = (origRoot + P.transpose + 12) % 12;
     $('#tpStart').textContent = P.playing ? '■' : '▶'; $('#tpStart').classList.toggle('on', P.playing);
@@ -510,8 +541,8 @@
     $('#stProps').onclick = () => openStyleProps({ x, bi, i: state.styles[bi].items.indexOf(x) });
     document.querySelectorAll('.edc').forEach(c => c.onclick = () => { const [eid, tn] = c.dataset.ed.split('|'); openNoteEditor(x, bi, eid, tn); });
     document.querySelectorAll('.ms').forEach(b => b.onclick = () => { const t = b.dataset.m || b.dataset.s; const set = b.dataset.m ? P.mutes : P.solos; set.has(t) ? set.delete(t) : set.add(t); b.classList.toggle('on', set.has(t)); });
-    document.querySelectorAll('.padb').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const p = s.pads[+b.dataset.p]; if (p.smf) P.playClip(p.smf, p.sound, [14, 15, 13, 12][+b.dataset.p % 4]); });
-    document.querySelectorAll('.kssel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const k = s.keyboardSets[+b.dataset.k]; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); document.querySelectorAll('.kssel').forEach(z => z.classList.toggle('on', z === b)); });
+    document.querySelectorAll('.padb').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const p = s.pads[+b.dataset.p]; await prepareSounds([p.sound]); if (p.smf) P.playClip(p.smf, p.sound, [14, 15, 13, 12][+b.dataset.p % 4]); });
+    document.querySelectorAll('.kssel').forEach(b => b.onclick = async () => { if (!(await ensurePlayer())) return; const k = s.keyboardSets[+b.dataset.k]; await prepareSounds(k.tracks.map(t => t.sound)); await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); document.querySelectorAll('.kssel').forEach(z => z.classList.toggle('on', z === b)); });
     // export hooks
     $('#oChords').onchange = e => opts.includeChords = e.target.checked; $('#oSetup').onchange = e => opts.setupPerElement = e.target.checked; $('#oSysex').onchange = e => opts.keepKorgSysex = e.target.checked;
     document.querySelectorAll('.chmap select').forEach(sel => sel.onchange = () => opts.channels[sel.dataset.t] = +sel.value);
@@ -654,7 +685,7 @@
       ${k.tracks.map(t => `<tr><td>${t.name}</td><td>${esc(C.soundLabel(t.sound))}</td><td class="snd hint">${esc(C.soundTitle(t.sound))}</td><td class="c">${t.sound?.vol ?? '—'}</td><td class="c">${t.sound?.pan ?? '—'}</td><td class="c">${t.keyLow !== undefined ? noteName(t.keyLow) + '–' + noteName(t.keyHigh) : '—'}</td><td class="c">${t.mute ? 'да' : ''}</td></tr>`).join('')}</table>
       ${k.splitPoint !== null ? `<p class="hint">Split point: ${noteName(k.splitPoint)}</p>` : ''}</div>
       <div class="card"><h3>Прослушване</h3><button class="btn primary" id="ksPlay">🎹 Включи клавиатурата</button><div id="kbHost"></div></div>`;
-    $('#ksPlay').onclick = async () => { if (!(await ensurePlayer())) return; await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); $('#ksPlay').style.display = 'none'; };
+    $('#ksPlay').onclick = async () => { if (!(await ensurePlayer())) return; await prepareSounds(k.tracks.map(t => t.sound)); await P.setKeyboardSet(k); mountKeyboard($('#kbHost'), k); $('#ksPlay').style.display = 'none'; };
   }
 
   async function exportMany(items, zipName) {
@@ -881,7 +912,7 @@
     }
     const at = (ev) => { const r = cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; };
     const hit = (p) => { for (let i = notes.length - 1; i >= 0; i--) { const n = notes[i]; const x = n.t * E.pxPerTick, ww = Math.max(3, n.dur * E.pxPerTick); if (p.x >= x && p.x <= x + ww && kOf(p.y) === n.key) return { n, edge: p.x > x + ww - 6 }; } return null; };
-    const audition = (k, vel) => { if (!playerReady) return; P.audition(tr.sound, tr.info.setup, isDrum ? 9 : 15, k, vel || 100); };
+    const audition = async (k, vel) => { if (!playerReady) return; await prepareSounds([tr.sound]); P.audition(tr.sound, tr.info.setup, isDrum ? 9 : 15, k, vel || 100); };
     let drag = null;
     cv.addEventListener('pointerdown', (ev) => {
       const p = at(ev); const h = hit(p); cv.setPointerCapture(ev.pointerId); E.playhead = Math.max(0, snapT(p.x / E.pxPerTick));
@@ -1028,6 +1059,10 @@
     for (const [t] of SP_TRACKS) { const v = P.trackSetupVolume(first, t); if (v != null) P.trackVol[t] = v; }
     spMini(s); P.start(start); renderStylePlay();
   }
+  function srcTag(s, t) {
+    let snd = null; for (const el of s.elements) { const tr = el.tracks.find(x => x.name === t && x.sound); if (tr) { snd = tr.sound; break; } }
+    const k = P.soundSource(snd); const [lab, tip] = SRC_LABEL[k] || SRC_LABEL.gm; return `<div class="mpsrc ${k}" title="${tip}">${lab}</div>`;
+  }
   function spMini(s) {
     let m = $('#spMini'); if (!m) { m = document.createElement('div'); m.id = 'spMini'; m.className = 'spmini'; document.body.appendChild(m); }
     const has = (t) => s.elements.some(e => e.tracks.some(x => x.name === t && x.info.notes));
@@ -1037,10 +1072,11 @@
       <div class="mpels">${SP_ELS.map(([id, l]) => { const e = s.elements.find(z => z.id === id && z.length); return `<button class="mpel ${/^Var/.test(id) ? 'v' : /^Fill|^Break/.test(id) ? 'f' : 'i'}" data-el="${id}" ${e ? '' : 'disabled'}>${l}</button>`; }).join('')}</div>
       <div class="mpmix">
         <div class="mpch master"><div class="mpval" id="mvVal">${mv}</div><input type="range" class="fader" orient="vertical" min="0" max="127" value="${mv}" id="mvF"><div class="mpname">MASTER<br>VOLUME</div></div>
-        ${SP_TRACKS.map(([t, l]) => { const on = has(t); const v = P.trackVol[t] ?? 0; return `<div class="mpch${on ? '' : ' off'}" data-t="${t}"><div class="mpval">${on ? v : 0}</div><input type="range" class="fader" orient="vertical" min="0" max="127" value="${on ? v : 0}" ${on ? '' : 'disabled'}><div class="mpname">${l}</div><div class="mpled"></div><div class="mpms"><button class="ms m${P.mutes.has(t) ? ' on' : ''}" ${on ? '' : 'disabled'}>M</button><button class="ms s${P.solos.has(t) ? ' on' : ''}" ${on ? '' : 'disabled'}>S</button></div></div>`; }).join('')}
+        ${SP_TRACKS.map(([t, l]) => { const on = has(t); const v = P.trackVol[t] ?? 0; return `<div class="mpch${on ? '' : ' off'}" data-t="${t}"><div class="mpval">${on ? v : 0}</div><input type="range" class="fader" orient="vertical" min="0" max="127" value="${on ? v : 0}" ${on ? '' : 'disabled'}><div class="mpname">${l}</div>${on ? srcTag(s, t) : ''}<div class="mpled"></div><div class="mpms"><button class="ms m${P.mutes.has(t) ? ' on' : ''}" ${on ? '' : 'disabled'}>M</button><button class="ms s${P.solos.has(t) ? ' on' : ''}" ${on ? '' : 'disabled'}>S</button></div></div>`; }).join('')}
       </div>
-      <div class="mpfoot"><span>Tact: <b id="mpTs">—</b></span><span>L: <b id="mpL">—</b></span><span>Key: <select id="mpKey">${ROOTS.map((r, i) => `<option value="${i}">${r}${/m$/.test(origChordLabel) ? 'm' : ''}</option>`).join('')}</select></span><span>Tempo: <input type="number" id="mpTempo" min="30" max="300" value="${Math.round(P.tempo)}"></span></div>`;
+      <div class="mpfoot"><span>Tact: <b id="mpTs">—</b></span><span>L: <b id="mpL">—</b></span><span>Key: <select id="mpKey">${ROOTS.map((r, i) => `<option value="${i}">${r}${/m$/.test(origChordLabel) ? 'm' : ''}</option>`).join('')}</select></span><span>Tempo: <input type="number" id="mpTempo" min="30" max="300" value="${Math.round(P.tempo)}"></span><span>Звук: <select id="mpOut"><option value="synth">Семпли от сета + GM</option><option value="gm">Само GM</option>${P.out === 'midi' ? '<option value="midi" selected>MIDI</option>' : ''}</select></span></div>`;
     $('#mpClose').onclick = () => { P.stop(); m.remove(); renderStylePlay(); };
+    const mo = $('#mpOut'); if (P.out !== 'midi') mo.value = P.sampler && !P.sampler.enabled ? 'gm' : 'synth'; mo.onchange = () => { if (mo.value !== 'midi') { setSoundMode(mo.value); spMini(s); } };
     $('#mpLoop').onclick = (e) => { P.loop = !P.loop; e.target.classList.toggle('on', P.loop); };
     $('#mpPlay').onclick = () => { if (P.playing) P.stop(); else P.start(P.lastVar || 'Var1'); spTick(); };
     m.querySelectorAll('.mpel').forEach(b => b.onclick = () => { const id = b.dataset.el; if (P.playing) P.queue(id); else P.start(id); });
@@ -1163,7 +1199,7 @@
     document.body.appendChild(b);
     const list = () => { const q = b.querySelector('#psQ').value.toLowerCase(), f = b.querySelector('#psS').value; const r = all.filter(s => (!q || s.name.toLowerCase().includes(q)) && (!f || (f === 'u') === (s.src !== 'Factory'))).slice(0, 400);
       b.querySelector('#psL').innerHTML = r.map((s, i) => `<div class="psi" data-i="${all.indexOf(s)}"><span>${esc(s.name)}</span><span class="hint">${esc(s.src)} · ${s.msb},${s.lsb},${s.pc}</span></div>`).join('') || '<div class="hint" style="padding:10px">Няма резултати</div>';
-      b.querySelectorAll('.psi').forEach(d => { d.onclick = () => { const s = all[+d.dataset.i]; b.querySelector('#psM').value = s.msb; b.querySelector('#psB').value = s.lsb; b.querySelector('#psP').value = s.pc + 1; b.querySelectorAll('.psi').forEach(z => z.classList.toggle('sel', z === d)); if (playerReady) P.audition(s, [], 15, drum ? 38 : 60, 100); }; d.ondblclick = () => b.querySelector('#psOk').click(); }); };
+      b.querySelectorAll('.psi').forEach(d => { d.onclick = () => { const s = all[+d.dataset.i]; b.querySelector('#psM').value = s.msb; b.querySelector('#psB').value = s.lsb; b.querySelector('#psP').value = s.pc + 1; b.querySelectorAll('.psi').forEach(z => z.classList.toggle('sel', z === d)); if (playerReady) prepareSounds([s]).then(() => P.audition(s, [], 15, drum ? 38 : 60, 100)); }; d.ondblclick = () => b.querySelector('#psOk').click(); }); };
     b.querySelector('#psQ').oninput = list; b.querySelector('#psS').onchange = list; list(); b.querySelector('#psQ').focus();
     b.querySelector('#psNo').onclick = () => b.remove();
     b.querySelector('#psOk').onclick = () => { const snd = { msb: +b.querySelector('#psM').value & 127, lsb: +b.querySelector('#psB').value & 127, pc: (+b.querySelector('#psP').value - 1) & 127 }; b.remove(); cb(snd); };

@@ -13,6 +13,7 @@
       this.transpose = 0; this.tempo = 120; this.volume = 1; this.onState = null; this.timer = null;
       this.drumCh = new Set(); this.held = new Map(); // ch -> Set(notes)
       this.trackVol = {}; this.activity = {}; this.loop = true;
+      this.sampler = root.PASampler ? new root.PASampler() : null; this.gmNotes = new Set();
     }
     async init(loadBank) {
       if (this.ready) return this.ready;
@@ -21,6 +22,7 @@
         await this.ctx.audioWorklet.addModule('spessasynth_processor.min.js');
         this.synth = new root.SpessaLib.WorkletSynthesizer(this.ctx);
         this.gain = this.ctx.createGain(); this.synth.connect(this.gain); this.gain.connect(this.ctx.destination);
+        if (this.sampler) this.sampler.ensureCtx(this.ctx, this.gain);
         await this.synth.soundBankManager.addSoundBank(await loadBank(), 'main');
         await this.synth.isReady;
       })();
@@ -42,6 +44,13 @@
         return;
       }
       const s = this.synth; const st = bytes[0] & 0xf0, ch = bytes[0] & 15; const o = { time: Math.max(time, this.ctx.currentTime) };
+      const sm = this.sampler;
+      if (sm && sm.active(ch)) { // the set's own samples; factory (ROM) layers fall back to the GM synth
+        const k = ch * 128 + bytes[1];
+        if (st === 0x90 && bytes[2] > 0) { const r = sm.noteOn(ch, bytes[1], bytes[2], o.time); if (r.rom) { s.noteOn(ch, bytes[1], bytes[2], o); this.gmNotes.add(k); } return; }
+        if (st === 0x80 || st === 0x90) { sm.noteOff(ch, bytes[1], o.time); if (this.gmNotes.delete(k)) s.noteOff(ch, bytes[1], o); return; }
+        if (st === 0xb0) sm.cc(ch, bytes[1], bytes[2], o.time);
+      } else if (sm && st === 0xb0 && (bytes[1] === 123 || bytes[1] === 120)) sm.allOff(ch, o.time);
       if (st === 0x90 && bytes[2] > 0) s.noteOn(ch, bytes[1], bytes[2], o);
       else if (st === 0x80 || st === 0x90) s.noteOff(ch, bytes[1], o);
       else s.sendMessage(bytes, 0, o);
@@ -55,6 +64,7 @@
         return;
       }
       const drum = sound && sound.msb === 120;
+      if (this.sampler) this.sampler.setProgram(ch, sound);
       if (this.synth.midiChannels[ch]) this.synth.midiChannels[ch].setDrums(!!drum);
       if (drum) this.drumCh.add(ch); else this.drumCh.delete(ch);
       this.send([0xc0 | ch, sound && sound.pc !== null ? sound.pc : 0], time);
@@ -65,6 +75,14 @@
       }
       if (ov != null) this.send([0xb0 | ch, 7, ov], time);
     }
+    // load the set samples a list of sounds needs (before playing)
+    async prepareSounds(sounds, onProgress) { if (!this.sampler || !this.sampler.kmp || this.out === 'midi') return; await this.ready; await this.sampler.prepare(this.ctx, sounds.filter(Boolean), onProgress); }
+    styleSounds(style) { const out = []; const seen = new Set(); for (const el of style.elements) for (const t of el.tracks) { const k = this.sampler && this.sampler.key(t.sound); if (k && !seen.has(k)) { seen.add(k); out.push(t.sound); } } for (const k of style.keyboardSets || []) for (const t of k.tracks) if (t.sound) out.push(t.sound); for (const p of style.pads || []) if (p.sound) out.push(p.sound); return out; }
+    refreshRouting() { // after switching set samples on/off: re-route the channels of the current element
+      if (!this.sampler || !this.cur || !this.ctx) return; const t = this.ctx.currentTime;
+      for (const tr of this.cur.tracks) { if (tr.name === 'Chords') continue; const ch = (this.channels[tr.name] || 1) - 1; if (this.sampler.active(ch)) this.sampler.allOff(ch, t, true); this.sampler.setProgram(ch, tr.sound); }
+    }
+    soundSource(sound) { if (this.out === 'midi') return 'midi'; if (!this.sampler || !this.sampler.kmp || !this.sampler.enabled) return 'gm'; return this.sampler.status(sound); }
     setTrackVolume(name, v) { this.trackVol[name] = v; if (this.ctx && this.channels && this.channels[name]) this.send([0xb0 | ((this.channels[name] - 1) & 15), 7, v], this.ctx.currentTime); }
     trackSetupVolume(el, name) { const tr = el && el.tracks.find(t => t.name === name); if (!tr) return null; for (const e of tr.info.setup) if (e.kind === 'ch' && (e.status & 0xf0) === 0xb0 && e.data[0] === 7) return e.data[1]; return 100; }
     noteMsg(e, ch, transpose) {
@@ -79,7 +97,7 @@
       if (hi === 0x90 && msg[2] > 0) h.add(msg[1]); else if (hi === 0x80 || hi === 0x90) h.delete(msg[1]);
     }
     allNotesOff(time) {
-      if (!this.ctx) return; const t = time || this.ctx.currentTime;
+      if (!this.ctx) return; const t = time || this.ctx.currentTime; this.gmNotes.clear();
       for (const [ch, set] of this.held) { for (const n of set) this.send([0x80 | ch, n, 0], t); set.clear(); }
       for (let ch = 0; ch < 16; ch++) { this.send([0xb0 | ch, 123, 0], t); this.send([0xb0 | ch, 64, 0], t); }
     }
@@ -150,7 +168,7 @@
     }
     stop() {
       clearInterval(this.timer); this.timer = null; const was = this.playing; this.playing = false; this.pending = null;
-      if (this.ctx) this.allNotesOff(); if (was) this.emit();
+      if (this.ctx) { this.allNotesOff(); if (this.sampler && this.sampler.ctx) this.sampler.allOff(null, this.ctx.currentTime, true); } if (was) this.emit();
     }
     position() {
       if (!this.playing || !this.cur) return null;

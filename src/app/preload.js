@@ -3,6 +3,8 @@ contextBridge.exposeInMainWorld('native', {
   openFolder: () => ipcRenderer.invoke('open-folder'),
   openPath: (p) => ipcRenderer.invoke('open-path', p),
   readFile: (rel) => ipcRenderer.invoke('read-file', rel),
+  pcmIndex: () => ipcRenderer.invoke('pcm-index'),
+  readRange: (rel, off, len) => ipcRenderer.invoke('read-range', rel, off, len),
   saveFile: (name, data) => ipcRenderer.invoke('save-file', name, data),
   showInFolder: (p) => ipcRenderer.invoke('show-in-folder', p),
   readAppFile: (n) => ipcRenderer.invoke('read-app-file', n),
